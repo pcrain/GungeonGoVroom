@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
+  <Import Project="$(MSBuildExtensionsPath)$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)$(MSBuildToolsVersion)\Microsoft.Common.props')"/>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{52A82040-5BED-4ACB-9894-41A595F284CB}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>GGV</RootNamespace>
+    <AssemblyName>GungeonGoVroom</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <FrameworkPathOverride>/home/pretzel/workspace/gungeon-projects/gungeon-go-vroom/_dotNETFramework/v3.5</FrameworkPathOverride>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <LangVersion>latest</LangVersion>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <LangVersion>latest</LangVersion>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="packages.config"/>
+    <Reference Include="System"/>
+    <Compile Include="src\ConfigMenu.cs"/>
+    <Compile Include="src\Main.cs"/>
+    <Reference Include="UnityEngine.ClothModule"/>
+    <Reference Include="UnityEngine.UnityConnectModule"/>
+    <Reference Include="UnityEngine.AIModule"/>
+    <Reference Include="UnityEngine.AnimationModule"/>
+    <Reference Include="UnityEngine.Physics2DModule"/>
+    <Reference Include="UnityEngine.UnityWebRequestTextureModule"/>
+    <Reference Include="UnityEngine.UIModule"/>
+    <Reference Include="UnityEngine.GridModule"/>
+    <Reference Include="UnityEngine.IMGUIModule"/>
+    <Reference Include="UnityEngine.CoreModule"/>
+    <Reference Include="UnityEngine.Networking"/>
+    <Reference Include="UnityEngine.AudioModule"/>
+    <Reference Include="UnityEngine.UnityWebRequestWWWModule"/>
+    <Reference Include="UnityEngine.AccessibilityModule"/>
+    <Reference Include="UnityEngine.SpriteMaskModule"/>
+    <Reference Include="UnityEngine.TerrainModule"/>
+    <Reference Include="UnityEngine"/>
+    <Reference Include="UnityEngine.UnityAnalyticsModule"/>
+    <Reference Include="UnityEngine.UnityWebRequestAudioModule"/>
+    <Reference Include="UnityEngine.UNETModule"/>
+    <Reference Include="UnityEngine.TextRenderingModule"/>
+    <Reference Include="UnityEngine.WebModule"/>
+    <Reference Include="UnityEngine.InputModule"/>
+    <Reference Include="UnityEngine.VRModule"/>
+    <Reference Include="UnityEngine.JSONSerializeModule"/>
+    <Reference Include="UnityEngine.GameCenterModule"/>
+    <Reference Include="UnityEngine.ScreenCaptureModule"/>
+    <Reference Include="UnityEngine.ClusterInputModule"/>
+    <Reference Include="UnityEngine.WindModule"/>
+    <Reference Include="UnityEngine.ParticlesLegacyModule"/>
+    <Reference Include="UnityEngine.StyleSheetsModule"/>
+    <Reference Include="UnityEngine.StandardEvents"/>
+    <Reference Include="UnityEngine.SharedInternalsModule"/>
+    <Reference Include="UnityEngine.UI"/>
+    <Reference Include="UnityEngine.PerformanceReportingModule"/>
+    <Reference Include="UnityEngine.ParticleSystemModule"/>
+    <Reference Include="UnityEngine.VehiclesModule"/>
+    <Reference Include="UnityEngine.ARModule"/>
+    <Reference Include="UnityEngine.UnityWebRequestModule"/>
+    <Reference Include="UnityEngine.PhysicsModule"/>
+    <Reference Include="UnityEngine.UIElementsModule"/>
+    <Reference Include="UnityEngine.ClusterRendererModule"/>
+    <Reference Include="UnityEngine.TerrainPhysicsModule"/>
+    <Reference Include="UnityEngine.SpriteShapeModule"/>
+    <Reference Include="UnityEngine.Timeline"/>
+    <Reference Include="UnityEngine.CrashReportingModule"/>
+    <Reference Include="UnityEngine.VideoModule"/>
+    <Reference Include="UnityEngine.DirectorModule"/>
+    <Reference Include="UnityEngine.AssetBundleModule"/>
+    <Reference Include="UnityEngine.SpatialTracking"/>
+    <Reference Include="UnityEngine.TilemapModule"/>
+    <Reference Include="UnityEngine.ImageConversionModule"/>
+    <Reference Include="MonoMod.Utils"/>
+    <Reference Include="MonoMod.RuntimeDetour"/>
+    <Reference Include="Assembly-CSharp"/>
+    <Reference Include="PlayMaker"/>
+    <Reference Include="0Harmony"/>
+    <Reference Include="BepInEx"/>
+    <Reference Include="Gunfig"/>
+    <Reference Include="ModTheGungeonAPI"/>
+    <Reference Include="Mono.Cecil.Rocks"/>
+    <Reference Include="Mono.Cecil"/>
+    <Reference Include="Mono.Cecil.Pdb"/>
+    <Reference Include="Mono.Cecil.Mdb"/>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+  <Import Project=".\packages\BepInEx.Core.5.4.21\build\BepInEx.Core.targets" Condition="Exists('.\packages\BepInEx.Core.5.4.21\build\BepInEx.Core.targets')"/>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('.\packages\BepInEx.Core.5.4.21\build\BepInEx.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '.\packages\BepInEx.Core.5.4.21\build\BepInEx.Core.targets'))"/>
+  </Target>
+</Project>

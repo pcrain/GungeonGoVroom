@@ -1,0 +1,244 @@
+#!/bin/bash
+#Helper script for generating my gungeon mod's .csproj file
+
+#Important top level variables
+namespace="GGV"                                  #namespace used throughout source code; need to change for my own mod eventually
+projectname="GungeonGoVroom"                     #name of the DLL to create
+projfile="./GungeonGoVroom.csproj"               #the name of the csproj file to generate
+sourcechecksums="./_${namespace}-checksums-src"  #file containing checksums of all source files to determing recompilation
+externalupdate="./_${namespace}-externalupdate"  #file containing the last time an external resource was added
+dllname="./bin/Debug/${projectname}.dll"         #DLL name is directly based on the project name
+dotnet35path="$(pwd)/_dotNETFramework/v3.5"      #Path to .NET 3.5 developer assemblies (from NUGet)
+UPDATEDLLS=0                                     #Set to 1 if any new DLLS are added to make sure they're copied correctly to bin/Debug
+projectversion="$(cat 'src/Main.cs' | grep -m1 'MOD_VERSION' | cut -f 2 -d '"')"
+debugbuild="$( [ "false" == "$(cat 'src/Main.cs' | grep -m1 'DEBUG_BUILD' | cut -f 2 -d '=' | cut -f 1 -d ';' | tr -d ' ')" ]; echo "$?" )"
+manifesttemplate=`cat <<HERE
+{
+  "name": "$projectname",
+  "version_number": "$projectversion",
+  "website_url": "https://github.com/pcrain/GungeonGoVroom",
+  "description": "A vanilla bugfix and optimization mod for Enter the Gungeon",
+  "dependencies": [
+    "MtG_API-Mod_the_Gungeon_API-1.9.2",
+    "CaptainPretzel-Gunfig-1.1.5"
+  ]
+}
+HERE`
+
+#Base directory we're copying our plugin to
+plugindir="/xmedia/pretzel/Steam/steamapps/common/Enter the Gungeon/BepInEx/plugins"
+
+#Easy colors (condensed)
+  BLN="\e[0m"   ; UND="\e[1;4m" ; INV="\e[1;7m" ; CRT="\e[1;41m";
+  BLK="\e[1;30m"; RED="\e[1;31m"; GRN="\e[1;32m"; YLW="\e[1;33m";
+  BLU="\e[1;34m"; MGN="\e[1;35m"; CYN="\e[1;36m"; WHT="\e[1;37m";
+
+#Variable tracking if anything actually needs to be rebuilt
+rebuild=1
+
+sources=()  #Array of source files
+includes=() #Array of items to include in the base project file
+externs=()  #Array of external resource to copy over to the EtG plugins/sprites directory
+
+#Manually populated includes
+includes+=('<None Include="packages.config" />')
+includes+=('<Reference Include="System" />') #needed for LinkedList
+# includes+=('<Reference Include="Ionic.Zip, Version=1.9.1.8"/>')
+
+#Source files
+echo -e "[${GRN}>${BLN}] Scanning for source files"
+while read -r line; do
+  [[ "$line" =~ \\_ ]] && continue; # skip any filename beginning with an underscore
+  includes+=("<Compile Include=\"${line}\" />")
+  sources+=("${line}")
+done <<< $(find "src" -type f | sed -r 's@/@\\@g')
+
+#Unversioned EtG Unity Packages (skipping version numbers because there's no way to tell just by looking and it was causing problems)
+echo -e "[${GRN}>${BLN}] Scanning for EtG DLLs"
+unitydllpath="packages/EtG.UnityEngine.1.0.0/lib"
+while read -r line; do
+  if [ $UPDATEDLLS -eq 1 ]; then
+    newpath="./bin/Debug/${line}.dll"
+    if [ ! -e "$newpath" ]; then
+      /bin/cp "${unitydllpath}/${line}.dll" "${newpath}"
+    fi
+  fi
+  includes+=("<Reference Include=\"${line}\"/>")
+done <<< $(find "${unitydllpath}" -path "*.dll" | sed -r 's@^.*(UnityEngine(\..+)?).dll@\1@g')
+
+#Versioned packages, net35
+echo -e "[${GRN}>${BLN}] Scanning for net35 DLLs"
+while read -r line; do
+  if [ $UPDATEDLLS -eq 1 ]; then
+    basename="$(echo "${line}" | rev | cut -f1 -d $'\\' | rev)"
+    separated="$(echo "${line}" | sed -re 's@\\@/@g')"
+    newpath="./bin/Debug/${basename}"
+    if [ ! -e "$newpath" ]; then
+      /bin/cp "${separated}" "${newpath}"
+    fi
+  fi
+  includes+=("<Reference Include=\"$(echo "$line" | rev | cut -f 1 -d '\' | cut -f 2- -d '.' | rev)\"/>")
+done <<< $(find "packages" -path "*net35*.dll" | sed -r 's@/@\\@g')
+
+#Generate the template .csproj file (FrameworkPathOverride points to the .NET 3.5 development packages)
+echo -e "[${GRN}>${BLN}] Generating .csproj template"
+template=`cat <<'HERE'
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{52A82040-5BED-4ACB-9894-41A595F284CB}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>%s</RootNamespace>
+    <AssemblyName>%s</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <FrameworkPathOverride>%s</FrameworkPathOverride>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <LangVersion>latest</LangVersion>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <LangVersion>latest</LangVersion>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    %s
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project=".\packages\BepInEx.Core.5.4.21\build\BepInEx.Core.targets" Condition="Exists('.\packages\BepInEx.Core.5.4.21\build\BepInEx.Core.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('.\packages\BepInEx.Core.5.4.21\build\BepInEx.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '.\packages\BepInEx.Core.5.4.21\build\BepInEx.Core.targets'))" />
+  </Target>
+</Project>
+HERE`
+
+#Escape all of the backslashes for printf
+template="$(echo "$template" | sed -r 's@\\@\\\\@g')"
+#Generate our substitution from our includes array
+replace="$(printf "%s\n" "${includes[@]}")"
+
+echo -e "[${GRN}>${BLN}] Substituting .csproj template"
+#Get old checksum of generated csproj file
+oldchecksum="$(md5sum "$projfile" | cut -f 1 -d ' ')"
+#Invoke the substitution and create our projects file
+printf "$template" "$namespace" "$projectname" "$dotnet35path" "$replace" | xmllint --format - > "${projfile}.new"
+#Get new checksum of generated csproj file
+newchecksum="$(md5sum "${projfile}.new" | cut -f 1 -d ' ')"
+
+#Compare .csproj checksums and clobber the old .csproj file as necessary
+if [ "$oldchecksum" == "$newchecksum" ]; then
+  echo -e "[${GRN}>${BLN}]   No changes to .csproj file!"
+  /bin/rm "${projfile}.new"
+else
+  echo -e "[${GRN}>${BLN}]   New .csproj file generated, rebuilding project"
+  /bin/rm "${projfile}"
+  /bin/mv "${projfile}.new" "${projfile}"
+  rebuild=1
+fi
+
+#Compare source file checksums to see if we need to rebuild
+if [ $rebuild -eq 0 ]; then
+  echo -e "[${GRN}>${BLN}] Checking if any source files were changed"
+  if [ ! -e "${sourcechecksums}" ]; then
+    echo -e "[${GRN}>${BLN}]   Source checksum file does not exist, rebuilding project"
+    rebuild=1
+  else
+    md5sum --status -c "${sourcechecksums}"
+    if [ $? -gt 0 ]; then
+      echo -e "[${GRN}>${BLN}]   At least one source file was changed, rebuilding project"
+      rebuild=1
+    else
+      echo -e "[${GRN}>${BLN}]   No source files changed"
+    fi
+  fi
+fi
+
+#Check if our dll has actually been built
+if [ ! -e "${dllname}" ]; then
+  echo -e "[${GRN}>${BLN}] ${dllname} does not exist, forcing rebuild"
+  rebuild=1
+fi
+
+if [ $rebuild -eq 1 ]; then
+  #Remove old DLL file
+  /bin/rm -f "${dllname}"
+
+  #Recompute checksums for source file
+  echo -e "[${GRN}>${BLN}] Recomputing source file checksums"
+  /bin/rm -f "${sourcechecksums}"
+  for source in "${sources[@]}"; do
+    s="$(echo "${source}" | sed -re 's@\\@/@g')"
+    echo "$(md5sum "${s}")" >> "${sourcechecksums}"
+  done
+
+  #Don't warn about unused variables
+  #  (list is semicolon delimited))
+  nowarn="CS0414"
+
+  #Actually rebuild the project
+  echo -e "[${GRN}>${BLN}] Building project"
+  dotnet build --no-restore -m -noLogo -warnAsMessage:"${nowarn}" -v:minimal -clp:"Summary"
+  error="$?"
+  killall dotnet >/dev/null 2>&1 # fixes a dumb bug where the child process doesn't terminate...thanks microsoft D:
+  # dotnet build -m -noLogo -warnAsMessage:"${nowarn}" -v:minimal -clp:"Summary;Verbosity=minimal"
+  # msbuild -m -noLogo -warnAsMessage:"${nowarn}" -v:minimal -clp:"Summary;Verbosity=minimal"
+  if [ $error -gt 0 ]; then
+    echo -e "[${RED}@${BLN}] Build failed! D: Check errors above"
+    exit
+  else
+    echo -e "[${GRN}>${BLN}] Build succeeded! :D"
+  fi
+
+  #Import the mod into the plugins folder
+  echo -e "[${GRN}>${BLN}] Importing ${dllname} to EtG plugins directory"
+  /bin/cp "$dllname" "$plugindir"
+fi
+
+#Generate new Thunderstore Package
+if [ $# -gt 0 ] && [ "$1" == "-t" ]; then
+  echo -e "[${GRN}>${BLN}] Assembling Thunderstore package"
+  if [ $debugbuild -gt 0 ]; then
+    echo -e "[${RED}@${BLN}] Trying to build Thunderstore package from debug build, refusing"
+  else
+    tdir="./_thunderstore_package"
+    /bin/mkdir -p "${tdir}"
+    /bin/cp -f "./readme.md" "${tdir}/README.md"
+    /bin/cp -f "./changelog.md" "${tdir}/CHANGELOG.md"
+    /bin/cp -f "./previews/icon.png" "${tdir}/icon.png"
+    echo "${manifesttemplate}" > "${tdir}/manifest.json"
+    /bin/cp "${dllname}" "${tdir}"
+
+    cd "${tdir}"
+    /bin/rm -f "${projectname}.zip"
+    zip -q "${projectname}.zip" ./*
+    cd ..
+    /bin/rm -f ./bin/*.zip
+    zippath="./bin/${projectname}_${projectversion}_$(date +%F_%H-%M-%S).zip"
+    /bin/mv "${tdir}/${projectname}.zip" "${zippath}"
+    echo -e "[${GRN}>${BLN}]   Created package ${CYN}${zippath}${BLN}"
+  fi
+fi
