@@ -103,4 +103,35 @@ internal static partial class Patches
         Transform t = __instance.m_shootPointTransform;
         t.localPosition = t.localPosition.WithY(-t.localPosition.y);
     }
+
+    // Fix player two not getting Turbo Mode speed buffs in Coop
+    [HarmonyPatch(typeof(PlayerController), nameof(PlayerController.UpdateTurboModeStats))]
+    [HarmonyILManipulator]
+    private static void CoopTurboModeFixHookIL(ILContext il)
+    {
+        ILCursor cursor = new ILCursor(il);
+
+        if (!cursor.TryGotoNext(MoveType.After,
+          instr => instr.MatchLdfld<PlayerController>("m_turboSpeedModifier"),
+          instr => instr.OpCode == OpCodes.Callvirt))  // can't match List<StatModified>::Add() for some reason
+            return; // failed to find what we need
+
+        // Recalculate stats after adjusting turbo speed modifier
+        cursor.Emit(OpCodes.Ldarg_0);
+        cursor.CallPrivate(typeof(Patches), nameof(RecalculateTurboStats));
+
+        if (!cursor.TryGotoNext(MoveType.After,
+          instr => instr.MatchLdfld<PlayerController>("m_turboRollSpeedModifier"),
+          instr => instr.OpCode == OpCodes.Callvirt))  // can't match List<StatModified>::Add() for some reason
+            return; // failed to find what we need
+
+        // Recalculate stats after adjusting turbo roll speed modifier
+        cursor.Emit(OpCodes.Ldarg_0);
+        cursor.CallPrivate(typeof(Patches), nameof(RecalculateTurboStats));
+    }
+
+    private static void RecalculateTurboStats(PlayerController player)
+    {
+        player.stats.RecalculateStats(player);
+    }
 }

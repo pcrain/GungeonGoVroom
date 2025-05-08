@@ -9,6 +9,7 @@ internal static class GGVConfig
   internal static bool FIX_ROOM_SHUFFLE  = true;
   internal static bool FIX_AMMO_UI       = true;
   internal static bool FIX_ORBITAL_GUN   = true;
+  internal static bool FIX_COOP_TURBO    = true;
 
   internal static void Update()
   {
@@ -17,6 +18,7 @@ internal static class GGVConfig
     FIX_ROOM_SHUFFLE  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ROOM_SHUFFLE);
     FIX_AMMO_UI       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_UI);
     FIX_ORBITAL_GUN   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ORBITAL_GUN);
+    FIX_COOP_TURBO    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.COOP_TURBO);
 
     if (C.DEBUG_BUILD)
     {
@@ -26,6 +28,7 @@ internal static class GGVConfig
       ETGModConsole.Log($"   FIX_ROOM_SHUFFLE = {FIX_ROOM_SHUFFLE}");
       ETGModConsole.Log($"        FIX_AMMO_UI = {FIX_AMMO_UI}");
       ETGModConsole.Log($"    FIX_ORBITAL_GUN = {FIX_ORBITAL_GUN}");
+      ETGModConsole.Log($"     FIX_COOP_TURBO = {FIX_COOP_TURBO}");
     }
   }
 
@@ -43,6 +46,7 @@ public static class ConfigMenu
   internal const string ROOM_SHUFFLE  = "Room Shuffle Fix";
   internal const string AMMO_UI       = "Ammo UI Fix";
   internal const string ORBITAL_GUN   = "Orbital Gun Fix";
+  internal const string COOP_TURBO    = "Co-op Turbo Mode Fix";
 
   internal const string SAFE_OPT = "Safe Optimizations";
 
@@ -58,6 +62,7 @@ public static class ConfigMenu
     sf.FancyToggle(ROOM_SHUFFLE, "Fixes off-by-one error in room randomization,\nmaking certain rooms always / never spawn in\ncertain unintended situations.");
     sf.FancyToggle(AMMO_UI, "Fixes a rendering issue with final projectiles\nin the ammo indicator causing them to render\nabove UI elements they shouldn't.");
     sf.FancyToggle(ORBITAL_GUN, "Fixes orbital guns visually firing from\nthe wrong location if created while the player\nis facing left.");
+    sf.FancyToggle(COOP_TURBO, "Fixes co-op partner in turbo mode not\ngetting turbo mode speed buffs until\ntheir stats have changed at least once.");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
     so.AddToggle("TEST 1");

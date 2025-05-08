@@ -41,6 +41,7 @@
     <None Include="packages.config"/>
     <Reference Include="System"/>
     <Compile Include="src\Extensions.cs"/>
+    <Compile Include="src\SafeOptimizations.cs"/>
     <Compile Include="src\Bugfixes.cs"/>
     <Compile Include="src\ConfigMenu.cs"/>
     <Compile Include="src\Main.cs"/>
