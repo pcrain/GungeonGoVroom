@@ -44,9 +44,11 @@
     <Compile Include="src\Extensions.cs"/>
     <Compile Include="src\SafeOptimizations.cs"/>
     <Compile Include="src\Bugfixes.cs"/>
-    <Compile Include="src\BasicBeamPooler.cs"/>
     <Compile Include="src\ConfigMenu.cs"/>
     <Compile Include="src\Main.cs"/>
+    <Compile Include="src\BeamPoolers\RaidenBeamPooler.cs"/>
+    <Compile Include="src\BeamPoolers\ReverseBeamPooler.cs"/>
+    <Compile Include="src\BeamPoolers\BasicBeamPooler.cs"/>
     <Reference Include="UnityEngine.ClothModule"/>
     <Reference Include="UnityEngine.UnityConnectModule"/>
     <Reference Include="UnityEngine.AIModule"/>
