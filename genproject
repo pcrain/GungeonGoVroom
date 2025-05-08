@@ -7,11 +7,23 @@ projectname="GungeonGoVroom"                     #name of the DLL to create
 projfile="./GungeonGoVroom.csproj"               #the name of the csproj file to generate
 sourcechecksums="./_${namespace}-checksums-src"  #file containing checksums of all source files to determing recompilation
 externalupdate="./_${namespace}-externalupdate"  #file containing the last time an external resource was added
-dllname="./bin/Debug/${projectname}.dll"         #DLL name is directly based on the project name
 dotnet35path="$(pwd)/_dotNETFramework/v3.5"      #Path to .NET 3.5 developer assemblies (from NUGet)
 UPDATEDLLS=0                                     #Set to 1 if any new DLLS are added to make sure they're copied correctly to bin/Debug
 projectversion="$(cat 'src/Main.cs' | grep -m1 'MOD_VERSION' | cut -f 2 -d '"')"
+
 debugbuild="$( [ "false" == "$(cat 'src/Main.cs' | grep -m1 'DEBUG_BUILD' | cut -f 2 -d '=' | cut -f 1 -d ';' | tr -d ' ')" ]; echo "$?" )"
+#Easy colors (condensed)
+  BLN="\e[0m"   ; UND="\e[1;4m" ; INV="\e[1;7m" ; CRT="\e[1;41m";
+  BLK="\e[1;30m"; RED="\e[1;31m"; GRN="\e[1;32m"; YLW="\e[1;33m";
+  BLU="\e[1;34m"; MGN="\e[1;35m"; CYN="\e[1;36m"; WHT="\e[1;37m";
+if [ "$debugbuild" == "1" ]; then
+  buildType="Debug"
+  buildColor="$YLW"
+else
+  buildType="Release"
+  buildColor="$GRN"
+fi
+dllname="./bin/${buildType}/${projectname}.dll" #Release DLL name
 manifesttemplate=`cat <<HERE
 {
   "name": "$projectname",
@@ -58,7 +70,7 @@ echo -e "[${GRN}>${BLN}] Scanning for EtG DLLs"
 unitydllpath="packages/EtG.UnityEngine.1.0.0/lib"
 while read -r line; do
   if [ $UPDATEDLLS -eq 1 ]; then
-    newpath="./bin/Debug/${line}.dll"
+    newpath="./bin/${buildType}/${line}.dll"
     if [ ! -e "$newpath" ]; then
       /bin/cp "${unitydllpath}/${line}.dll" "${newpath}"
     fi
@@ -72,7 +84,7 @@ while read -r line; do
   if [ $UPDATEDLLS -eq 1 ]; then
     basename="$(echo "${line}" | rev | cut -f1 -d $'\\' | rev)"
     separated="$(echo "${line}" | sed -re 's@\\@/@g')"
-    newpath="./bin/Debug/${basename}"
+    newpath="./bin/${buildType}/${basename}"
     if [ ! -e "$newpath" ]; then
       /bin/cp "${separated}" "${newpath}"
     fi
@@ -200,8 +212,8 @@ if [ $rebuild -eq 1 ]; then
   nowarn="CS0414"
 
   #Actually rebuild the project
-  echo -e "[${GRN}>${BLN}] Building project"
-  dotnet build --no-restore -m -noLogo -warnAsMessage:"${nowarn}" -v:minimal -clp:"Summary"
+  echo -e "[${GRN}>${BLN}] Building $buildColor$buildType$BLN project"
+  dotnet build --no-restore -m -noLogo -warnAsMessage:"${nowarn}" -v:minimal -clp:"Summary" -property:Configuration="$buildType"
   error="$?"
   killall dotnet >/dev/null 2>&1 # fixes a dumb bug where the child process doesn't terminate...thanks microsoft D:
   # dotnet build -m -noLogo -warnAsMessage:"${nowarn}" -v:minimal -clp:"Summary;Verbosity=minimal"

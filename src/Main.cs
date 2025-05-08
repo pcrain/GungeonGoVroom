@@ -32,7 +32,7 @@ namespace GGV;
 
 public static class C // constants
 {
-    public static readonly bool DEBUG_BUILD = false; // set to false for release builds (must be readonly instead of const to avoid build warnings)
+    public static readonly bool DEBUG_BUILD = true; // set to false for release builds (must be readonly instead of const to avoid build warnings)
 
     public const string MOD_NAME     = "Gungeon Go Vroom";
     public const string MOD_INT_NAME = "GungeonGoVroom";
@@ -70,24 +70,28 @@ public class Initialisation : BaseUnityPlugin
     }
 }
 
-public class GunfigDebug
+// stub to make sure Harmony picks up all our patches
+[HarmonyPatch]
+internal static partial class Patches {}
+
+internal static class GGVDebug
 {
     // Log with the console only in debug mode
-    public static void Log(object text)
+    [System.Diagnostics.Conditional("DEBUG")]
+    public static void Log(string text)
     {
-        if (C.DEBUG_BUILD)
-            ETGModConsole.Log(text);
+        System.Console.WriteLine("[GGV]: " + text);
     }
 
     // Warn with the console only in debug mode
+    [System.Diagnostics.Conditional("DEBUG")]
     public static void Warn(string text)
     {
-        if (C.DEBUG_BUILD)
-            ETGModConsole.Log($"<color=#ffffaaff>{text}</color>");
+        ETGModConsole.Log($"<color=#ffffaaff>{text}</color>");
     }
 }
 
-public static class Dissect // reflection helper methods
+internal static class Dissect // reflection helper methods
 {
     public static void DumpComponents(this GameObject g)
     {
