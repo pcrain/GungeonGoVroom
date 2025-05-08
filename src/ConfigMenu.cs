@@ -10,6 +10,7 @@ internal static class GGVConfig
   internal static bool FIX_AMMO_UI       = true;
   internal static bool FIX_ORBITAL_GUN   = true;
   internal static bool FIX_COOP_TURBO    = true;
+  internal static bool FIX_BULLET_TRAILS = true;
 
   internal static void Update()
   {
@@ -19,6 +20,7 @@ internal static class GGVConfig
     FIX_AMMO_UI       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_UI);
     FIX_ORBITAL_GUN   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ORBITAL_GUN);
     FIX_COOP_TURBO    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.COOP_TURBO);
+    FIX_BULLET_TRAILS = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BULLET_TRAILS);
 
     if (C.DEBUG_BUILD)
     {
@@ -29,6 +31,7 @@ internal static class GGVConfig
       ETGModConsole.Log($"        FIX_AMMO_UI = {FIX_AMMO_UI}");
       ETGModConsole.Log($"    FIX_ORBITAL_GUN = {FIX_ORBITAL_GUN}");
       ETGModConsole.Log($"     FIX_COOP_TURBO = {FIX_COOP_TURBO}");
+      ETGModConsole.Log($"  FIX_BULLET_TRAILS = {FIX_BULLET_TRAILS}");
     }
   }
 
@@ -47,6 +50,7 @@ public static class ConfigMenu
   internal const string AMMO_UI       = "Ammo UI Fix";
   internal const string ORBITAL_GUN   = "Orbital Gun Fix";
   internal const string COOP_TURBO    = "Co-op Turbo Mode Fix";
+  internal const string BULLET_TRAILS = "Bullet Trail Fix";
 
   internal const string SAFE_OPT = "Safe Optimizations";
 
@@ -63,6 +67,7 @@ public static class ConfigMenu
     sf.FancyToggle(AMMO_UI, "Fixes a rendering issue with final projectiles\nin the ammo indicator causing them to render\nabove UI elements they shouldn't.");
     sf.FancyToggle(ORBITAL_GUN, "Fixes orbital guns visually firing from\nthe wrong location if created while the player\nis facing left.");
     sf.FancyToggle(COOP_TURBO, "Fixes co-op partner in turbo mode not\ngetting turbo mode speed buffs until\ntheir stats have changed at least once.");
+    sf.FancyToggle(BULLET_TRAILS, "Fixes the trails of projectiles\ndisappearing if they travel too slowly\n(e.g., during timeslow effects).");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
     so.AddToggle("TEST 1");

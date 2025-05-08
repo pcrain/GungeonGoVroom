@@ -132,6 +132,30 @@ internal static partial class Patches
 
     private static void RecalculateTurboStats(PlayerController player)
     {
+        if (!GGVConfig.FIX_COOP_TURBO)
+            return;
+        GGVDebug.Log("Fixing coop turbo stats");
         player.stats.RecalculateStats(player);
+    }
+
+    // Keeps projectile trails from disappearing if projectiles slow down too much
+    [HarmonyPatch(typeof(TrailController), nameof(TrailController.Update))]
+    [HarmonyILManipulator]
+    private static void TrailControllerUpdateIL(ILContext il)
+    {
+        ILCursor cursor = new ILCursor(il);
+        if (!cursor.TryGotoNext(MoveType.After, instr => instr.MatchCallvirt(typeof(LinkedList<TrailController.Bone>).GetMethod("get_Count"))))
+            return;
+
+        cursor.Emit(OpCodes.Ldarg_0); // TrailController
+        cursor.CallPrivate(typeof(Patches), nameof(KeepTrailAliveWhenEmpty));
+    }
+
+    private static int KeepTrailAliveWhenEmpty(int oldCount, TrailController trail)
+    {
+        if (!GGVConfig.FIX_BULLET_TRAILS)
+            return oldCount;
+        // GGVDebug.Log("Fixing bullet trails"); // gets spammed too much
+        return trail.destroyOnEmpty ? oldCount : 999; // must be nonzero to avoid BrTrue statement
     }
 }
