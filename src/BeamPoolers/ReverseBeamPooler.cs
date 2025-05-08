@@ -17,7 +17,7 @@ internal static class ReverseBeamPooler
     }
 
     /// <summary>Replaces all calls to constructor</summary>
-    private static Bone Rent(Vector2 pos)
+    private static void RentAndAdd(LinkedList<Bone> bones, Vector2 pos)
     {
         if (_BonePool.Count == 0)
           _BonePool.AddLast(new Bone(default));
@@ -29,7 +29,7 @@ internal static class ReverseBeamPooler
         bone.pos                   = pos;
         bone.normal                = default;
 
-        return bone;
+        bones.AddLast(node);
     }
 
     /// <summary>Replaces all calls to Clear() and must be called in OnDestroy()</summary>
@@ -48,11 +48,19 @@ internal static class ReverseBeamPooler
 
     private static bool ReplaceConstructor(this ILCursor cursor)
     {
-        if (!cursor.TryGotoNext(MoveType.Before, instr => instr.MatchNewobj<Bone>()))
+        if (!cursor.TryGotoNext(MoveType.Before,
+          instr => instr.MatchNewobj<Bone>(),
+          instr => instr.MatchCallvirt(typeof(LinkedList<>).MakeGenericType(typeof(Bone)).GetMethod("AddLast", new[]{typeof(Bone)})),
+          instr => instr.MatchPop()))
+        {
+          GGVDebug.Log($"no dice ):");
           return false;
+        }
         // GGVDebug.Log($"replacing bone construction with rental (int)");
-        cursor.Remove();
-        cursor.CallPrivate(typeof(ReverseBeamPooler), nameof(ReverseBeamPooler.Rent));
+        cursor.Remove(); // remove contructor
+        cursor.Remove(); // remove AddLast(Bone)
+        cursor.Remove(); // remove Pop for ignored LinkedListNode(Bone)
+        cursor.CallPrivate(typeof(ReverseBeamPooler), nameof(ReverseBeamPooler.RentAndAdd));
         return true;
     }
 

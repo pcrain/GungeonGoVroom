@@ -2,6 +2,7 @@ namespace GGV;
 
 using static BasicBeamController;
 
+//NOTE: this still techincally creates a bunch of LinkedListNodes, so there's room for further optimization
 [HarmonyPatch]
 internal static class BasicBeamPooler
 {
