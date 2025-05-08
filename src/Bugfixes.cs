@@ -32,7 +32,7 @@ internal static partial class Patches
                 return;
             cursor.Remove();
             cursor.Emit(OpCodes.Bge, forLabel);
-            GGVDebug.Log("Fixing Room Shuffling");
+            // GGVDebug.Log("Fixing Room Shuffling");
         }
     }
 
@@ -43,7 +43,7 @@ internal static partial class Patches
     {
         if (!GGVConfig.FIX_DUCT_TAPE)
             return;
-        GGVDebug.Log("Fixing Duct Tape");
+        // GGVDebug.Log("Fixing Duct Tape");
         __instance.DuctTapeMergedGunIDs = other.DuctTapeMergedGunIDs;
     }
 
@@ -68,7 +68,7 @@ internal static partial class Patches
     {
         if (!gm || !GGVConfig.FIX_QUICK_RESTART)
             return;
-        GGVDebug.Log("Fixing Quick Restart");
+        // GGVDebug.Log("Fixing Quick Restart");
         gm.GlobalInjectionData.PreprocessRun();
     }
 
@@ -97,7 +97,7 @@ internal static partial class Patches
     {
         if (!GGVConfig.FIX_ORBITAL_GUN)
             return;
-        GGVDebug.Log("Fixing Hovering Gun");
+        // GGVDebug.Log("Fixing Hovering Gun");
         if (!__instance.m_owner || !__instance.m_owner.sprite || !__instance.m_owner.sprite.FlipX)
             return;
         Transform t = __instance.m_shootPointTransform;
@@ -134,7 +134,7 @@ internal static partial class Patches
     {
         if (!GGVConfig.FIX_COOP_TURBO)
             return;
-        GGVDebug.Log("Fixing coop turbo stats");
+        // GGVDebug.Log("Fixing coop turbo stats");
         player.stats.RecalculateStats(player);
     }
 
