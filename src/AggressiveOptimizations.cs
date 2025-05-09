@@ -105,108 +105,116 @@ internal static partial class Patches
         {
             const int DISTANCE_THRESH = 3;
             self.m_ambientVFXProcessingActive = true;
-            System.Diagnostics.Stopwatch pitWatch = System.Diagnostics.Stopwatch.StartNew();
             while (self.m_ambientVFXProcessingActive)
             {
-                pitWatch.Reset();
-                pitWatch.Start();
-                if (GameManager.Options.ShaderQuality == GameOptions.GenericHighMedLowOption.LOW || GameManager.Options.ShaderQuality == GameOptions.GenericHighMedLowOption.VERY_LOW)
+                if (GameManager.Instance.IsLoadingLevel || GameManager.Options.ShaderQuality == GameOptions.GenericHighMedLowOption.LOW || GameManager.Options.ShaderQuality == GameOptions.GenericHighMedLowOption.VERY_LOW)
                 {
-                    // GGVDebug.Log($"  pit handling took {pitWatch.ElapsedTicks,4} ticks");
                     yield return null;
                     continue;
                 }
-                if (!GameManager.Instance.IsLoadingLevel)
+
+                DungeonData allData = self.data;
+                if (allData == null)
                 {
-                    CameraController mainCameraController = GameManager.Instance.MainCameraController;
-                    if (!mainCameraController || self.data == null)
+                    yield return null;
+                    continue;
+                }
+
+                CameraController mainCameraController = GameManager.Instance.MainCameraController;
+                if (!mainCameraController)
+                {
+                    yield return null;
+                    continue;
+                }
+
+                CellData[][] allCells = allData.cellData;
+                IntVector2 camMin = mainCameraController.MinVisiblePoint.ToIntVector2(VectorConversions.Floor);
+                IntVector2 camMax = mainCameraController.MaxVisiblePoint.ToIntVector2(VectorConversions.Ceil);
+                int xMin = Mathf.Max(camMin.x, DISTANCE_THRESH);
+                int yMin = Mathf.Max(camMin.y, DISTANCE_THRESH);
+                int xMax = Mathf.Min(camMax.x, allData.Width - DISTANCE_THRESH - 1);
+                int yMax = Mathf.Min(camMax.y, allData.Height - DISTANCE_THRESH - 1);
+                bool inHell = self.tileIndices.tilesetId == GlobalDungeonData.ValidTilesets.HELLGEON;
+                bool inForge = self.tileIndices.tilesetId == GlobalDungeonData.ValidTilesets.FORGEGEON;
+                for (int i = xMin; i <= xMax; i++)
+                {
+                    for (int j = yMin; j <= yMax; j++)
                     {
-                        // GGVDebug.Log($"  pit handling took {pitWatch.ElapsedTicks,4} ticks");
-                        continue;
-                    }
-                    DungeonData allData = self.data;
-                    CellData[][] allCells = allData.cellData;
-                    IntVector2 camMin = mainCameraController.MinVisiblePoint.ToIntVector2(VectorConversions.Floor);
-                    IntVector2 camMax = mainCameraController.MaxVisiblePoint.ToIntVector2(VectorConversions.Ceil);
-                    int xMin = Mathf.Max(camMin.x, DISTANCE_THRESH);
-                    int yMin = Mathf.Max(camMin.y, DISTANCE_THRESH);
-                    int xMax = Mathf.Min(camMax.x, allData.Width - DISTANCE_THRESH - 1);
-                    int yMax = Mathf.Min(camMax.y, allData.Height - DISTANCE_THRESH - 1);
-                    bool inHell = self.tileIndices.tilesetId == GlobalDungeonData.ValidTilesets.HELLGEON;
-                    bool inForge = self.tileIndices.tilesetId == GlobalDungeonData.ValidTilesets.FORGEGEON;
-                    for (int i = xMin; i <= xMax; i++)
-                    {
-                        for (int j = yMin; j <= yMax; j++)
+                        if (inHell)
                         {
-                            CellData cellData2 = allCells[i][j + 1];
-                            if (cellData2 == null || cellData2.type != CellType.PIT)
+                            CellData cellData4 = allCells[i][j + 2];
+                            if (cellData4 == null || cellData4.type != CellType.PIT)
                             {
-                                j++; // we can safely skip the next iteration since it will just check this cell again
+                                j += 2; // we can safely skip the next two iterations since it will just check both cells again
                                 continue;
                             }
+                        }
 
-                            CellData cellData = allCells[i][j];
-                            if (cellData == null || cellData.type != CellType.PIT || cellData.fallingPrevented || cellData.cellVisualData.precludeAllTileDrawing)
-                                continue;
+                        CellData cellData2 = allCells[i][j + 1];
+                        if (cellData2 == null || cellData2.type != CellType.PIT)
+                        {
+                            j++; // we can safely skip the next iteration since it will just check this cell again
+                            continue;
+                        }
 
-                            CellData cellData3 = allCells[i][j - 1];
-                            if (cellData3 == null)
-                                continue;
+                        CellData cellData = allCells[i][j];
+                        if (cellData == null || cellData.type != CellType.PIT || cellData.fallingPrevented)
+                            continue;
 
-                            if (inHell)
+                        CellData cellData3 = allCells[i][j - 1];
+                        if (cellData3 == null)
+                            continue;
+
+                        CellVisualData vis = cellData.cellVisualData;
+                        if (vis.precludeAllTileDrawing)
+                            continue;
+
+                        DungeonMaterial dungeonMaterial = self.roomMaterialDefinitions[vis.roomVisualTypeIndex];
+                        if (dungeonMaterial == null)
+                            continue;
+
+                        if (!vis.HasTriggeredPitVFX)
+                        {
+                            vis.HasTriggeredPitVFX = true;
+                            vis.PitVFXCooldown = UnityEngine.Random.Range(1f, dungeonMaterial.PitVFXMaxCooldown / 2f);
+                            vis.PitParticleCooldown = UnityEngine.Random.Range(0f, 1f);
+                        }
+
+                        if (inHell || (inForge && dungeonMaterial.usesFacewallGrids))
+                        {
+                            vis.PitParticleCooldown -= BraveTime.DeltaTime;
+                            if (vis.PitParticleCooldown <= 0f)
                             {
-                                CellData cellData4 = allCells[i][j + 2];
-                                if (cellData4 == null || cellData4.type != CellType.PIT)
-                                    continue;
-                            }
-
-                            DungeonMaterial dungeonMaterial = self.roomMaterialDefinitions[cellData.cellVisualData.roomVisualTypeIndex];
-                            if (dungeonMaterial == null)
-                                continue;
-
-                            RoomHandler parentRoom = cellData.parentRoom;
-                            if (!cellData.cellVisualData.HasTriggeredPitVFX)
-                            {
-                                cellData.cellVisualData.HasTriggeredPitVFX = true;
-                                cellData.cellVisualData.PitVFXCooldown = UnityEngine.Random.Range(1f, dungeonMaterial.PitVFXMaxCooldown / 2f);
-                                cellData.cellVisualData.PitParticleCooldown = UnityEngine.Random.Range(0f, 1f);
-                            }
-                            if (inHell || (inForge && dungeonMaterial.usesFacewallGrids))
-                            {
-                                cellData.cellVisualData.PitParticleCooldown -= BraveTime.DeltaTime;
-                                if (cellData.cellVisualData.PitParticleCooldown <= 0f)
+                                Vector3 position = BraveUtility.RandomVector2(cellData.position.ToVector2(), cellData.position.ToVector2() + Vector2.one).ToVector3ZisY();
+                                vis.PitParticleCooldown = UnityEngine.Random.Range(0.35f, 0.95f);
+                                if (inForge)
+                                    GlobalSparksDoer.DoSingleParticle(position, Vector3.zero, null, 0.375f, null, GlobalSparksDoer.SparksType.EMBERS_SWIRLING);
+                                else
                                 {
-                                    Vector3 position = BraveUtility.RandomVector2(cellData.position.ToVector2(), cellData.position.ToVector2() + Vector2.one).ToVector3ZisY();
-                                    cellData.cellVisualData.PitParticleCooldown = UnityEngine.Random.Range(0.35f, 0.95f);
-                                    if (inForge && dungeonMaterial.usesFacewallGrids)
-                                    {
-                                        GlobalSparksDoer.DoSingleParticle(position, Vector3.zero, null, 0.375f, null, GlobalSparksDoer.SparksType.EMBERS_SWIRLING);
-                                    }
-                                    else if (inHell && parentRoom != null && parentRoom.area.PrototypeRoomCategory != PrototypeDungeonRoom.RoomCategory.BOSS)
-                                    {
+                                    RoomHandler parentRoom = cellData.parentRoom;
+                                    if (parentRoom != null && parentRoom.area.PrototypeRoomCategory != PrototypeDungeonRoom.RoomCategory.BOSS)
                                         GlobalSparksDoer.DoSingleParticle(position, Vector3.up, null, null, null, GlobalSparksDoer.SparksType.BLACK_PHANTOM_SMOKE);
-                                    }
                                 }
                             }
-                            if (!dungeonMaterial.UsePitAmbientVFX || dungeonMaterial.AmbientPitVFX == null || cellData3.type != CellType.PIT)
-                            {
-                                continue;
-                            }
-                            if (cellData.cellVisualData.PitVFXCooldown > 0f)
-                            {
-                                cellData.cellVisualData.PitVFXCooldown -= BraveTime.DeltaTime;
-                                continue;
-                            }
-                            if (UnityEngine.Random.value < dungeonMaterial.ChanceToSpawnPitVFXOnCooldown)
-                            {
-                                GameObject gameObject = dungeonMaterial.AmbientPitVFX[UnityEngine.Random.Range(0, dungeonMaterial.AmbientPitVFX.Count)];
-                                Vector3 position2 = gameObject.transform.position;
-                                SpawnManager.SpawnVFX(gameObject, cellData.position.ToVector2().ToVector3ZisY() + position2 + new Vector3(UnityEngine.Random.Range(0.25f, 0.75f), UnityEngine.Random.Range(0.25f, 0.75f), 2f), Quaternion.identity);
-                            }
-                            cellData.cellVisualData.PitVFXCooldown = UnityEngine.Random.Range(dungeonMaterial.PitVFXMinCooldown, dungeonMaterial.PitVFXMaxCooldown);
                         }
+
+                        if (!dungeonMaterial.UsePitAmbientVFX || dungeonMaterial.AmbientPitVFX == null || cellData3.type != CellType.PIT)
+                            continue;
+
+                        if (vis.PitVFXCooldown > 0f)
+                        {
+                            vis.PitVFXCooldown -= BraveTime.DeltaTime;
+                            continue;
+                        }
+
+                        vis.PitVFXCooldown = UnityEngine.Random.Range(dungeonMaterial.PitVFXMinCooldown, dungeonMaterial.PitVFXMaxCooldown);
+                        if (UnityEngine.Random.value >= dungeonMaterial.ChanceToSpawnPitVFXOnCooldown)
+                            continue;
+
+                        GameObject gameObject = dungeonMaterial.AmbientPitVFX[UnityEngine.Random.Range(0, dungeonMaterial.AmbientPitVFX.Count)];
+                        Vector3 position2 = gameObject.transform.position;
+                        SpawnManager.SpawnVFX(gameObject, cellData.position.ToVector2().ToVector3ZisY() + position2 + new Vector3(UnityEngine.Random.Range(0.25f, 0.75f), UnityEngine.Random.Range(0.25f, 0.75f), 2f), Quaternion.identity);
                     }
-                    // GGVDebug.Log($"  pit handling for {(camMax.x - camMin.x + 1)*(camMax.y - camMin.y + 1)} cells took {pitWatch.ElapsedTicks,4} ticks");
                 }
                 yield return null;
             }
