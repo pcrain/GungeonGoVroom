@@ -4,6 +4,7 @@
 #Important top level variables
 namespace="GGV"                                  #namespace used throughout source code; need to change for my own mod eventually
 projectname="GungeonGoVroom"                     #name of the DLL to create
+thunderstorename="Gungeon_Go_Vroom"              #name of the mod on Thunderstore
 projfile="./GungeonGoVroom.csproj"               #the name of the csproj file to generate
 sourcechecksums="./_${namespace}-checksums-src"  #file containing checksums of all source files to determing recompilation
 externalupdate="./_${namespace}-externalupdate"  #file containing the last time an external resource was added
@@ -26,13 +27,13 @@ fi
 dllname="./bin/${buildType}/${projectname}.dll" #Release DLL name
 manifesttemplate=`cat <<HERE
 {
-  "name": "$projectname",
+  "name": "$thunderstorename",
   "version_number": "$projectversion",
   "website_url": "https://github.com/pcrain/GungeonGoVroom",
   "description": "A vanilla bugfix and optimization mod for Enter the Gungeon",
   "dependencies": [
     "MtG_API-Mod_the_Gungeon_API-1.9.2",
-    "CaptainPretzel-Gunfig-1.1.5"
+    "CaptainPretzel-Gunfig-$(cat 'src/Main.cs' | grep 'Gunfiguration.C.MOD_GUID' | cut -f 2 -d '"')"
   ]
 }
 HERE`
@@ -133,6 +134,7 @@ template=`cat <<'HERE'
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     %s
