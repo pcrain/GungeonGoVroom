@@ -7,4 +7,12 @@ internal static class Extensions
     {
         cursor.Emit(OpCodes.Call, t.GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic));
     }
+
+    /// <summary>Declare a local variable in an ILManipulator</summary>
+    public static VariableDefinition DeclareLocal<T>(this ILContext il)
+    {
+        VariableDefinition v = new VariableDefinition(il.Import(typeof(T)));
+        il.Body.Variables.Add(v);
+        return v;
+    }
 }

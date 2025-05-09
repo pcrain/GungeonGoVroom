@@ -2,7 +2,6 @@ namespace GGV;
 
 using static BasicBeamController;
 
-//NOTE: this still techincally creates a bunch of LinkedListNodes, so there's room for further optimization
 [HarmonyPatch]
 internal static class BasicBeamPooler
 {
@@ -41,6 +40,72 @@ internal static class BasicBeamPooler
         return bone;
     }
 
+    /// <summary>Replaces all calls to int constructor</summary>
+    private static LinkedListNode<BeamBone> RentIntNode(float posX, float rotationAngle, int subtileNum)
+    {
+        if (_BonePool.Count == 0)
+          _BonePool.AddLast(new BeamBone(0, 0, 0));
+
+        LinkedListNode<BeamBone> node = _BonePool.Last;
+        _BonePool.RemoveLast();
+
+        BeamBone bone              = node.Value;
+        bone.PosX                  = posX;
+        bone.RotationAngle         = rotationAngle;
+        bone.Position              = default;
+        bone.Velocity              = default;
+        bone.SubtileNum            = subtileNum;
+        bone.HomingRadius          = default;
+        bone.HomingAngularVelocity = default;
+        bone.HomingDampenMotion    = default;
+
+        return node;
+    }
+
+    /// <summary>Replaces all calls to int constructor</summary>
+    private static void RentIntAndAddFirst(LinkedList<BeamBone> bones, float posX, float rotationAngle, int subtileNum)
+    {
+        if (_BonePool.Count == 0)
+          _BonePool.AddLast(new BeamBone(0, 0, 0));
+
+        LinkedListNode<BeamBone> node = _BonePool.Last;
+        _BonePool.RemoveLast();
+
+        BeamBone bone              = node.Value;
+        bone.PosX                  = posX;
+        bone.RotationAngle         = rotationAngle;
+        bone.Position              = default;
+        bone.Velocity              = default;
+        bone.SubtileNum            = subtileNum;
+        bone.HomingRadius          = default;
+        bone.HomingAngularVelocity = default;
+        bone.HomingDampenMotion    = default;
+
+        bones.AddFirst(node);
+    }
+
+    /// <summary>Replaces all calls to int constructor</summary>
+    private static void RentIntAndAddLast(LinkedList<BeamBone> bones, float posX, float rotationAngle, int subtileNum)
+    {
+        if (_BonePool.Count == 0)
+          _BonePool.AddLast(new BeamBone(0, 0, 0));
+
+        LinkedListNode<BeamBone> node = _BonePool.Last;
+        _BonePool.RemoveLast();
+
+        BeamBone bone              = node.Value;
+        bone.PosX                  = posX;
+        bone.RotationAngle         = rotationAngle;
+        bone.Position              = default;
+        bone.Velocity              = default;
+        bone.SubtileNum            = subtileNum;
+        bone.HomingRadius          = default;
+        bone.HomingAngularVelocity = default;
+        bone.HomingDampenMotion    = default;
+
+        bones.AddLast(node);
+    }
+
     /// <summary>Replaces all calls to Vector2 constructor</summary>
     private static BeamBone RentVec(float posX, Vector2 position, Vector2 velocity)
     {
@@ -63,8 +128,52 @@ internal static class BasicBeamPooler
         return bone;
     }
 
+    /// <summary>Replaces all calls to Vector2 constructor</summary>
+    private static LinkedListNode<BeamBone> RentVecNode(float posX, Vector2 position, Vector2 velocity)
+    {
+        if (_BonePool.Count == 0)
+          _BonePool.AddLast(new BeamBone(0, 0, 0));
+
+        LinkedListNode<BeamBone> node = _BonePool.Last;
+        _BonePool.RemoveLast();
+
+        BeamBone bone              = node.Value;
+        bone.PosX                  = posX;
+        bone.RotationAngle         = default;
+        bone.Position              = position;
+        bone.Velocity              = velocity;
+        bone.SubtileNum            = default;
+        bone.HomingRadius          = default;
+        bone.HomingAngularVelocity = default;
+        bone.HomingDampenMotion    = default;
+
+        return node;
+    }
+
+    /// <summary>Replaces all calls to Vector2 constructor</summary>
+    private static void RentVecAndAddLast(LinkedList<BeamBone> bones, float posX, Vector2 position, Vector2 velocity)
+    {
+        if (_BonePool.Count == 0)
+          _BonePool.AddLast(new BeamBone(0, 0, 0));
+
+        LinkedListNode<BeamBone> node = _BonePool.Last;
+        _BonePool.RemoveLast();
+
+        BeamBone bone              = node.Value;
+        bone.PosX                  = posX;
+        bone.RotationAngle         = default;
+        bone.Position              = position;
+        bone.Velocity              = velocity;
+        bone.SubtileNum            = default;
+        bone.HomingRadius          = default;
+        bone.HomingAngularVelocity = default;
+        bone.HomingDampenMotion    = default;
+
+        bones.AddLast(node);
+    }
+
     /// <summary>Replaces all calls to BeamBone constructor</summary>
-    private static BeamBone RentCopy(BeamBone other)
+    private static LinkedListNode<BeamBone> RentCopy(BeamBone other)
     {
         if (_BonePool.Count == 0)
           _BonePool.AddLast(new BeamBone(0, 0, 0));
@@ -82,7 +191,7 @@ internal static class BasicBeamPooler
         bone.HomingAngularVelocity = other.HomingAngularVelocity;
         bone.HomingDampenMotion    = other.HomingDampenMotion;
 
-        return bone;
+        return node;
     }
 
     /// <summary>Replaces all calls to RemoveFirst()</summary>
@@ -131,6 +240,60 @@ internal static class BasicBeamPooler
         return true;
     }
 
+    private static bool ReplaceIntConstructorAndAddFirst(this ILCursor cursor)
+    {
+        if (!cursor.TryGotoNext(MoveType.Before,
+          instr => instr.MatchNewobj<BeamBone>(),
+          instr => instr.MatchCallvirt(typeof(LinkedList<>).MakeGenericType(typeof(BeamBone)).GetMethod("AddFirst", new[]{typeof(BeamBone)})),
+          instr => instr.MatchPop()))
+        {
+          GGVDebug.Log($"no dice ):");
+          return false;
+        }
+        // GGVDebug.Log($"replacing bone construction with rental (int)");
+        cursor.Remove(); // remove constructor
+        cursor.Remove(); // remove AddFirst(BeamBone)
+        cursor.Remove(); // remove Pop for ignored LinkedListNode(BeamBone)
+        cursor.CallPrivate(typeof(BasicBeamPooler), nameof(BasicBeamPooler.RentIntAndAddFirst));
+        return true;
+    }
+
+    private static bool ReplaceIntConstructorAndAddLast(this ILCursor cursor)
+    {
+        if (!cursor.TryGotoNext(MoveType.Before,
+          instr => instr.MatchNewobj<BeamBone>(),
+          instr => instr.MatchCallvirt(typeof(LinkedList<>).MakeGenericType(typeof(BeamBone)).GetMethod("AddLast", new[]{typeof(BeamBone)})),
+          instr => instr.MatchPop()))
+        {
+          GGVDebug.Log($"no dice ):");
+          return false;
+        }
+        // GGVDebug.Log($"replacing bone construction with rental (int)");
+        cursor.Remove(); // remove constructor
+        cursor.Remove(); // remove AddLast(BeamBone)
+        cursor.Remove(); // remove Pop for ignored LinkedListNode(BeamBone)
+        cursor.CallPrivate(typeof(BasicBeamPooler), nameof(BasicBeamPooler.RentIntAndAddLast));
+        return true;
+    }
+
+    private static bool ReplaceVecConstructorAndAddLast(this ILCursor cursor)
+    {
+        if (!cursor.TryGotoNext(MoveType.Before,
+          instr => instr.MatchNewobj<BeamBone>(),
+          instr => instr.MatchCallvirt(typeof(LinkedList<>).MakeGenericType(typeof(BeamBone)).GetMethod("AddLast", new[]{typeof(BeamBone)})),
+          instr => instr.MatchPop()))
+        {
+          GGVDebug.Log($"no dice ):");
+          return false;
+        }
+        // GGVDebug.Log($"replacing bone construction with rental (int)");
+        cursor.Remove(); // remove constructor
+        cursor.Remove(); // remove AddLast(BeamBone)
+        cursor.Remove(); // remove Pop for ignored LinkedListNode(BeamBone)
+        cursor.CallPrivate(typeof(BasicBeamPooler), nameof(BasicBeamPooler.RentVecAndAddLast));
+        return true;
+    }
+
     private static bool ReplaceVecConstructor(this ILCursor cursor)
     {
         if (!cursor.TryGotoNext(MoveType.Before, instr => instr.MatchNewobj<BeamBone>()))
@@ -138,16 +301,6 @@ internal static class BasicBeamPooler
         // GGVDebug.Log($"replacing bone construction with rental (vec)");
         cursor.Remove();
         cursor.CallPrivate(typeof(BasicBeamPooler), nameof(BasicBeamPooler.RentVec));
-        return true;
-    }
-
-    private static bool ReplaceCopyConstructor(this ILCursor cursor)
-    {
-        if (!cursor.TryGotoNext(MoveType.Before, instr => instr.MatchNewobj<BeamBone>()))
-          return false;
-        // GGVDebug.Log($"replacing bone construction with rental (copy)");
-        cursor.Remove();
-        cursor.CallPrivate(typeof(BasicBeamPooler), nameof(BasicBeamPooler.RentCopy));
         return true;
     }
 
@@ -190,9 +343,21 @@ internal static class BasicBeamPooler
         if (!_Enabled)
           return;
         ILCursor cursor = new ILCursor(il);
-        if (!cursor.ReplaceIntConstructor()) return;
-        if (!cursor.ReplaceIntConstructor()) return;
+        if (!cursor.ReplaceIntConstructorAndAddFirst()) return;
+        if (!cursor.ReplaceIntConstructorAndAddLast()) return;
         GGVDebug.Log("patched BasicBeamController.Start!");
+    }
+
+    private static VariableDefinition ReplaceConstructionWithRental(this ILCursor cursor, ILContext il, string rentalMethod)
+    {
+        cursor.Remove(); // remove new BeamBone()
+        cursor.CallPrivate(typeof(BasicBeamPooler), rentalMethod); // rent a bone
+        VariableDefinition node = il.DeclareLocal<LinkedListNode<BeamBone>>(); // declare a local for our LinkedListNode
+        cursor.Emit(OpCodes.Stloc, node); // store the node in our local
+        cursor.Emit(OpCodes.Ldloc, node); // load the node from our local
+        cursor.CallPrivate(typeof(BasicBeamPooler), nameof(BasicBeamPooler.GetValue)); // get the BeamBone value of the node for the stack
+        // next opcode is Stloc which will store the BeamBone locally
+        return node; // return the VariableDefinition for our new node
     }
 
     /// <summary>Replace all construction of BeamBones with Rents</summary>
@@ -204,9 +369,35 @@ internal static class BasicBeamPooler
         if (!_Enabled)
           return;
         ILCursor cursor = new ILCursor(il);
-        if (!cursor.ReplaceCopyConstructor()) return;
+
+        // replace BeamBone constructor with LinkedListNode<BeamBone> rental
+        if (!cursor.TryGotoNext(MoveType.Before, instr => instr.MatchNewobj<BeamBone>()))
+          return;
+        VariableDefinition node = cursor.ReplaceConstructionWithRental(il, nameof(BasicBeamPooler.RentCopy));
+
+        if (!cursor.TryGotoNext(MoveType.Before,
+          instr => instr.MatchLdloc(2),
+          instr => instr.MatchCallvirt(typeof(LinkedList<>).MakeGenericType(typeof(BeamBone)).GetMethod("AddFirst", new[]{typeof(BeamBone)})),
+          instr => instr.MatchPop()))
+          return;
+
+        cursor.Remove(); // remove store to local BeamBone since we need a LinkedListNode(BeamBone)
+        cursor.Remove(); // remove call to AddFirst
+        cursor.Remove(); // remove pop of linkedlistnode from the stack
+        cursor.Emit(OpCodes.Ldloc, node); // load the node for our bone
+        cursor.CallPrivate(typeof(BasicBeamPooler), nameof(BasicBeamPooler.AddFirstNode));
+
         GGVDebug.Log("patched BasicBeamController.SeparateBeam!");
     }
+
+    private static BeamBone GetValue(LinkedListNode<BeamBone> node)
+      => node.Value;
+    private static void AddFirstNode(LinkedList<BeamBone> list, LinkedListNode<BeamBone> node)
+      => list.AddFirst(node);
+    private static void AddLastNode(LinkedList<BeamBone> list, LinkedListNode<BeamBone> node)
+      => list.AddLast(node);
+    private static void AddBeforeNode(LinkedList<BeamBone> list, LinkedListNode<BeamBone> prev, LinkedListNode<BeamBone> node)
+      => list.AddBefore(prev, node);
 
     /// <summary>Replace all construction of BeamBones with Rents</summary>
     [HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.HandleBeamFrame))]
@@ -217,15 +408,43 @@ internal static class BasicBeamPooler
         if (!_Enabled)
           return;
         ILCursor cursor = new ILCursor(il);
-        if (!cursor.ReplaceIntConstructor()) return; //1324
+        if (!cursor.ReplaceIntConstructorAndAddFirst()) return; //1324
         if (!cursor.ReplaceRemoveLast())     return; //1329
-        if (!cursor.ReplaceIntConstructor()) return; //1394
-        if (!cursor.ReplaceIntConstructor()) return; //1444
+
+        if (!cursor.TryGotoNext(MoveType.Before, instr => instr.MatchNewobj<BeamBone>())) //1394
+          return;
+        VariableDefinition node = cursor.ReplaceConstructionWithRental(il, nameof(BasicBeamPooler.RentIntNode));
+        if (!cursor.TryGotoNext(MoveType.Before,
+          instr => instr.MatchLdloc(23), // BeamBone
+          instr => instr.MatchCallvirt(typeof(LinkedList<>).MakeGenericType(typeof(BeamBone)).GetMethod("AddBefore", new[]{typeof(LinkedListNode<BeamBone>), typeof(BeamBone)}))))
+          return;
+
+        cursor.Remove(); // remove load for local BeamBone since we need a LinkedListNode(BeamBone)
+        cursor.Remove(); // remove call to AddBefore(BeamBone)
+        cursor.Emit(OpCodes.Ldloc, node); // load the node for our bone
+        cursor.CallPrivate(typeof(BasicBeamPooler), nameof(BasicBeamPooler.AddBeforeNode));
+        cursor.Emit(OpCodes.Ldloc, node); // prepare for upcoming stloc(22)
+
+        if (!cursor.ReplaceIntConstructorAndAddFirst()) return; //1444
         if (!cursor.ReplaceRemoveFirst())    return; //1487
         if (!cursor.ReplaceRemoveLast())     return; //1491
         if (!cursor.ReplaceClear())          return; //1498
-        if (!cursor.ReplaceVecConstructor()) return; //1505
-        if (!cursor.ReplaceVecConstructor()) return; //1509
+        if (!cursor.ReplaceVecConstructorAndAddLast()) return; //1505
+
+        if (!cursor.TryGotoNext(MoveType.Before, instr => instr.MatchNewobj<BeamBone>())) //1509
+          return;
+        VariableDefinition node2 = cursor.ReplaceConstructionWithRental(il, nameof(BasicBeamPooler.RentVecNode));
+        if (!cursor.TryGotoNext(MoveType.Before,
+          instr => instr.MatchLdloc(49), // BeamBone
+          instr => instr.MatchCallvirt(typeof(LinkedList<>).MakeGenericType(typeof(BeamBone)).GetMethod("AddLast", new[]{typeof(BeamBone)})),
+          instr => instr.MatchPop()))
+          return;
+        cursor.Remove(); // remove load for local BeamBone since we need a LinkedListNode(BeamBone)
+        cursor.Remove(); // remove call to AddLast(BeamBone)
+        cursor.Remove(); // remove pop of linkedlistnode from the stack
+        cursor.Emit(OpCodes.Ldloc, node2); // load the node for our bone
+        cursor.CallPrivate(typeof(BasicBeamPooler), nameof(BasicBeamPooler.AddLastNode));
+
         if (!cursor.ReplaceRemoveLast())     return; //1823
         GGVDebug.Log("patched BasicBeamController.HandleBeamFrame!");
     }

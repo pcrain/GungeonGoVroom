@@ -57,7 +57,7 @@ internal static class RaidenBeamPooler
           return false;
         }
         // GGVDebug.Log($"replacing bone construction with rental (int)");
-        cursor.Remove(); // remove contructor
+        cursor.Remove(); // remove constructor
         cursor.Remove(); // remove AddLast(Bone)
         cursor.Remove(); // remove Pop for ignored LinkedListNode(Bone)
         cursor.CallPrivate(typeof(RaidenBeamPooler), nameof(RaidenBeamPooler.RentAndAdd));
