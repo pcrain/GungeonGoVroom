@@ -65,10 +65,10 @@ public static class ConfigMenu
   internal const string BULLET_TRAILS = "Bullet Trail Fix";
 
   internal const string SAFE_OPT      = "Safe Optimizations";
+  internal const string BEAMS         = "Optimize Beams";
   internal const string PROJ_STATUS   = "Optimize Projectile Prefabs";
 
   internal const string AGGR_OPT      = "Aggressive Optimizations";
-  internal const string BEAMS         = "Optimize Beams";
   internal const string POINTCAST     = "Optimize Pointcast";
   internal const string PIT_VFX       = "Optimize Pit VFX";
 
@@ -79,17 +79,17 @@ public static class ConfigMenu
     Gunfig sf = _Gunfig.AddSubMenu(BUG_FIX);
     sf.FancyToggle(DUCT_TAPE, "Fixes duct-taped guns sometimes breaking\nwhen using the elevator save button.");
     sf.FancyToggle(QUICK_RESTART, "Fixes once-per-run rooms not properly\nresetting with Quick Restart, preventing them\nfrom respawning until visiting the Breach.");
-    sf.FancyToggle(ROOM_SHUFFLE, "Fixes off-by-one error in room randomization,\nmaking certain rooms always / never spawn in\ncertain unintended situations.");
+    sf.FancyToggle(ROOM_SHUFFLE, "Fixes an off-by-one error in room randomization,\nmaking certain rooms always / never spawn in\ncertain unintended situations.");
     sf.FancyToggle(AMMO_UI, "Fixes a rendering issue with final projectiles\nin the ammo indicator causing them to render\nabove UI elements they shouldn't.");
     sf.FancyToggle(ORBITAL_GUN, "Fixes orbital guns visually firing from\nthe wrong location if created while the player\nis facing left.");
     sf.FancyToggle(COOP_TURBO, "Fixes co-op partner in turbo mode not\ngetting turbo mode speed buffs until\ntheir stats have changed at least once.");
     sf.FancyToggle(BULLET_TRAILS, "Fixes the trails of projectiles\ndisappearing if they travel too slowly\n(e.g., during timeslow effects).");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
+    so.FancyToggle(BEAMS, "Pools beam bones to reduce lag spikes.\nTakes effect on game restart.\nSaves a modest amount of RAM and CPU.");
     so.FancyToggle(PROJ_STATUS, "Removes prefab effect data (e.g., poison) from\nprojectiles that never apply those effects.\nSaves a small amount of RAM.");
 
     Gunfig ao = _Gunfig.AddSubMenu(AGGR_OPT);
-    ao.FancyToggleOff(BEAMS, "Pools beam bones to reduce lag spikes.\nTakes effect on game restart.\nSaves a modest amount of RAM and CPU.");
     ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing statics instead of delegates.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(PIT_VFX, "Speeds up pit VFX calculations by skipping\nseveral redundant tile checks.\nSaves a small amount of CPU.");
 

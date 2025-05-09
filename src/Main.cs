@@ -32,7 +32,7 @@ namespace GGV;
 
 public static class C // constants
 {
-    public static readonly bool DEBUG_BUILD = true; // set to false for release builds (must be readonly instead of const to avoid build warnings)
+    public static readonly bool DEBUG_BUILD = false; // set to false for release builds (must be readonly instead of const to avoid build warnings)
 
     public const string MOD_NAME     = "Gungeon Go Vroom";
     public const string MOD_INT_NAME = "GungeonGoVroom";
@@ -45,7 +45,7 @@ public static class C // constants
 
 [BepInPlugin(C.MOD_GUID, C.MOD_INT_NAME, C.MOD_VERSION)]
 [BepInDependency(ETGModMainBehaviour.GUID, "1.9.2")]
-[BepInDependency(Gunfiguration.C.MOD_GUID, "1.1.5")]
+[BepInDependency(Gunfiguration.C.MOD_GUID, "1.1.6")]
 public class Initialisation : BaseUnityPlugin
 {
     public static Initialisation Instance;
