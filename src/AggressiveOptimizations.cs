@@ -226,4 +226,68 @@ internal static partial class Patches
         }
     }
 
+    /// <summary>Optimize ClosestPointOnRectangle() by avoiding function calls and taking advantage of the fact that rectangles are axis-aligned.</summary>
+    [HarmonyPatch(typeof(BraveMathCollege), nameof(BraveMathCollege.ClosestPointOnRectangle))]
+    [HarmonyPrefix]
+    public static bool FastClosestPointOnRectanglePatch(Vector2 point, Vector2 origin, Vector2 dimensions, ref Vector2 __result)
+    {
+      if (!GGVConfig.OPT_MATH)
+        return true; // call original method
+
+      float x = point.x;
+      float y = point.y;
+      float left = origin.x;
+      float right = left + dimensions.x;
+      float bottom = origin.y;
+      float top = bottom + dimensions.y;
+      if (x <= left)
+        __result = new Vector2(left, (y < bottom) ? bottom : (y > top) ? top : y);
+      else if (x >= right)
+        __result = new Vector2(right, (y < bottom) ? bottom : (y > top) ? top : y);
+      else if (y <= bottom)
+        __result = new Vector2((x < left) ? left : (x > right) ? right : x, bottom);
+      else if (y >= top)
+        __result = new Vector2((x < left) ? left : (x > right) ? right : x, top);
+      else // we're inside the rectangle, so find the closest edge
+      {
+
+        float midH = 0.5f * (left + right);
+        float midV = 0.5f * (bottom + top);
+        if (x < midH) // left half
+        {
+          if (y < midV) // bottom left quadrant
+          {
+            if ((x - left) < (y - bottom)) // closer to left edge than bottom
+              __result = new Vector2(left, y);
+            else // closer to bottom edge than left
+              __result = new Vector2(x, bottom);
+          }
+          else // top left quadrant
+          {
+            if ((x - left) < (top - y)) // closer to left edge than top
+              __result = new Vector2(left, y);
+            else // closer to top edge than left
+              __result = new Vector2(x, top);
+          }
+        }
+        else // right half
+        {
+          if (y < midV) // bottom right quadrant
+          {
+            if ((right - x) < (y - bottom)) // closer to right edge than bottom
+              __result = new Vector2(right, y);
+            else // closer to bottom edge than right
+              __result = new Vector2(x, bottom);
+          }
+          else // top right quadrant
+          {
+            if ((right - x) < (top - y)) // closer to right edge than top
+              __result = new Vector2(right, y);
+            else // closer to top edge than right
+              __result = new Vector2(x, top);
+          }
+        }
+      }
+      return false;
+    }
 }

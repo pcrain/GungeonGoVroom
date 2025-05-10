@@ -14,6 +14,7 @@ internal static class GGVConfig
   internal static bool OPT_PROJ_STATUS   = true;
   internal static bool OPT_GUI_EVENTS    = true;
   internal static bool OPT_BEAMS         = true;
+  internal static bool OPT_MATH          = true;
   internal static bool OPT_POINTCAST     = true;
   internal static bool OPT_PIT_VFX       = true;
 
@@ -29,6 +30,7 @@ internal static class GGVConfig
     OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
     OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
     OPT_PROJ_STATUS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
+    OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
     OPT_POINTCAST     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
     OPT_PIT_VFX       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIT_VFX);
 
@@ -45,6 +47,7 @@ internal static class GGVConfig
       ETGModConsole.Log($"          OPT_BEAMS = {OPT_BEAMS}");
       ETGModConsole.Log($"     OPT_GUI_EVENTS = {OPT_GUI_EVENTS}");
       ETGModConsole.Log($"    OPT_PROJ_STATUS = {OPT_PROJ_STATUS}");
+      ETGModConsole.Log($"           OPT_MATH = {OPT_MATH}");
       ETGModConsole.Log($"      OPT_POINTCAST = {OPT_POINTCAST}");
       ETGModConsole.Log($"        OPT_PIT_VFX = {OPT_PIT_VFX}");
     }
@@ -73,6 +76,7 @@ public static class ConfigMenu
   internal const string PROJ_STATUS   = "Optimize Projectile Prefabs";
 
   internal const string AGGR_OPT      = "Aggressive Optimizations";
+  internal const string MATH          = "Optimize Math";
   internal const string POINTCAST     = "Optimize Pointcast";
   internal const string PIT_VFX       = "Optimize Pit VFX";
 
@@ -95,6 +99,7 @@ public static class ConfigMenu
     so.FancyToggle(PROJ_STATUS, "Removes prefab effect data (e.g., poison) from\nprojectiles that never apply those effects.\nSaves a small amount of RAM.");
 
     Gunfig ao = _Gunfig.AddSubMenu(AGGR_OPT);
+    ao.FancyToggleOff(MATH, "Speeds up some geometry calculations\nby using optimized algorithms.\nSaves a significant amount of CPU.");
     ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing statics instead of delegates.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(PIT_VFX, "Speeds up pit VFX calculations by skipping\nseveral redundant tile checks.\nSaves a small amount of CPU.");
 
