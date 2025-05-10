@@ -5,7 +5,7 @@ internal static partial class Patches
     /// <summary>Optimizations for preventing player projectile prefabs from constructing unnecessary objects</summary>
     [HarmonyPatch(typeof(SpawnManager), nameof(SpawnManager.SpawnProjectile), typeof(GameObject), typeof(Vector3), typeof(Quaternion), typeof(bool))]
     [HarmonyPrefix]
-    static void SpawnManagerSpawnProjectilePatch(SpawnManager __instance, GameObject prefab, Vector3 position, Quaternion rotation, bool ignoresPools)
+    private static void SpawnManagerSpawnProjectilePatch(SpawnManager __instance, GameObject prefab, Vector3 position, Quaternion rotation, bool ignoresPools)
     {
         if (!GGVConfig.OPT_PROJ_STATUS)
           return;
@@ -24,4 +24,33 @@ internal static partial class Patches
         _ProcessedProjPrefabs.Add(prefab);
     }
     private static HashSet<GameObject> _ProcessedProjPrefabs = new();
+
+    /// <summary>Optimizations for caching results of reflection in GetAllFields</summary>
+    [HarmonyPatch(typeof(dfReflectionExtensions), nameof(dfReflectionExtensions.GetAllFields))]
+    [HarmonyPrefix]
+    private static bool dfReflectionExtensionsGetAllFieldsPatch(Type type, ref FieldInfo[] __result)
+    {
+        if (!GGVConfig.OPT_GUI_EVENTS)
+          return true;
+        if (type == null)
+        {
+          __result = _NoFieldInfo;
+          return false;
+        }
+        if (_CachedFields.TryGetValue(type, out FieldInfo[] fi))
+        {
+          __result = fi;
+          return false;
+        }
+        __result = _CachedFields[type] = type
+          .GetFields(_FieldFlags)
+          .Concat(type.GetBaseType().GetAllFields())
+          .Where(f => !f.IsDefined(typeof(HideInInspector), true))
+          .ToArray();
+        GGVDebug.Log($"cached fields for type {type} with cache size {_CachedFields.Count}");
+        return false;    // skip the original method
+    }
+    private static readonly FieldInfo[] _NoFieldInfo = new FieldInfo[0];
+    private static readonly Dictionary<Type, FieldInfo[]> _CachedFields = new();
+    private static readonly BindingFlags _FieldFlags = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 }
