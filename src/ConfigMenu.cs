@@ -17,6 +17,7 @@ internal static class GGVConfig
   internal static bool OPT_MATH          = true;
   internal static bool OPT_POINTCAST     = true;
   internal static bool OPT_PIT_VFX       = true;
+  internal static bool OPT_ITEM_LOOKUPS  = true;
 
   internal static void Update()
   {
@@ -33,6 +34,7 @@ internal static class GGVConfig
     OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
     OPT_POINTCAST     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
     OPT_PIT_VFX       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIT_VFX);
+    OPT_ITEM_LOOKUPS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ITEM_LOOKUPS);
 
     if (C.DEBUG_BUILD)
     {
@@ -50,6 +52,7 @@ internal static class GGVConfig
       ETGModConsole.Log($"           OPT_MATH = {OPT_MATH}");
       ETGModConsole.Log($"      OPT_POINTCAST = {OPT_POINTCAST}");
       ETGModConsole.Log($"        OPT_PIT_VFX = {OPT_PIT_VFX}");
+      ETGModConsole.Log($"   OPT_ITEM_LOOKUPS = {OPT_ITEM_LOOKUPS}");
     }
   }
 
@@ -79,6 +82,7 @@ public static class ConfigMenu
   internal const string MATH          = "Optimize Math";
   internal const string POINTCAST     = "Optimize Pointcast";
   internal const string PIT_VFX       = "Optimize Pit VFX";
+  internal const string ITEM_LOOKUPS  = "Optimize Item Lookups";
 
   internal static void Init()
   {
@@ -102,6 +106,7 @@ public static class ConfigMenu
     ao.FancyToggleOff(MATH, "Speeds up some geometry calculations\nby using optimized algorithms.\nSaves a significant amount of CPU.");
     ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing statics instead of delegates.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(PIT_VFX, "Speeds up pit VFX calculations by skipping\nseveral redundant tile checks.\nSaves a small amount of CPU.");
+    ao.FancyToggleOff(ITEM_LOOKUPS, "Speeds up passive / active item lookups\nby skipping delegate creation.\nSaves a small amount of RAM.");
 
     GGVConfig.Update();
     Gunfig.OnAllModsLoaded += LateInit;

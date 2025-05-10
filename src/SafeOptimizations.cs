@@ -47,10 +47,44 @@ internal static partial class Patches
           .Concat(type.GetBaseType().GetAllFields())
           .Where(f => !f.IsDefined(typeof(HideInInspector), true))
           .ToArray();
-        GGVDebug.Log($"cached fields for type {type} with cache size {_CachedFields.Count}");
+        // GGVDebug.Log($"cached fields for type {type} with cache size {_CachedFields.Count}");
         return false;    // skip the original method
     }
     private static readonly FieldInfo[] _NoFieldInfo = new FieldInfo[0];
     private static readonly Dictionary<Type, FieldInfo[]> _CachedFields = new();
     private static readonly BindingFlags _FieldFlags = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+    /// <summary>Optimize calls to HasPassive() to avoid unnecessary delegate creation.</summary>
+    [HarmonyPatch(typeof(PlayerController), nameof(PlayerController.HasPassiveItem))]
+    [HarmonyPrefix]
+    private static bool PlayerControllerHasPassiveItemPatch(PlayerController __instance, int pickupId, ref bool __result)
+    {
+        if (!GGVConfig.OPT_ITEM_LOOKUPS)
+          return true;
+        for (int i = __instance.passiveItems.Count - 1; i >= 0; --i)
+          if (__instance.passiveItems[i].PickupObjectId == pickupId)
+          {
+            __result = true;
+            return false; // skip the original method
+          }
+        __result = false;
+        return false; // skip the original method
+    }
+
+    /// <summary>Optimize calls to HasActive() to avoid unnecessary delegate creation.</summary>
+    [HarmonyPatch(typeof(PlayerController), nameof(PlayerController.HasActiveItem))]
+    [HarmonyPrefix]
+    private static bool PlayerControllerHasActiveItemPatch(PlayerController __instance, int pickupId, ref bool __result)
+    {
+        if (!GGVConfig.OPT_ITEM_LOOKUPS)
+          return true;
+        for (int i = __instance.activeItems.Count - 1; i >= 0; --i)
+          if (__instance.activeItems[i].PickupObjectId == pickupId)
+          {
+            __result = true;
+            return false; // skip the original method
+          }
+        __result = false;
+        return false; // skip the original method
+    }
 }
