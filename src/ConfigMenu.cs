@@ -18,6 +18,7 @@ internal static class GGVConfig
   internal static bool OPT_POINTCAST     = true;
   internal static bool OPT_PIT_VFX       = true;
   internal static bool OPT_ITEM_LOOKUPS  = true;
+  internal static bool OPT_DUNGEON_DIMS  = true;
 
   internal static void Update()
   {
@@ -35,6 +36,7 @@ internal static class GGVConfig
     OPT_POINTCAST     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
     OPT_PIT_VFX       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIT_VFX);
     OPT_ITEM_LOOKUPS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ITEM_LOOKUPS);
+    OPT_DUNGEON_DIMS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUNGEON_DIMS);
 
     if (C.DEBUG_BUILD)
     {
@@ -53,6 +55,7 @@ internal static class GGVConfig
       ETGModConsole.Log($"      OPT_POINTCAST = {OPT_POINTCAST}");
       ETGModConsole.Log($"        OPT_PIT_VFX = {OPT_PIT_VFX}");
       ETGModConsole.Log($"   OPT_ITEM_LOOKUPS = {OPT_ITEM_LOOKUPS}");
+      ETGModConsole.Log($"   OPT_DUNGEON_DIMS = {OPT_DUNGEON_DIMS}");
     }
   }
 
@@ -83,6 +86,7 @@ public static class ConfigMenu
   internal const string POINTCAST     = "Optimize Pointcast";
   internal const string PIT_VFX       = "Optimize Pit VFX";
   internal const string ITEM_LOOKUPS  = "Optimize Item Lookups";
+  internal const string DUNGEON_DIMS  = "Optimize Dungeon Size Checks";
 
   internal static void Init()
   {
@@ -107,6 +111,7 @@ public static class ConfigMenu
     ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing statics instead of delegates.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(PIT_VFX, "Speeds up pit VFX calculations by skipping\nseveral redundant tile checks.\nSaves a small amount of CPU.");
     ao.FancyToggleOff(ITEM_LOOKUPS, "Speeds up passive / active item lookups\nby skipping delegate creation.\nSaves a small amount of RAM.");
+    ao.FancyToggleOff(DUNGEON_DIMS, "Speeds up dungeon size lookups by\nusing fields instead of properties.\nSaves a modest amount of CPU.");
 
     GGVConfig.Update();
     Gunfig.OnAllModsLoaded += LateInit;

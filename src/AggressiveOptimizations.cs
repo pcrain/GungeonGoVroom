@@ -136,8 +136,8 @@ internal static partial class Patches
                 IntVector2 camMax = mainCameraController.MaxVisiblePoint.ToIntVector2(VectorConversions.Ceil);
                 int xMin = Mathf.Max(camMin.x, DISTANCE_THRESH);
                 int yMin = Mathf.Max(camMin.y, DISTANCE_THRESH);
-                int xMax = Mathf.Min(camMax.x, allData.Width - DISTANCE_THRESH - 1);
-                int yMax = Mathf.Min(camMax.y, allData.Height - DISTANCE_THRESH - 1);
+                int xMax = Mathf.Min(camMax.x, allData.m_width - DISTANCE_THRESH - 1);
+                int yMax = Mathf.Min(camMax.y, allData.m_height - DISTANCE_THRESH - 1);
                 bool inHell = self.tileIndices.tilesetId == GlobalDungeonData.ValidTilesets.HELLGEON;
                 bool inForge = self.tileIndices.tilesetId == GlobalDungeonData.ValidTilesets.FORGEGEON;
                 for (int i = xMin; i <= xMax; i++)
@@ -289,5 +289,103 @@ internal static partial class Patches
         }
       }
       return false;
+    }
+
+    /// <summary>Optimize calls to DungeonData Width and Height properties by caching results of CellData creation and using fields instead</summary>
+    [HarmonyPatch]
+    private static class DungeonWidthAndHeightPatches
+    {
+        /// <summary>Vanilla only ever calls ClearCachedCellData() after resizing Dungeon.data.cellData, so we can just adjust the width and height immediately.</summary>
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.ClearCachedCellData))]
+        [HarmonyPostfix]
+        private static void ClearCachedCellData(DungeonData __instance)
+        {
+          if (!GGVConfig.OPT_DUNGEON_DIMS)
+            return;
+          __instance.m_width = __instance.cellData.Length;
+          __instance.m_height = __instance.cellData[0].Length;
+        }
+
+        /// <summary>Compute width and height of DungeonData immediately after construction.</summary>
+        [HarmonyPatch(typeof(DungeonData), MethodType.Constructor, new[] {typeof(CellData[][])})]
+        [HarmonyPostfix]
+        private static void ClearCachedCellData(DungeonData __instance, CellData[][] data)
+        {
+          if (!GGVConfig.OPT_DUNGEON_DIMS)
+            return;
+          __instance.m_width = __instance.cellData.Length;
+          __instance.m_height = __instance.cellData[0].Length;
+        }
+
+        // private static readonly Dictionary<string, int> _Calls = new();
+        // [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.Width), MethodType.Getter)]
+        // [HarmonyPrefix]
+        // private static void DungeonDataWidthPatch(DungeonData __instance)
+        // {
+        //   StackTrace s = new StackTrace();
+        //   string caller = string.Empty;
+        //   for (int frame = 2; true; ++frame)
+        //   {
+        //     StackFrame f = s.GetFrame(frame);
+        //     if (f == null)
+        //       return;
+        //     caller = f.GetMethod().Name;
+        //     if (caller.Contains("MoveNext"))
+        //       continue;
+        //     break;
+        //   }
+        //   if (caller == "MoveNext")
+        //     caller = s.GetFrame(3).GetMethod().Name;
+        //   if (!_Calls.TryGetValue(caller, out int val))
+        //     _Calls[caller] = 0;
+        //   ++_Calls[caller];
+        //   System.Console.WriteLine($"called from {caller} {_Calls[caller]} times");
+        // }
+
+        /// <summary>Patch a bunch of methods that use Width and Height to use the m_width and m_height fields instead.</summary>
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.CheckInBounds), new[] {typeof(int), typeof(int)})]
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.CheckInBounds), new[] {typeof(IntVector2)})]
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.CheckInBounds), new[] {typeof(IntVector2), typeof(int)})]
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.CheckInBoundsAndValid), new[] {typeof(int), typeof(int)})]
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.CheckInBoundsAndValid), new[] {typeof(IntVector2)})]
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.FloodFillDungeonExterior))]
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.GenerateInterestingVisuals))]
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.CheckIntegrity))]
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.ExciseElbows))]
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.PostGenerationCleanup))]
+        [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.GetRoomVisualTypeAtPosition), new[] {typeof(int), typeof(int)})]
+        [HarmonyPatch(typeof(Minimap), nameof(Minimap.InitializeMinimap))]
+        [HarmonyPatch(typeof(TileSpriteClipper), nameof(TileSpriteClipper.ClipToTileBounds))]
+        [HarmonyPatch(typeof(TK2DInteriorDecorator), nameof(TK2DInteriorDecorator.PlaceLightDecoration))]
+        [HarmonyPatch(typeof(PhysicsEngine), nameof(PhysicsEngine.LateUpdate))]
+        [HarmonyPatch(typeof(OcclusionLayer), nameof(OcclusionLayer.GetRValueForCell))]
+        [HarmonyPatch(typeof(OcclusionLayer), nameof(OcclusionLayer.GetGValueForCell))]
+        [HarmonyPatch(typeof(OcclusionLayer), nameof(OcclusionLayer.GetCellOcclusion))]
+        [HarmonyPatch(typeof(RoomHandler), nameof(RoomHandler.StampCell), new[] {typeof(int), typeof(int), typeof(bool)})]
+        [HarmonyPatch(typeof(RoomHandler), nameof(RoomHandler.StampCellAsExit))] // has another "width" field that causes problems
+        [HarmonyILManipulator]
+        private static void DungeonDataWidthAndHeightPatchesIL(ILContext il, MethodBase original)
+        {
+            if (!GGVConfig.OPT_DUNGEON_DIMS)
+              return;
+            ILCursor cursor = new ILCursor(il);
+            Type ot = original.DeclaringType;
+            int replacements = 0;
+            while (cursor.TryGotoNext(MoveType.Before, instr => instr.MatchCallOrCallvirt<DungeonData>("get_Width")))
+            {
+              ++replacements;
+              cursor.Remove();
+              cursor.Emit(OpCodes.Ldfld, typeof(DungeonData).GetField("m_width", BindingFlags.Instance | BindingFlags.NonPublic));
+            }
+
+            cursor.Index = 0;
+            while (cursor.TryGotoNext(MoveType.Before, instr => instr.MatchCallOrCallvirt<DungeonData>("get_Height")))
+            {
+              ++replacements;
+              cursor.Remove();
+              cursor.Emit(OpCodes.Ldfld, typeof(DungeonData).GetField("m_height", BindingFlags.Instance | BindingFlags.NonPublic));
+            }
+            GGVDebug.Log($"  made {replacements} Width and Height replacements in {original.Name}");
+        }
     }
 }
