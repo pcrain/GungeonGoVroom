@@ -48,6 +48,7 @@
     <Compile Include="src\Bugfixes.cs"/>
     <Compile Include="src\ConfigMenu.cs"/>
     <Compile Include="src\Main.cs"/>
+    <Compile Include="src\BeamPoolers\CustomTrailPooler.cs"/>
     <Compile Include="src\BeamPoolers\RaidenBeamPooler.cs"/>
     <Compile Include="src\BeamPoolers\ReverseBeamPooler.cs"/>
     <Compile Include="src\BeamPoolers\BasicBeamPooler.cs"/>

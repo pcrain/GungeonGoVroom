@@ -13,6 +13,7 @@ internal static class GGVConfig
   internal static bool FIX_BULLET_TRAILS = true;
   internal static bool OPT_PROJ_STATUS   = true;
   internal static bool OPT_GUI_EVENTS    = true;
+  internal static bool OPT_TRAILS        = true;
   internal static bool OPT_LIGHT_CULL    = true;
   internal static bool OPT_BEAMS         = true;
   internal static bool OPT_MATH          = true;
@@ -33,6 +34,7 @@ internal static class GGVConfig
     OPT_LIGHT_CULL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
     OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
     OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
+    OPT_TRAILS        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TRAILS);
     OPT_PROJ_STATUS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
     OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
     OPT_POINTCAST     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
@@ -53,6 +55,7 @@ internal static class GGVConfig
       ETGModConsole.Log($"     OPT_LIGHT_CULL = {OPT_LIGHT_CULL}");
       ETGModConsole.Log($"          OPT_BEAMS = {OPT_BEAMS}");
       ETGModConsole.Log($"     OPT_GUI_EVENTS = {OPT_GUI_EVENTS}");
+      ETGModConsole.Log($"         OPT_TRAILS = {OPT_TRAILS}");
       ETGModConsole.Log($"    OPT_PROJ_STATUS = {OPT_PROJ_STATUS}");
       ETGModConsole.Log($"           OPT_MATH = {OPT_MATH}");
       ETGModConsole.Log($"      OPT_POINTCAST = {OPT_POINTCAST}");
@@ -83,6 +86,7 @@ public static class ConfigMenu
   internal const string LIGHT_CULL    = "Optimize Light Culling";
   internal const string BEAMS         = "Optimize Beams";
   internal const string GUI_EVENTS    = "Optimize GUI Events";
+  internal const string TRAILS        = "Optimize Bullet Trails";
   internal const string PROJ_STATUS   = "Optimize Projectile Prefabs";
 
   internal const string AGGR_OPT      = "Aggressive Optimizations";
@@ -107,8 +111,9 @@ public static class ConfigMenu
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
     so.FancyToggle(LIGHT_CULL, "Uses optimized inlined logic for\ndetermining whether lights should be culled.\nSaves a significant amount of CPU.");
-    so.FancyToggle(BEAMS, "Pools beam bones to reduce lag spikes.\n\nSaves a modest amount of RAM and CPU.");
+    so.FancyToggle(BEAMS, "Pools beam bones to reduce memory usage.\n\nSaves a modest amount of RAM and CPU.");
     so.FancyToggle(GUI_EVENTS, "Caches results of expensive lookups\nfor finding GUI event handlers.\nSaves a modest amount of RAM.");
+    so.FancyToggle(TRAILS, "Pools bullet trail particles to\nreduce memory usage.\nSaves a small amount of RAM.");
     so.FancyToggle(PROJ_STATUS, "Removes prefab effect data (e.g., poison) from\nprojectiles that never apply those effects.\nSaves a small amount of RAM.");
 
     Gunfig ao = _Gunfig.AddSubMenu(AGGR_OPT);

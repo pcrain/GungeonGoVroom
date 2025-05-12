@@ -14,14 +14,16 @@ internal static class BasicBeamPooler
     private static readonly MethodInfo _AddLastBone = _BoneListType.GetMethod("AddLast", new[]{typeof(BeamBone)});
     private static readonly MethodInfo _AddBeforeBone = _BoneListType.GetMethod("AddBefore", new[]{typeof(LinkedListNode<BeamBone>), typeof(BeamBone)});
 
-    [HarmonyPatch(typeof(BeamBone), MethodType.Constructor, new[] {typeof(float), typeof(float), typeof(int)})]
-    [HarmonyPatch(typeof(BeamBone), MethodType.Constructor, new[] {typeof(float), typeof(Vector2), typeof(Vector2)})]
-    [HarmonyPatch(typeof(BeamBone), MethodType.Constructor, new[] {typeof(BeamBone)})]
-    [HarmonyPostfix]
-    private static void NewBoneCounter()
-    {
-      GGVDebug.Log($"constructed {++_TotalBones} bones");
-    }
+    // #if DEBUG
+    // [HarmonyPatch(typeof(BeamBone), MethodType.Constructor, new[] {typeof(float), typeof(float), typeof(int)})]
+    // [HarmonyPatch(typeof(BeamBone), MethodType.Constructor, new[] {typeof(float), typeof(Vector2), typeof(Vector2)})]
+    // [HarmonyPatch(typeof(BeamBone), MethodType.Constructor, new[] {typeof(BeamBone)})]
+    // [HarmonyPostfix]
+    // private static void NewBoneCounter()
+    // {
+    //   GGVDebug.Log($"constructed {++_TotalBones} bones");
+    // }
+    // #endif
 
     #region Rentals
     /// <summary>Replaces all calls to int constructor</summary>
