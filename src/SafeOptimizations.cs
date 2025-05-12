@@ -101,4 +101,56 @@ internal static partial class Patches
         __result = ((x * x) + (y * y)) > (cullRadius * cullRadius);
         return false;    // skip the original method
     }
+
+    /// <summary>Optimize FloodFillDungeonExterior() to not use a HashSet</summary>
+    [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.FloodFillDungeonExterior))]
+    [HarmonyPrefix]
+    private static bool FloodFillDungeonExteriorPatch(DungeonData __instance)
+    {
+        if (!GGVConfig.OPT_FLOOD_FILL)
+          return true; // call original
+        int width = __instance.m_width;
+        int height = __instance.m_height;
+        // GGVDebug.Log($"processing exterior of size {width} by {height}");
+        int amountToClear = Mathf.CeilToInt((width * height) / 64f);
+        if (amountToClear > _FloodFillBitfield.Length)
+          Array.Resize(ref _FloodFillBitfield, amountToClear);
+        for (int i = amountToClear - 1; i >= 0; --i)
+          _FloodFillBitfield[i] = 0;
+
+        CellData[][] data = __instance.cellData;
+        if (data[0][0] != null)
+            data[0][0].isRoomInternal = false;
+        _FloodFillBitfield[0] = 1; // set the very first bit for 0,0
+        _FloodFillStack.Push(IntVector2.Zero);
+        while (_FloodFillStack.Count > 0)
+        {
+            IntVector2 cellPos = _FloodFillStack.Pop();
+            for (int i = 0; i < IntVector2.Cardinals.Length; i++)
+            {
+                IntVector2 nextPos = cellPos + IntVector2.Cardinals[i];
+                int nx = nextPos.x;
+                int ny = nextPos.y;
+                if (nx < 0 || ny < 0 || nx >= width || ny >= height)
+                    continue;
+                int bitIndex = ny * width + nx;
+                int elementIndex = Mathf.FloorToInt(bitIndex / 64f);
+                UInt64 bitmask = (1u << (bitIndex % 64));
+                if ((_FloodFillBitfield[elementIndex] & bitmask) == bitmask)
+                  continue; // already checked
+                _FloodFillBitfield[elementIndex] |= bitmask;
+                CellData nextData = data[nx][ny];
+                if (nextData != null)
+                {
+                  if ((nextData.type != CellType.WALL || nextData.breakable) && !nextData.isExitCell)
+                    continue;
+                  nextData.isRoomInternal = false;
+                }
+                _FloodFillStack.Push(nextPos);
+            }
+        }
+        return false; // skip original method
+    }
+    private static readonly Stack<IntVector2> _FloodFillStack = new();
+    private static UInt64[] _FloodFillBitfield = new UInt64[10000];
 }
