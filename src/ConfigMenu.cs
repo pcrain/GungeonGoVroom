@@ -26,49 +26,27 @@ internal static class GGVConfig
 
   internal static void Update()
   {
-    FIX_DUCT_TAPE     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUCT_TAPE);
-    FIX_QUICK_RESTART = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.QUICK_RESTART);
-    FIX_ROOM_SHUFFLE  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ROOM_SHUFFLE);
-    FIX_AMMO_UI       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_UI);
-    FIX_ORBITAL_GUN   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ORBITAL_GUN);
-    FIX_COOP_TURBO    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.COOP_TURBO);
-    FIX_BULLET_TRAILS = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BULLET_TRAILS);
-    OPT_LIGHT_CULL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
-    OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
-    OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
-    OPT_FLOOD_FILL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.FLOOD_FILL);
-    OPT_TRAILS        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TRAILS);
-    OPT_PROJ_STATUS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
-    OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
-    OPT_CHUNKBUILD    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
-    OPT_POINTCAST     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
-    OPT_PIT_VFX       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIT_VFX);
-    OPT_ITEM_LOOKUPS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ITEM_LOOKUPS);
-    OPT_DUNGEON_DIMS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUNGEON_DIMS);
-
-    if (C.DEBUG_BUILD)
-    {
-      ETGModConsole.Log($"Updated GGV with the following options:");
-      ETGModConsole.Log($"      FIX_DUCT_TAPE = {FIX_DUCT_TAPE}");
-      ETGModConsole.Log($"  FIX_QUICK_RESTART = {FIX_QUICK_RESTART}");
-      ETGModConsole.Log($"   FIX_ROOM_SHUFFLE = {FIX_ROOM_SHUFFLE}");
-      ETGModConsole.Log($"        FIX_AMMO_UI = {FIX_AMMO_UI}");
-      ETGModConsole.Log($"    FIX_ORBITAL_GUN = {FIX_ORBITAL_GUN}");
-      ETGModConsole.Log($"     FIX_COOP_TURBO = {FIX_COOP_TURBO}");
-      ETGModConsole.Log($"  FIX_BULLET_TRAILS = {FIX_BULLET_TRAILS}");
-      ETGModConsole.Log($"     OPT_LIGHT_CULL = {OPT_LIGHT_CULL}");
-      ETGModConsole.Log($"          OPT_BEAMS = {OPT_BEAMS}");
-      ETGModConsole.Log($"     OPT_GUI_EVENTS = {OPT_GUI_EVENTS}");
-      ETGModConsole.Log($"     OPT_FLOOD_FILL = {OPT_FLOOD_FILL}");
-      ETGModConsole.Log($"         OPT_TRAILS = {OPT_TRAILS}");
-      ETGModConsole.Log($"    OPT_PROJ_STATUS = {OPT_PROJ_STATUS}");
-      ETGModConsole.Log($"           OPT_MATH = {OPT_MATH}");
-      ETGModConsole.Log($"     OPT_CHUNKBUILD = {OPT_CHUNKBUILD}");
-      ETGModConsole.Log($"      OPT_POINTCAST = {OPT_POINTCAST}");
-      ETGModConsole.Log($"        OPT_PIT_VFX = {OPT_PIT_VFX}");
-      ETGModConsole.Log($"   OPT_ITEM_LOOKUPS = {OPT_ITEM_LOOKUPS}");
-      ETGModConsole.Log($"   OPT_DUNGEON_DIMS = {OPT_DUNGEON_DIMS}");
-    }
+    #if !DEBUG // everything's always enabled in debug builds
+      FIX_DUCT_TAPE     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUCT_TAPE);
+      FIX_QUICK_RESTART = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.QUICK_RESTART);
+      FIX_ROOM_SHUFFLE  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ROOM_SHUFFLE);
+      FIX_AMMO_UI       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_UI);
+      FIX_ORBITAL_GUN   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ORBITAL_GUN);
+      FIX_COOP_TURBO    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.COOP_TURBO);
+      FIX_BULLET_TRAILS = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BULLET_TRAILS);
+      OPT_LIGHT_CULL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
+      OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
+      OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
+      OPT_FLOOD_FILL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.FLOOD_FILL);
+      OPT_TRAILS        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TRAILS);
+      OPT_PROJ_STATUS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
+      OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
+      OPT_CHUNKBUILD    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
+      OPT_POINTCAST     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
+      OPT_PIT_VFX       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIT_VFX);
+      OPT_ITEM_LOOKUPS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ITEM_LOOKUPS);
+      OPT_DUNGEON_DIMS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUNGEON_DIMS);
+    #endif
   }
 
   // for callback purposes
@@ -107,6 +85,7 @@ public static class ConfigMenu
   internal static void Init()
   {
     _Gunfig = Gunfig.Get(modName: C.MOD_NAME.WithColor(C.MOD_COLOR));
+    _Gunfig.AddLabel("All Changes are Applied on Next Restart".Magenta());
 
     Gunfig sf = _Gunfig.AddSubMenu(BUG_FIX);
     sf.FancyToggle(DUCT_TAPE, "Fixes duct-taped guns sometimes breaking\nwhen using the elevator save button.");
@@ -142,12 +121,12 @@ public static class ConfigMenu
   private static void FancyToggle(this Gunfig gunfig, string toggleName, string toggleDesc)
   {
     string info = toggleDesc.Green();
-    gunfig.AddScrollBox(key: toggleName, options: DefaultEnabled, info: [info, info], callback: GGVConfig.Update);
+    gunfig.AddScrollBox(key: toggleName, options: DefaultEnabled, info: [info, info], callback: GGVConfig.Update, updateType: Gunfig.Update.OnRestart);
   }
   private static void FancyToggleOff(this Gunfig gunfig, string toggleName, string toggleDesc)
   {
     string info = toggleDesc.Green();
-    gunfig.AddScrollBox(key: toggleName, options: DefaultDisabled, info: [info, info], callback: GGVConfig.Update);
+    gunfig.AddScrollBox(key: toggleName, options: DefaultDisabled, info: [info, info], callback: GGVConfig.Update, updateType: Gunfig.Update.OnRestart);
   }
 
   private static void LateInit()
