@@ -153,4 +153,21 @@ internal static partial class Patches
     }
     private static readonly Stack<IntVector2> _FloodFillStack = new();
     private static UInt64[] _FloodFillBitfield = new UInt64[10000];
+
+    // /// <summary>Fix memory leak in df pooling (don't think there's a real leak, check on this later)</summary>
+    // [HarmonyPatch(typeof(dfFont.BitmappedFontRenderer), nameof(dfFont.BitmappedFontRenderer.Obtain))]
+    // [HarmonyPrefix]
+    // private static void dfFontBitmappedFontRendererObtainPatch(dfFont font)
+    // {
+    //   if (dfFont.BitmappedFontRenderer.objectPool.Count == 0)
+    //     System.Console.WriteLine($"  new renderer being requested");
+    // }
+
+    // [HarmonyPatch(typeof(dfMarkupToken), MethodType.Constructor)]
+    // [HarmonyPrefix]
+    // private static void Newdfmarkuptoken()
+    // {
+    //   System.Console.WriteLine($"created {++_TokensCreated} tokens");
+    // }
+    // private static int _TokensCreated = 0;
 }

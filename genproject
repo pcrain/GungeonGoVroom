@@ -232,6 +232,9 @@ if [ $rebuild -eq 1 ]; then
   /bin/cp "$dllname" "$plugindir"
 fi
 
+echo -e "[${GRN}>${BLN}] Regenerating readme"
+python ./genreadme
+
 #Generate new Thunderstore Package
 if [ $# -gt 0 ] && [ "$1" == "-t" ]; then
   echo -e "[${GRN}>${BLN}] Assembling Thunderstore package"
