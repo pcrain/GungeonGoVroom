@@ -317,31 +317,6 @@ internal static partial class Patches
           __instance.m_height = __instance.cellData[0].Length;
         }
 
-        // private static readonly Dictionary<string, int> _Calls = new();
-        // [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.Width), MethodType.Getter)]
-        // [HarmonyPrefix]
-        // private static void DungeonDataWidthPatch(DungeonData __instance)
-        // {
-        //   StackTrace s = new StackTrace();
-        //   string caller = string.Empty;
-        //   for (int frame = 2; true; ++frame)
-        //   {
-        //     StackFrame f = s.GetFrame(frame);
-        //     if (f == null)
-        //       return;
-        //     caller = f.GetMethod().Name;
-        //     if (caller.Contains("MoveNext"))
-        //       continue;
-        //     break;
-        //   }
-        //   if (caller == "MoveNext")
-        //     caller = s.GetFrame(3).GetMethod().Name;
-        //   if (!_Calls.TryGetValue(caller, out int val))
-        //     _Calls[caller] = 0;
-        //   ++_Calls[caller];
-        //   System.Console.WriteLine($"called from {caller} {_Calls[caller]} times");
-        // }
-
         /// <summary>Patch a bunch of methods that use Width and Height to use the m_width and m_height fields instead.</summary>
         [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.CheckInBounds), new[] {typeof(int), typeof(int)})]
         [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.CheckInBounds), new[] {typeof(IntVector2)})]

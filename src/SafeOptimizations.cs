@@ -87,4 +87,18 @@ internal static partial class Patches
         __result = false;
         return false; // skip the original method
     }
+
+    /// <summary>Optimize LightCulled() by manually computing / comparing against square distance</summary>
+    [HarmonyPatch(typeof(Pixelator), nameof(Pixelator.LightCulled))]
+    [HarmonyPrefix]
+    private static bool PixelatorLightCulledPatch(Pixelator __instance, Vector2 lightPosition, Vector2 cameraPosition, float lightRange, float orthoSize, float aspect, ref bool __result)
+    {
+        if (!GGVConfig.OPT_LIGHT_CULL)
+          return true;
+        float x = lightPosition.x - cameraPosition.x;
+        float y = lightPosition.y - cameraPosition.y;
+        float cullRadius = lightRange + orthoSize * __instance.LightCullFactor * aspect;
+        __result = ((x * x) + (y * y)) > (cullRadius * cullRadius);
+        return false;    // skip the original method
+    }
 }
