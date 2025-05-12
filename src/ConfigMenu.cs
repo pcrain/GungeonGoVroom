@@ -17,6 +17,7 @@ internal static class GGVConfig
   internal static bool OPT_LIGHT_CULL    = true;
   internal static bool OPT_BEAMS         = true;
   internal static bool OPT_MATH          = true;
+  internal static bool OPT_CHUNKBUILD    = true;
   internal static bool OPT_POINTCAST     = true;
   internal static bool OPT_PIT_VFX       = true;
   internal static bool OPT_ITEM_LOOKUPS  = true;
@@ -37,6 +38,7 @@ internal static class GGVConfig
     OPT_TRAILS        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TRAILS);
     OPT_PROJ_STATUS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
     OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
+    OPT_CHUNKBUILD    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
     OPT_POINTCAST     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
     OPT_PIT_VFX       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIT_VFX);
     OPT_ITEM_LOOKUPS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ITEM_LOOKUPS);
@@ -58,6 +60,7 @@ internal static class GGVConfig
       ETGModConsole.Log($"         OPT_TRAILS = {OPT_TRAILS}");
       ETGModConsole.Log($"    OPT_PROJ_STATUS = {OPT_PROJ_STATUS}");
       ETGModConsole.Log($"           OPT_MATH = {OPT_MATH}");
+      ETGModConsole.Log($"     OPT_CHUNKBUILD = {OPT_CHUNKBUILD}");
       ETGModConsole.Log($"      OPT_POINTCAST = {OPT_POINTCAST}");
       ETGModConsole.Log($"        OPT_PIT_VFX = {OPT_PIT_VFX}");
       ETGModConsole.Log($"   OPT_ITEM_LOOKUPS = {OPT_ITEM_LOOKUPS}");
@@ -91,6 +94,7 @@ public static class ConfigMenu
 
   internal const string AGGR_OPT      = "Aggressive Optimizations";
   internal const string MATH          = "Optimize Math";
+  internal const string CHUNKBUILD    = "Optimize Chunk Building";
   internal const string POINTCAST     = "Optimize Pointcast";
   internal const string PIT_VFX       = "Optimize Pit VFX";
   internal const string ITEM_LOOKUPS  = "Optimize Item Lookups";
@@ -118,6 +122,7 @@ public static class ConfigMenu
 
     Gunfig ao = _Gunfig.AddSubMenu(AGGR_OPT);
     ao.FancyToggleOff(MATH, "Speeds up some geometry calculations\nby using optimized algorithms.\nSaves a significant amount of CPU.");
+    ao.FancyToggleOff(CHUNKBUILD, "Reuses temporary storage structures when\nrebuilding chunk data during level gen.\nSaves a significant amount of RAM.");
     ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing statics instead of delegates.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(PIT_VFX, "Speeds up pit VFX calculations by skipping\nseveral redundant tile checks.\nSaves a small amount of CPU.");
     ao.FancyToggleOff(ITEM_LOOKUPS, "Speeds up passive / active item lookups\nby skipping delegate creation.\nSaves a small amount of RAM.");
