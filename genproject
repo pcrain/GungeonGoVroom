@@ -238,8 +238,8 @@ python ./genreadme
 #Generate new Thunderstore Package
 if [ $# -gt 0 ] && [ "$1" == "-t" ]; then
   echo -e "[${GRN}>${BLN}] Assembling Thunderstore package"
-  imguidll="./_bundled/OptimizeIMGUI.dll"
-  if [ ! -e "$imguidll" ]; then
+  imguidlldir="./_bundled/OptimizeIMGUI"
+  if [ ! -d "$imguidlldir" ]; then
     echo -e "[${RED}@${BLN}] OptimizeIMGUI.dll could not be found, refusing"
   elif [ $debugbuild -gt 0 ]; then
     echo -e "[${RED}@${BLN}] Trying to build Thunderstore package from debug build, refusing"
@@ -251,7 +251,7 @@ if [ $# -gt 0 ] && [ "$1" == "-t" ]; then
     /bin/cp -f "./previews/icon.png" "${tdir}/icon.png"
     echo "${manifesttemplate}" > "${tdir}/manifest.json"
     /bin/cp "${dllname}" "${tdir}"
-    /bin/cp "${imguidll}" "${tdir}"
+    /bin/cp -r "${imguidlldir}" "${tdir}"
 
     cd "${tdir}"
     /bin/rm -f "${projectname}.zip"

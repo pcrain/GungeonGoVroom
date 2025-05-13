@@ -1,8 +1,6 @@
 ## What Is This Mod?
 
-Gungeon Go Vroom fixes several bugs in vanilla Enter the Gungeon's code, and optimizes several other parts of Gungeon's code to reduce CPU usage, RAM usage, and lag spike frequency. Each fix and optimization can be individually toggled via the Mod Config menu (Options -> Mod Config -> Gungeon Go Vroom). 
-
-**NOTE:** For safety and performance reasons, most changes will only take effect upon restarting the game. For best results, it's recommended to also install "Optimize IMGUI" (download [this zip](https://github.com/BepInEx/BepInEx.Utility/releases/download/r9/BepInEx.OptimizeIMGUI.v1.0.zip) and extract `BepInEx.OptimizeIMGUI.dll` to ".../Enter the Gungeon/BepInEx/plugins/")
+Gungeon Go Vroom fixes several bugs in vanilla Enter the Gungeon's code, and optimizes several other parts of Gungeon's code to reduce CPU usage, RAM usage, and lag spike frequency. Each fix and optimization can be individually toggled via the Mod Config menu (Options -> Mod Config -> Gungeon Go Vroom). *For safety and performance reasons, most changes will only take effect upon restarting the game.*
 
 Gungeon Go Vroom's changes are organized into three main categories:
 
@@ -47,3 +45,7 @@ Currently included aggressive optimizations are:
 ## Issues? Suggestions?
 
 [Feel free to use the Issue Tracker on Github](https://github.com/pcrain/GungeonGoVroom/issues) if you encounter any issues or have any other vanilla bugs you'd like to see fixed. C:
+
+## Additional Credits
+
+For convenience and additional performance, Gungeon Go Vroom's Thunderstore package comes bundled with the [Optimize IMGUI](https://github.com/BepInEx/BepInEx.Utility) plugin, licensed under the [GNU General Public License v3.0](https://github.com/BepInEx/BepInEx.Utility/blob/master/LICENSE). Gungeon Go Vroom does not use or require Optimize IMGUI to function.

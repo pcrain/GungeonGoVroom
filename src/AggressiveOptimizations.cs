@@ -1,9 +1,5 @@
 namespace GGV;
 
-/* TODO: future optimizations
-    - HasPassiveItem / HasActiveItem
-*/
-
 internal static partial class Patches
 {
     /// <summary>Optimized version of PhysicsEngine.Pointcast(IntVector2, ...) without unnecessary delegate creation</summary>
