@@ -85,7 +85,7 @@ internal static class ReverseBeamPooler
         ILCursor cursor = new ILCursor(il);
         if (!cursor.ReplaceConstructor()) return;
         if (!cursor.ReplaceConstructor()) return;
-        GGVDebug.Log("patched ReverseBeamController.DrawBezierCurve!");
+        // GGVDebug.Log("patched ReverseBeamController.DrawBezierCurve!");
     }
 
     /// <summary>Replace all construction of Bones with Rents</summary>
@@ -98,7 +98,7 @@ internal static class ReverseBeamPooler
           return;
         ILCursor cursor = new ILCursor(il);
         if (!cursor.ReplaceClear()) return;
-        GGVDebug.Log("patched ReverseBeamController.HandleBeamFrame!");
+        // GGVDebug.Log("patched ReverseBeamController.HandleBeamFrame!");
     }
 
     [HarmonyPatch(typeof(ReverseBeamController), nameof(ReverseBeamController.OnDestroy))]

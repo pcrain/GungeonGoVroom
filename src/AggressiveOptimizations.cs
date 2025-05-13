@@ -360,7 +360,7 @@ internal static partial class Patches
               cursor.Remove();
               cursor.Emit(OpCodes.Ldfld, typeof(DungeonData).GetField("m_height", BindingFlags.Instance | BindingFlags.NonPublic));
             }
-            GGVDebug.Log($"  made {replacements} Width and Height replacements in {original.Name}");
+            // GGVDebug.Log($"  made {replacements} Width and Height replacements in {original.Name}");
         }
     }
 }

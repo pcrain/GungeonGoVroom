@@ -188,7 +188,7 @@ internal static class Dissect // reflection helper methods
     }
 
     // Dump IL instructions for an IL Hook
-    public static void DumpIL(this ILCursor cursor, string key)
+    public static void DumpIL(this ILCursor cursor)
     {
         foreach (Instruction c in cursor.Instrs)
             DumpILInstruction(c);

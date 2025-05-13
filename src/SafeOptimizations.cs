@@ -170,4 +170,29 @@ internal static partial class Patches
     //   System.Console.WriteLine($"created {++_TokensCreated} tokens");
     // }
     // private static int _TokensCreated = 0;
+
+    /// <summary>Cache numerical strings.</summary>
+    [HarmonyPatch(typeof(SGUI.SGUIIMBackend), nameof(SGUI.SGUIIMBackend.NextComponentName))]
+    [HarmonyILManipulator]
+    private static void SGUIIMBackendNextComponentNamePatch(ILContext il)
+    {
+        if (!GGVConfig.OPT_NUMBERS)
+          return;
+        ILCursor cursor = new ILCursor(il);
+        if (!cursor.TryGotoNext(MoveType.Before, instr => instr.MatchCall<int>(nameof(int.ToString))))
+          return;
+
+        cursor.Remove();
+        cursor.CallPrivate(typeof(Patches), nameof(CachedStringForNumber));
+    }
+    private static string CachedStringForNumber(ref int n)
+    {
+      if (n > _MAX_CACHED_NUMBER)
+        return n.ToString();
+      if (_CachedNumberStrings.TryGetValue(n, out string s))
+        return s;
+      return _CachedNumberStrings[n] = n.ToString();
+    }
+    private const int _MAX_CACHED_NUMBER = 100000;
+    private static readonly Dictionary<int, string> _CachedNumberStrings = new();
 }

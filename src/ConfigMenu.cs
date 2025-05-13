@@ -13,6 +13,7 @@ internal static class GGVConfig
   internal static bool FIX_BULLET_TRAILS = true;
   internal static bool OPT_PROJ_STATUS   = true;
   internal static bool OPT_GUI_EVENTS    = true;
+  internal static bool OPT_NUMBERS       = true;
   internal static bool OPT_FLOOD_FILL    = true;
   internal static bool OPT_TRAILS        = true;
   internal static bool OPT_LIGHT_CULL    = true;
@@ -37,6 +38,7 @@ internal static class GGVConfig
       OPT_LIGHT_CULL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
       OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
       OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
+      OPT_NUMBERS       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.NUMBERS);
       OPT_FLOOD_FILL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.FLOOD_FILL);
       OPT_TRAILS        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TRAILS);
       OPT_PROJ_STATUS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
@@ -70,6 +72,7 @@ public static class ConfigMenu
   internal const string LIGHT_CULL    = "Optimize Light Culling";
   internal const string BEAMS         = "Optimize Beams";
   internal const string GUI_EVENTS    = "Optimize GUI Events";
+  internal const string NUMBERS       = "Optimize Numerical Strings";
   internal const string FLOOD_FILL    = "Optimize Flood Filling";
   internal const string TRAILS        = "Optimize Bullet Trails";
   internal const string PROJ_STATUS   = "Optimize Projectile Prefabs";
@@ -100,6 +103,7 @@ public static class ConfigMenu
     so.FancyToggle(LIGHT_CULL, "Uses optimized inlined logic for\ndetermining whether lights should be culled.\nSaves a significant amount of CPU.");
     so.FancyToggle(BEAMS, "Pools beam bones to reduce memory usage.\n\nSaves a modest amount of RAM and CPU.");
     so.FancyToggle(GUI_EVENTS, "Caches results of expensive lookups\nfor finding GUI event handlers.\nSaves a modest amount of RAM.");
+    so.FancyToggle(NUMBERS, "Caches strings for small numbers\nused frequently by SGUI's labels.\nSaves significant RAM while any console is open.");
     so.FancyToggle(FLOOD_FILL, "Uses an optimized flood fill algorithm\nfor floor post-processing.\nSaves a small amount of CPU and RAM.");
     so.FancyToggle(TRAILS, "Pools bullet trail particles to\nreduce memory usage.\nSaves a small amount of RAM.");
     so.FancyToggle(PROJ_STATUS, "Removes prefab effect data (e.g., poison) from\nprojectiles that never apply those effects.\nSaves a small amount of RAM.");

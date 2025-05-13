@@ -85,7 +85,7 @@ internal static class RaidenBeamPooler
         ILCursor cursor = new ILCursor(il);
         if (!cursor.ReplaceConstructor()) return;
         if (!cursor.ReplaceConstructor()) return;
-        GGVDebug.Log("patched RaidenBeamController.DrawBezierCurve!");
+        // GGVDebug.Log("patched RaidenBeamController.DrawBezierCurve!");
     }
 
     /// <summary>Replace all construction of Bones with Rents</summary>
@@ -98,7 +98,7 @@ internal static class RaidenBeamPooler
           return;
         ILCursor cursor = new ILCursor(il);
         if (!cursor.ReplaceClear()) return;
-        GGVDebug.Log("patched RaidenBeamController.HandleBeamFrame!");
+        // GGVDebug.Log("patched RaidenBeamController.HandleBeamFrame!");
     }
 
     [HarmonyPatch(typeof(RaidenBeamController), nameof(RaidenBeamController.OnDestroy))]

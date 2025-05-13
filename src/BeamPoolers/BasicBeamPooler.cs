@@ -159,7 +159,7 @@ internal static class BasicBeamPooler
         ILCursor cursor = new ILCursor(il);
         if (!cursor.ReplaceNextIntConstructorAndAddFirst()) return;
         if (!cursor.ReplaceNextIntConstructorAndAddLast()) return;
-        GGVDebug.Log("patched BasicBeamController.Start!");
+        // GGVDebug.Log("patched BasicBeamController.Start!");
     }
 
     /// <summary>Replace all construction of BeamBones with Rents</summary>
@@ -187,7 +187,7 @@ internal static class BasicBeamPooler
         cursor.Emit(OpCodes.Ldloc, node); // load the node for our bone
         cursor.CallPrivate(typeof(BasicBeamPooler), nameof(BasicBeamPooler.AddFirstNode));
 
-        GGVDebug.Log("patched BasicBeamController.SeparateBeam!");
+        // GGVDebug.Log("patched BasicBeamController.SeparateBeam!");
     }
 
     /// <summary>Replace all construction of BeamBones with Rents</summary>
@@ -234,7 +234,7 @@ internal static class BasicBeamPooler
         cursor.CallPrivate(typeof(BasicBeamPooler), nameof(BasicBeamPooler.AddLastNode));
 
         if (!cursor.ReplaceNextRemoveLast()) return; // line 1823
-        GGVDebug.Log("patched BasicBeamController.HandleBeamFrame!");
+        // GGVDebug.Log("patched BasicBeamController.HandleBeamFrame!");
     }
 
     [HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.OnDestroy))]
