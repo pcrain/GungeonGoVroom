@@ -30,7 +30,7 @@ internal static class CallTracker
     if (!_Calls.TryGetValue(caller, out int val))
       _Calls[caller] = 0;
     ++_Calls[caller];
-    System.Console.WriteLine($"called from {caller} {_Calls[caller]} times");
+    GGVDebug.Log($"called from {caller} {_Calls[caller]} times");
   }
 }
 #endif
