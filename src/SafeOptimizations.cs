@@ -195,4 +195,28 @@ internal static partial class Patches
     }
     private const int _MAX_CACHED_NUMBER = 100000;
     private static readonly Dictionary<int, string> _CachedNumberStrings = new();
+
+    /// <summary>Skips expensive search for primary player when on the title screen.</summary>
+    [HarmonyPatch(typeof(GameManager), nameof(GameManager.PrimaryPlayer), MethodType.Getter)]
+    [HarmonyPrefix]
+    private static bool PrimaryPlayerPatch(GameManager __instance, ref PlayerController __result)
+    {
+      if (!__instance.m_player && (Foyer.DoIntroSequence || Foyer.DoMainMenu) && GGVConfig.OPT_TITLE_SCREEN && !_CheckForPlayer)
+      {
+        __result = null; // if we're on the menu this can never succeed, so don't try
+        return false; // skip original method
+      }
+      _CheckForPlayer = false;
+      return true; // call original method
+    }
+
+    /// <summary>Force check for the game's primary player every time a PlayerController is instantiated</summary>
+    [HarmonyPatch(typeof(PlayerController), nameof(PlayerController.Start))]
+    [HarmonyPostfix]
+    private static void PrimaryPlayerPatch(PlayerController __instance)
+    {
+      _CheckForPlayer = true;
+      var dummy = GameManager.Instance.PrimaryPlayer;
+    }
+    private static bool _CheckForPlayer = false;
 }
