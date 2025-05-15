@@ -9,7 +9,7 @@ internal static class CallTracker
 {
   private static readonly Dictionary<string, int> _Calls = new();
   // Chacne the next line to patch whatever needs to be checked
-  [HarmonyPatch(typeof(Vector2), nameof(Vector2.Distance))]
+  [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.Width), MethodType.Getter)]
   [HarmonyPrefix]
   private static void WhoCalledIt()
   {

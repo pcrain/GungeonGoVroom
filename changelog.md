@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0 (TBD)
+
+- Made Gungeon Go Vroom load apply patches earlier in the load process so other mods can benefit from them
+
 ## 1.1.0 (2025-05-12)
 
 - Added several new optimizations (see readme for full list)
