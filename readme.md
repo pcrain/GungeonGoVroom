@@ -30,6 +30,7 @@ Currently included safe optimizations are:
   - **Optimize Flood Filling**: Uses an optimized flood fill algorithm for floor post-processing. Saves a small amount of CPU and RAM.
   - **Optimize Bullet Trails**: Pools bullet trail particles to reduce memory usage. Saves a small amount of RAM.
   - **Optimize Projectile Prefabs**: Removes prefab effect data (e.g., poison) from projectiles that never apply those effects. Saves a small amount of RAM.
+  - **Optimize Chunk Checks**: Optimize checks for whether sprite chunks are relevant to gameplay. Saves a small amount of CPU.
 
 ### Aggressive Optimizations
 

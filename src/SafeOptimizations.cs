@@ -219,4 +219,49 @@ internal static partial class Patches
       var dummy = GameManager.Instance.PrimaryPlayer;
     }
     private static bool _CheckForPlayer = false;
+
+    /// <summary>Optimize IrrelevantToGameplay()</summary>
+    [HarmonyPatch(typeof(tk2dRuntime.TileMap.SpriteChunk), nameof(tk2dRuntime.TileMap.SpriteChunk.IrrelevantToGameplay), MethodType.Getter)]
+    [HarmonyPrefix]
+    private static bool SpriteChunkIrrelevantToGameplayPatch(tk2dRuntime.TileMap.SpriteChunk __instance, ref bool __result)
+    {
+      if (!GGVConfig.OPT_CHUNK_CHECKS)
+        return true;
+
+      const float THRESHOLD = 15f;
+
+      DungeonData data = GameManager.Instance.Dungeon.data;
+      int width        = data.m_width - 1;
+      int height       = data.m_height - 1;
+      int xOff         = tk2dRuntime.TileMap.RenderMeshBuilder.CurrentCellXOffset;
+      int yOff         = tk2dRuntime.TileMap.RenderMeshBuilder.CurrentCellYOffset;
+
+      int xMin = __instance.startX + xOff;
+      if (xMin < 0)
+        xMin = 0;
+      int yMin = __instance.startY + yOff;
+      if (yMin < 0)
+        yMin = 0;
+      int xMax = __instance.endX + xOff;
+      if (xMax > width)
+        xMax = width;
+      int yMax = __instance.endY + yOff;
+      if (yMax > height)
+        yMax = height;
+      CellData[][] cells = data.cellData;
+      for (int i = xMin; i < xMax; i++)
+      {
+        for (int j = yMin; j < yMax; j++)
+        {
+          CellData cd = cells[i][j];
+          if (cd != null && cd.distanceFromNearestRoom <= THRESHOLD)
+          {
+            __result = false; // relevant
+            return false;
+          }
+        }
+      }
+      __result = true; // irrelevant
+      return false;
+    }
 }

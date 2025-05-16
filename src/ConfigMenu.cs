@@ -11,6 +11,7 @@ internal static class GGVConfig
   internal static bool FIX_ORBITAL_GUN   = true;
   internal static bool FIX_COOP_TURBO    = true;
   internal static bool FIX_BULLET_TRAILS = true;
+
   internal static bool OPT_PROJ_STATUS   = true;
   internal static bool OPT_GUI_EVENTS    = true;
   internal static bool OPT_TITLE_SCREEN  = true;
@@ -19,6 +20,8 @@ internal static class GGVConfig
   internal static bool OPT_TRAILS        = true;
   internal static bool OPT_LIGHT_CULL    = true;
   internal static bool OPT_BEAMS         = true;
+  internal static bool OPT_CHUNK_CHECKS  = true;
+
   internal static bool OPT_MATH          = true;
   internal static bool OPT_CHUNKBUILD    = true;
   internal static bool OPT_POINTCAST     = true;
@@ -36,6 +39,7 @@ internal static class GGVConfig
       FIX_ORBITAL_GUN   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ORBITAL_GUN);
       FIX_COOP_TURBO    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.COOP_TURBO);
       FIX_BULLET_TRAILS = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BULLET_TRAILS);
+
       OPT_LIGHT_CULL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
       OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
       OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
@@ -44,6 +48,8 @@ internal static class GGVConfig
       OPT_FLOOD_FILL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.FLOOD_FILL);
       OPT_TRAILS        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TRAILS);
       OPT_PROJ_STATUS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
+      OPT_CHUNK_CHECKS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNK_CHECKS);
+
       OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
       OPT_CHUNKBUILD    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
       OPT_POINTCAST     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
@@ -79,6 +85,7 @@ public static class ConfigMenu
   internal const string FLOOD_FILL    = "Optimize Flood Filling";
   internal const string TRAILS        = "Optimize Bullet Trails";
   internal const string PROJ_STATUS   = "Optimize Projectile Prefabs";
+  internal const string CHUNK_CHECKS  = "Optimize Chunk Checks";
 
   internal const string AGGR_OPT      = "Aggressive Optimizations";
   internal const string MATH          = "Optimize Math";
@@ -111,6 +118,7 @@ public static class ConfigMenu
     so.FancyToggle(FLOOD_FILL, "Uses an optimized flood fill algorithm\nfor floor post-processing.\nSaves a small amount of CPU and RAM.");
     so.FancyToggle(TRAILS, "Pools bullet trail particles to\nreduce memory usage.\nSaves a small amount of RAM.");
     so.FancyToggle(PROJ_STATUS, "Removes prefab effect data (e.g., poison) from\nprojectiles that never apply those effects.\nSaves a small amount of RAM.");
+    so.FancyToggle(CHUNK_CHECKS, "Optimize checks for whether sprite chunks\nare relevant to gameplay.\nSaves a small amount of CPU.");
 
     Gunfig ao = _Gunfig.AddSubMenu(AGGR_OPT);
     ao.FancyToggleOff(MATH, "Speeds up some geometry calculations\nby using optimized algorithms.\nSaves a significant amount of CPU.");
