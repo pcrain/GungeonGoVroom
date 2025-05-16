@@ -1,7 +1,6 @@
 /* TODO: potential optimizations
-  - dfControl.PerformLayout calls GameUiRoot.Instance at startup when HasInstance will suffice, wasting a lot of time
-  - DefineEpicenter can be heavily optimized
   - (mtgapi) AddMissingReplacements is called way too aggressively
+  - RecalculateClearances() can be optimized
 */
 
 #region Global Usings

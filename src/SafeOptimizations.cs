@@ -1,5 +1,7 @@
 namespace GGV;
 
+using Pathfinding;
+
 internal static partial class Patches
 {
     /// <summary>Optimizations for preventing player projectile prefabs from constructing unnecessary objects</summary>
