@@ -1,6 +1,5 @@
 /* TODO: potential optimizations
   - (mtgapi) AddMissingReplacements is called way too aggressively
-  - RecalculateClearances() can be optimized
 */
 
 #region Global Usings

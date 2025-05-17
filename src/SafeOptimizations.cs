@@ -205,14 +205,13 @@ internal static partial class Patches
     [HarmonyPrefix]
     private static bool PrimaryPlayerPatch(GameManager __instance, ref PlayerController __result)
     {
-      return true; //BUG: breaks quick restart, call original for now
-      // if (!__instance.m_player && (Foyer.DoIntroSequence || Foyer.DoMainMenu) && GGVConfig.OPT_TITLE_SCREEN && !_CheckForPlayer)
-      // {
-      //   __result = null; // if we're on the menu this can never succeed, so don't try
-      //   return false; // skip original method
-      // }
-      // _CheckForPlayer = false;
-      // return true; // call original method
+      if (GGVConfig.OPT_TITLE_SCREEN && !_CheckForPlayer && !__instance.m_player && !GameManager.Instance.IsLoadingLevel && (Foyer.DoIntroSequence || Foyer.DoMainMenu))
+      {
+        __result = null; // if we're on the menu this can never succeed, so don't try
+        return false; // skip original method
+      }
+      _CheckForPlayer = false;
+      return true; // call original method
     }
 
     /// <summary>Force check for the game's primary player every time a PlayerController is instantiated</summary>
