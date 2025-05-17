@@ -278,21 +278,26 @@ internal static partial class Patches
         return true;
       int numCells = (maxX - minX + 1) * (maxY - minY + 1);
 
-      // callOriginal = true;
-      // System.Diagnostics.Stopwatch tempWatch = System.Diagnostics.Stopwatch.StartNew();
-      // __instance.RecalculateClearances(minX, minY, maxX, maxY);
-      // tempWatch.Stop();
-      // callOriginal = false;
-      // ulong ohash = HashClearances(__instance);
-
+      #if DEBUG
+      callOriginal = true;
+      System.Diagnostics.Stopwatch tempWatch = System.Diagnostics.Stopwatch.StartNew();
+      __instance.RecalculateClearances(minX, minY, maxX, maxY);
+      tempWatch.Stop();
+      callOriginal = false;
+      ulong ohash = HashClearances(__instance);
       System.Diagnostics.Stopwatch tempWatch2 = System.Diagnostics.Stopwatch.StartNew();
+      #endif
+
       var nodes = __instance.m_nodes;
       int w = __instance.m_width;
       int mapXMax = __instance.m_width - 1;
       int mapYMax = __instance.m_height - 1;
-      for (int i = maxX; i >= minX; i--)
+      // handle some edge cases where we might reuse stale nodes just barely outside our range
+      int borderX = (maxX < mapXMax) ? (maxX + 1) : mapXMax;
+      int borderY = (maxY < mapYMax) ? (maxY + 1) : mapYMax;
+      for (int i = borderX; i >= minX; i--)
       {
-        for (int j = maxY; j >= minY; j--)
+        for (int j = borderY; j >= minY; j--)
         {
           int nodeIndex = i + j * w;
           Pathfinder.PathNode node = nodes[nodeIndex];
@@ -320,23 +325,30 @@ internal static partial class Patches
           }
         }
       }
-      // tempWatch2.Stop(); System.Console.WriteLine($"    new: {tempWatch2.ElapsedTicks * 100,6:n0} ns clearances for {numCells} cells, {tempWatch.ElapsedTicks / (float)tempWatch2.ElapsedTicks}x speedup");
 
-      // if (ohash != HashClearances(__instance))
-      //   System.Console.WriteLine($"but hashes don't match! D:");
+      #if DEBUG
+      tempWatch2.Stop();
+      // System.Console.WriteLine($"    new: {tempWatch2.ElapsedTicks * 100,6:n0} ns clearances for {numCells} cells, {tempWatch.ElapsedTicks / (float)tempWatch2.ElapsedTicks}x speedup");
+
+      if (ohash != HashClearances(__instance))
+      {
+        ETGModConsole.Log("PATH NOTE HASHES DON'T MATCH");
+        System.Console.WriteLine($"but hashes don't match! D:");
+      }
+
+      static ulong HashClearances(Pathfinding.Pathfinder p)
+      {
+        ulong hash = 69420;
+        foreach (var node in p.m_nodes)
+        {
+          hash = hash * 1337;
+          hash = hash ^ (ulong)node.SquareClearance;
+        }
+        return hash;
+      }
+      #endif
 
       return false;    // skip the original method
-
-      // static ulong HashClearances(Pathfinding.Pathfinder p)
-      // {
-      //   ulong hash = 69420;
-      //   foreach (var node in p.m_nodes)
-      //   {
-      //     hash = hash * 1337;
-      //     hash = hash ^ (ulong)node.SquareClearance;
-      //   }
-      //   return hash;
-      // }
     }
 }
 
