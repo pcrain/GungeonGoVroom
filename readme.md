@@ -43,6 +43,7 @@ Currently included aggressive optimizations are:
   - **Optimize Chunk Building**: Reuses temporary storage structures when rebuilding chunk data during level gen. Saves a significant amount of RAM.
   - **Optimize Pointcast**: Speeds up pointcast physics calculations by using statics instead of delegates. Saves a modest amount of CPU.
   - **Optimize Dungeon Size Checks**: Speeds up dungeon size lookups by using fields instead of properties. Saves a modest amount of CPU.
+  - **Optimize Sprite Depth Checks**: Speeds up attached sprite depth checks by caching property accesses. Saves a modest amount of CPU.
   - **Optimize Pit VFX**: Speeds up pit VFX calculations by skipping several redundant tile checks. Saves a small amount of CPU.
   - **Optimize Item Lookups**: Speeds up passive / active item lookups by skipping delegate creation. Saves a small amount of RAM.
 

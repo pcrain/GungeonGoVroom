@@ -30,6 +30,7 @@ internal static class GGVConfig
   internal static bool OPT_PIT_VFX       = true;
   internal static bool OPT_ITEM_LOOKUPS  = true;
   internal static bool OPT_DUNGEON_DIMS  = true;
+  internal static bool OPT_DEPTH_CHECKS  = true;
 
   internal static void Update()
   {
@@ -59,6 +60,7 @@ internal static class GGVConfig
     OPT_PIT_VFX       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIT_VFX);
     OPT_ITEM_LOOKUPS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ITEM_LOOKUPS);
     OPT_DUNGEON_DIMS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUNGEON_DIMS);
+    OPT_DEPTH_CHECKS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DEPTH_CHECKS);
 
     #if DEBUG
     System.Console.WriteLine($"FIX_DUCT_TAPE            = {FIX_DUCT_TAPE}");
@@ -85,6 +87,7 @@ internal static class GGVConfig
     System.Console.WriteLine($"OPT_PIT_VFX              = {OPT_PIT_VFX}");
     System.Console.WriteLine($"OPT_ITEM_LOOKUPS         = {OPT_ITEM_LOOKUPS}");
     System.Console.WriteLine($"OPT_DUNGEON_DIMS         = {OPT_DUNGEON_DIMS}");
+    System.Console.WriteLine($"OPT_DEPTH_CHECKS         = {OPT_DEPTH_CHECKS}");
     #endif
   }
 
@@ -125,6 +128,7 @@ public static class ConfigMenu
   internal const string PIT_VFX       = "Optimize Pit VFX";
   internal const string ITEM_LOOKUPS  = "Optimize Item Lookups";
   internal const string DUNGEON_DIMS  = "Optimize Dungeon Size Checks";
+  internal const string DEPTH_CHECKS  = "Optimize Sprite Depth Checks";
 
   internal static void Init()
   {
@@ -158,6 +162,7 @@ public static class ConfigMenu
     ao.FancyToggleOff(CHUNKBUILD, "Reuses temporary storage structures when\nrebuilding chunk data during level gen.\nSaves a significant amount of RAM.");
     ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing statics instead of delegates.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(DUNGEON_DIMS, "Speeds up dungeon size lookups by\nusing fields instead of properties.\nSaves a modest amount of CPU.");
+    ao.FancyToggleOff(DEPTH_CHECKS, "Speeds up attached sprite depth checks\nby caching property accesses.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(PIT_VFX, "Speeds up pit VFX calculations by skipping\nseveral redundant tile checks.\nSaves a small amount of CPU.");
     ao.FancyToggleOff(ITEM_LOOKUPS, "Speeds up passive / active item lookups\nby skipping delegate creation.\nSaves a small amount of RAM.");
 

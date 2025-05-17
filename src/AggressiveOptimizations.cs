@@ -359,4 +359,37 @@ internal static partial class Patches
             // GGVDebug.Log($"  made {replacements} Width and Height replacements in {original.Name}");
         }
     }
+
+    /// <summary>Minimize property invocations when updating sprite z depths</summary>
+    [HarmonyPatch(typeof(tk2dBaseSprite), nameof(tk2dBaseSprite.UpdateZDepthInternal))]
+    [HarmonyPrefix]
+    private static bool FastUpdateZDepthInternal(tk2dBaseSprite __instance, float targetZValue, float currentYValue)
+    {
+      if (!GGVConfig.OPT_DEPTH_CHECKS)
+        return true;
+      __instance.IsZDepthDirty = false;
+      Vector3 position = __instance.m_transform.position;
+      if (position.z != targetZValue)
+      {
+        position.z = targetZValue;
+        __instance.m_transform.position = position;
+      }
+      if (__instance.attachedRenderers == null || __instance.attachedRenderers.Count <= 0)
+        return false;
+
+      bool isPerpendicular = __instance.IsPerpendicular;
+      for (int i = __instance.attachedRenderers.Count - 1; i >= 0; --i)
+      {
+        tk2dBaseSprite attachedSprite = __instance.attachedRenderers[i];
+        if (!attachedSprite || attachedSprite.attachParent != __instance)
+        {
+          __instance.attachedRenderers.RemoveAt(i);
+          continue;
+        }
+        attachedSprite.UpdateZDepthAttached(targetZValue, currentYValue, isPerpendicular);
+        if (!attachedSprite.independentOrientation && isPerpendicular != attachedSprite.IsPerpendicular)
+          attachedSprite.IsPerpendicular = isPerpendicular;
+      }
+      return false;
+    }
 }
