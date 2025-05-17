@@ -4,13 +4,14 @@ using System.Diagnostics;
 
 #if DEBUG
 /// <summary>Class for timing how long various methods take to run</summary>
-[HarmonyPatch]
+// [HarmonyPatch]
 internal static class DebugTiming
 {
     static IEnumerable<MethodBase> TargetMethods()
     {
         //NOTE: populate this with a yield return for each method to time
         yield return AccessTools.Method(typeof(Pathfinding.Pathfinder), nameof(Pathfinding.Pathfinder.Initialize));
+        yield break;
     }
 
     private static void Prefix(State __state, MethodBase __originalMethod)

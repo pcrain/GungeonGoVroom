@@ -1,9 +1,12 @@
 namespace GGV;
 
 using Pathfinding;
+using System.Runtime.CompilerServices;
 
 internal static partial class Patches
 {
+    private static UInt64[] _Bitfield = new UInt64[10000]; // bitfield used by several patches
+
     /// <summary>Optimizations for preventing player projectile prefabs from constructing unnecessary objects</summary>
     [HarmonyPatch(typeof(SpawnManager), nameof(SpawnManager.SpawnProjectile), typeof(GameObject), typeof(Vector3), typeof(Quaternion), typeof(bool))]
     [HarmonyPrefix]
@@ -115,15 +118,15 @@ internal static partial class Patches
         int height = __instance.m_height;
         // GGVDebug.Log($"processing exterior of size {width} by {height}");
         int amountToClear = Mathf.CeilToInt((width * height) / 64f);
-        if (amountToClear > _FloodFillBitfield.Length)
-          Array.Resize(ref _FloodFillBitfield, amountToClear);
+        if (amountToClear > _Bitfield.Length)
+          Array.Resize(ref _Bitfield, amountToClear);
         for (int i = amountToClear - 1; i >= 0; --i)
-          _FloodFillBitfield[i] = 0;
+          _Bitfield[i] = 0;
 
         CellData[][] data = __instance.cellData;
         if (data[0][0] != null)
             data[0][0].isRoomInternal = false;
-        _FloodFillBitfield[0] = 1; // set the very first bit for 0,0
+        _Bitfield[0] = 1; // set the very first bit for 0,0
         _FloodFillStack.Push(IntVector2.Zero);
         while (_FloodFillStack.Count > 0)
         {
@@ -137,10 +140,10 @@ internal static partial class Patches
                     continue;
                 int bitIndex = ny * width + nx;
                 int elementIndex = Mathf.FloorToInt(bitIndex / 64f);
-                UInt64 bitmask = (1u << (bitIndex % 64));
-                if ((_FloodFillBitfield[elementIndex] & bitmask) == bitmask)
+                UInt64 bitmask = (1ul << (bitIndex % 64));
+                if ((_Bitfield[elementIndex] & bitmask) == bitmask)
                   continue; // already checked
-                _FloodFillBitfield[elementIndex] |= bitmask;
+                _Bitfield[elementIndex] |= bitmask;
                 CellData nextData = data[nx][ny];
                 if (nextData != null)
                 {
@@ -154,7 +157,6 @@ internal static partial class Patches
         return false; // skip original method
     }
     private static readonly Stack<IntVector2> _FloodFillStack = new();
-    private static UInt64[] _FloodFillBitfield = new UInt64[10000];
 
     // /// <summary>Fix memory leak in df pooling (don't think there's a real leak, check on this later)</summary>
     // [HarmonyPatch(typeof(dfFont.BitmappedFontRenderer), nameof(dfFont.BitmappedFontRenderer.Obtain))]
@@ -266,4 +268,100 @@ internal static partial class Patches
       __result = true; // irrelevant
       return false;
     }
+
+    private static ulong HashClearances(Pathfinding.Pathfinder p)
+    {
+      ulong hash = 69420;
+      foreach (var node in p.m_nodes)
+      {
+        hash = hash * 1337;
+        hash = hash ^ (ulong)node.SquareClearance;
+      }
+      return hash;
+    }
+
+    private static bool callOriginal = false;
+    [HarmonyPatch(typeof(Pathfinding.Pathfinder), nameof(Pathfinding.Pathfinder.RecalculateClearances), new[]{typeof(int), typeof(int), typeof(int), typeof(int)})]
+    [HarmonyPrefix]
+    private unsafe static bool RecalculateClearancesPatch(Pathfinding.Pathfinder __instance, int minX, int minY, int maxX, int maxY)
+    {
+      if (callOriginal)
+        return true;
+      callOriginal = true;
+      __instance.RecalculateClearances(minX, minY, maxX, maxY);
+      System.Console.WriteLine($"  original hash is {HashClearances(__instance)}");
+      callOriginal = false;
+      int xSize = maxX - minX + 1;
+      int ySize = maxY - minY + 1;
+      int numCells = xSize * ySize;
+      int fieldSize = Mathf.CeilToInt(numCells / 64f);
+      UInt64* cellPassable = stackalloc UInt64[fieldSize];
+      for (int i = 0; i < fieldSize; ++i)
+        cellPassable[i] = 0;
+      int field = 0;
+      int bit = 0;
+      for (int i = minX; i <= maxX; i++)
+      {
+        for (int j = minY; j <= maxY; j++)
+        {
+          int nodeIndex = i + j * __instance.m_width;
+          if (__instance.m_nodes[nodeIndex].IsPassable(CellTypes.FLOOR, false))
+            cellPassable[field] |= (1ul << bit);
+          if (++bit == 64)
+          {
+            bit = 0;
+            ++field;
+          }
+        }
+      }
+
+      System.Diagnostics.Stopwatch tempWatch = System.Diagnostics.Stopwatch.StartNew();
+      // System.Console.WriteLine($"calculating clearances for {numCells} cells");
+      for (int i = minX; i <= maxX; i++)
+      {
+        for (int j = minY; j <= maxY; j++)
+        {
+          int nodeIndex = i + j * __instance.m_width;
+          int bitOffset = (i - minX) * ySize + (j - minY);
+          if ((cellPassable[bitOffset / 64] & (1ul << (bitOffset % 64))) == 0)
+          {
+            __instance.m_nodes[nodeIndex].SquareClearance = 0;
+            continue;
+          }
+          int maxPossibleClearance = Mathf.Max(maxX - i + 1, maxY - j + 1);
+          int clearance = 1;
+          while (true)
+          {
+            if (clearance < maxPossibleClearance)
+            {
+              for (int xClearance = 0; xClearance <= clearance; ++xClearance)
+              {
+                int xi = i + xClearance;
+                int yi = j + clearance;
+                int bitOffset2 = (xi - minX) * ySize + (yi - minY);
+                if ((cellPassable[bitOffset2 / 64] & (1ul << (bitOffset2 % 64))) == 0)
+                  goto doneWithNode;
+              }
+              for (int yClearance = 0; yClearance < clearance; ++yClearance) //NOTE: intentionally NOT <=
+              {
+                int xi = i + clearance;
+                int yi = j + yClearance;
+                int bitOffset2 = (xi - minX) * ySize + (yi - minY);
+                if ((cellPassable[bitOffset2 / 64] & (1ul << (bitOffset2 % 64))) == 0)
+                  goto doneWithNode;
+              }
+              clearance++;
+              continue;
+            }
+            doneWithNode:
+            __instance.m_nodes[nodeIndex].SquareClearance = clearance;
+            break;
+          }
+        }
+      }
+      System.Console.WriteLine($"       new hash is {HashClearances(__instance)}");
+      tempWatch.Stop(); System.Console.WriteLine($"    {tempWatch.ElapsedTicks * 100,6:n0} ns clearances");
+      return false;    // skip the original method
+    }
 }
+
