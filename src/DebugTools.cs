@@ -8,7 +8,7 @@ using System.Diagnostics;
 internal static class CallTracker
 {
   private static readonly Dictionary<string, int> _Calls = new();
-  // Chacne the next line to patch whatever needs to be checked
+  // Change the next line to patch whatever needs to be checked
   [HarmonyPatch(typeof(tk2dSprite), nameof(tk2dSprite.Awake))]
   [HarmonyPrefix]
   private static void WhoCalledIt()
