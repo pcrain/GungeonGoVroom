@@ -21,6 +21,7 @@ internal static class GGVConfig
   internal static bool OPT_LIGHT_CULL    = true;
   internal static bool OPT_BEAMS         = true;
   internal static bool OPT_CHUNK_CHECKS  = true;
+  internal static bool OPT_PATH_RECALC   = true;
 
   internal static bool OPT_MATH          = true;
   internal static bool OPT_CHUNKBUILD    = true;
@@ -49,6 +50,7 @@ internal static class GGVConfig
       OPT_TRAILS        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TRAILS);
       OPT_PROJ_STATUS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
       OPT_CHUNK_CHECKS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNK_CHECKS);
+      OPT_PATH_RECALC   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PATH_RECALC);
 
       OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
       OPT_CHUNKBUILD    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
@@ -86,6 +88,7 @@ public static class ConfigMenu
   internal const string TRAILS        = "Optimize Bullet Trails";
   internal const string PROJ_STATUS   = "Optimize Projectile Prefabs";
   internal const string CHUNK_CHECKS  = "Optimize Chunk Checks";
+  internal const string PATH_RECALC   = "Optimize Path Recalculations";
 
   internal const string AGGR_OPT      = "Aggressive Optimizations";
   internal const string MATH          = "Optimize Math";
@@ -119,6 +122,7 @@ public static class ConfigMenu
     so.FancyToggle(TRAILS, "Pools bullet trail particles to\nreduce memory usage.\nSaves a small amount of RAM.");
     so.FancyToggle(PROJ_STATUS, "Removes prefab effect data (e.g., poison) from\nprojectiles that never apply those effects.\nSaves a small amount of RAM.");
     so.FancyToggle(CHUNK_CHECKS, "Optimize checks for whether sprite chunks\nare relevant to gameplay.\nSaves a small amount of CPU.");
+    so.FancyToggle(PATH_RECALC, "Optimize algorithm for computing\nclearances used for pathing.\nSaves a small amount of CPU.");
 
     Gunfig ao = _Gunfig.AddSubMenu(AGGR_OPT);
     ao.FancyToggleOff(MATH, "Speeds up some geometry calculations\nby using optimized algorithms.\nSaves a significant amount of CPU.");

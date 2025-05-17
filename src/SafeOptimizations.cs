@@ -269,99 +269,68 @@ internal static partial class Patches
       return false;
     }
 
-    private static ulong HashClearances(Pathfinding.Pathfinder p)
-    {
-      ulong hash = 69420;
-      foreach (var node in p.m_nodes)
-      {
-        hash = hash * 1337;
-        hash = hash ^ (ulong)node.SquareClearance;
-      }
-      return hash;
-    }
-
     private static bool callOriginal = false;
     [HarmonyPatch(typeof(Pathfinding.Pathfinder), nameof(Pathfinding.Pathfinder.RecalculateClearances), new[]{typeof(int), typeof(int), typeof(int), typeof(int)})]
     [HarmonyPrefix]
-    private unsafe static bool RecalculateClearancesPatch(Pathfinding.Pathfinder __instance, int minX, int minY, int maxX, int maxY)
+    private static bool RecalculateClearancesPatch(Pathfinding.Pathfinder __instance, int minX, int minY, int maxX, int maxY)
     {
-      if (callOriginal)
+      if (!GGVConfig.OPT_PATH_RECALC || callOriginal)
         return true;
-      callOriginal = true;
-      __instance.RecalculateClearances(minX, minY, maxX, maxY);
-      System.Console.WriteLine($"  original hash is {HashClearances(__instance)}");
-      callOriginal = false;
-      int xSize = maxX - minX + 1;
-      int ySize = maxY - minY + 1;
-      int numCells = xSize * ySize;
-      int fieldSize = Mathf.CeilToInt(numCells / 64f);
-      UInt64* cellPassable = stackalloc UInt64[fieldSize];
-      for (int i = 0; i < fieldSize; ++i)
-        cellPassable[i] = 0;
-      int field = 0;
-      int bit = 0;
-      for (int i = minX; i <= maxX; i++)
-      {
-        for (int j = minY; j <= maxY; j++)
-        {
-          int nodeIndex = i + j * __instance.m_width;
-          if (__instance.m_nodes[nodeIndex].IsPassable(CellTypes.FLOOR, false))
-            cellPassable[field] |= (1ul << bit);
-          if (++bit == 64)
-          {
-            bit = 0;
-            ++field;
-          }
-        }
-      }
+      int numCells = (maxX - minX + 1) * (maxY - minY + 1);
 
-      System.Diagnostics.Stopwatch tempWatch = System.Diagnostics.Stopwatch.StartNew();
-      // System.Console.WriteLine($"calculating clearances for {numCells} cells");
-      for (int i = minX; i <= maxX; i++)
+      // callOriginal = true;
+      // System.Diagnostics.Stopwatch tempWatch = System.Diagnostics.Stopwatch.StartNew();
+      // __instance.RecalculateClearances(minX, minY, maxX, maxY);
+      // tempWatch.Stop(); System.Console.WriteLine($"    old: {tempWatch.ElapsedTicks * 100,6:n0} ns clearances for {numCells} cells");
+      // callOriginal = false;
+      // ulong ohash = HashClearances(__instance);
+
+      System.Diagnostics.Stopwatch tempWatch2 = System.Diagnostics.Stopwatch.StartNew();
+      var nodes = __instance.m_nodes;
+      int w = __instance.m_width;
+      for (int i = maxX; i >= minX; i--)
       {
-        for (int j = minY; j <= maxY; j++)
+        for (int j = maxY; j >= minY; j--)
         {
-          int nodeIndex = i + j * __instance.m_width;
-          int bitOffset = (i - minX) * ySize + (j - minY);
-          if ((cellPassable[bitOffset / 64] & (1ul << (bitOffset % 64))) == 0)
+          int nodeIndex = i + j * w;
+          Pathfinder.PathNode node = nodes[nodeIndex];
+          CellData cell = node.CellData;
+          if ((cell == null || cell.isOccupied || cell.type == CellType.WALL || (cell.type == CellType.PIT && !cell.fallingPrevented)))
+            node.SquareClearance = 0;
+          else if (i == maxX || j == maxY)
+            node.SquareClearance = 1;
+          else
           {
-            __instance.m_nodes[nodeIndex].SquareClearance = 0;
-            continue;
-          }
-          int maxPossibleClearance = Mathf.Max(maxX - i + 1, maxY - j + 1);
-          int clearance = 1;
-          while (true)
-          {
-            if (clearance < maxPossibleClearance)
-            {
-              for (int xClearance = 0; xClearance <= clearance; ++xClearance)
-              {
-                int xi = i + xClearance;
-                int yi = j + clearance;
-                int bitOffset2 = (xi - minX) * ySize + (yi - minY);
-                if ((cellPassable[bitOffset2 / 64] & (1ul << (bitOffset2 % 64))) == 0)
-                  goto doneWithNode;
-              }
-              for (int yClearance = 0; yClearance < clearance; ++yClearance) //NOTE: intentionally NOT <=
-              {
-                int xi = i + clearance;
-                int yi = j + yClearance;
-                int bitOffset2 = (xi - minX) * ySize + (yi - minY);
-                if ((cellPassable[bitOffset2 / 64] & (1ul << (bitOffset2 % 64))) == 0)
-                  goto doneWithNode;
-              }
-              clearance++;
-              continue;
-            }
-            doneWithNode:
-            __instance.m_nodes[nodeIndex].SquareClearance = clearance;
-            break;
+            int minClearance = nodes[nodeIndex + w + 1].SquareClearance;
+            int right = nodes[nodeIndex + 1].SquareClearance;
+            if (right < minClearance)
+              minClearance = right;
+            int below = nodes[nodeIndex + w].SquareClearance;
+            if (below < minClearance)
+              minClearance = below;
+            node.SquareClearance = 1 + minClearance;
           }
         }
       }
-      System.Console.WriteLine($"       new hash is {HashClearances(__instance)}");
-      tempWatch.Stop(); System.Console.WriteLine($"    {tempWatch.ElapsedTicks * 100,6:n0} ns clearances");
+      tempWatch2.Stop(); System.Console.WriteLine($"    new: {tempWatch2.ElapsedTicks * 100,6:n0} ns clearances for {numCells} cells");
+
+      // if (ohash == HashClearances(__instance))
+      //   System.Console.WriteLine($"  and hashes match!");
+      // else
+      //   System.Console.WriteLine($"  but hashes don't match! D:");
+
       return false;    // skip the original method
+
+      // static ulong HashClearances(Pathfinding.Pathfinder p)
+      // {
+      //   ulong hash = 69420;
+      //   foreach (var node in p.m_nodes)
+      //   {
+      //     hash = hash * 1337;
+      //     hash = hash ^ (ulong)node.SquareClearance;
+      //   }
+      //   return hash;
+      // }
     }
 }
 
