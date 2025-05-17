@@ -205,13 +205,14 @@ internal static partial class Patches
     [HarmonyPrefix]
     private static bool PrimaryPlayerPatch(GameManager __instance, ref PlayerController __result)
     {
-      if (!__instance.m_player && (Foyer.DoIntroSequence || Foyer.DoMainMenu) && GGVConfig.OPT_TITLE_SCREEN && !_CheckForPlayer)
-      {
-        __result = null; // if we're on the menu this can never succeed, so don't try
-        return false; // skip original method
-      }
-      _CheckForPlayer = false;
-      return true; // call original method
+      return true; //BUG: breaks quick restart, call original for now
+      // if (!__instance.m_player && (Foyer.DoIntroSequence || Foyer.DoMainMenu) && GGVConfig.OPT_TITLE_SCREEN && !_CheckForPlayer)
+      // {
+      //   __result = null; // if we're on the menu this can never succeed, so don't try
+      //   return false; // skip original method
+      // }
+      // _CheckForPlayer = false;
+      // return true; // call original method
     }
 
     /// <summary>Force check for the game's primary player every time a PlayerController is instantiated</summary>
@@ -281,13 +282,15 @@ internal static partial class Patches
       // callOriginal = true;
       // System.Diagnostics.Stopwatch tempWatch = System.Diagnostics.Stopwatch.StartNew();
       // __instance.RecalculateClearances(minX, minY, maxX, maxY);
-      // tempWatch.Stop(); System.Console.WriteLine($"    old: {tempWatch.ElapsedTicks * 100,6:n0} ns clearances for {numCells} cells");
+      // tempWatch.Stop();
       // callOriginal = false;
       // ulong ohash = HashClearances(__instance);
 
       System.Diagnostics.Stopwatch tempWatch2 = System.Diagnostics.Stopwatch.StartNew();
       var nodes = __instance.m_nodes;
       int w = __instance.m_width;
+      int mapXMax = __instance.m_width - 1;
+      int mapYMax = __instance.m_height - 1;
       for (int i = maxX; i >= minX; i--)
       {
         for (int j = maxY; j >= minY; j--)
@@ -297,7 +300,7 @@ internal static partial class Patches
           CellData cell = node.CellData;
           if ((cell == null || cell.isOccupied || cell.type == CellType.WALL || (cell.type == CellType.PIT && !cell.fallingPrevented)))
             node.SquareClearance = 0;
-          else if (i == maxX || j == maxY)
+          else if (i == mapXMax || j == mapYMax)
             node.SquareClearance = 1;
           else
           {
@@ -308,16 +311,20 @@ internal static partial class Patches
             int below = nodes[nodeIndex + w].SquareClearance;
             if (below < minClearance)
               minClearance = below;
-            node.SquareClearance = 1 + minClearance;
+            int nextClearance = 1 + minClearance;
+
+            int maxClearanceX = maxX - i + 1;
+            int maxClearanceY = maxY - j + 1;
+            int maxClearance = (maxClearanceX > maxClearanceY) ? maxClearanceX : maxClearanceY;
+
+            node.SquareClearance = (nextClearance < maxClearance) ? nextClearance : maxClearance;
           }
         }
       }
-      tempWatch2.Stop(); System.Console.WriteLine($"    new: {tempWatch2.ElapsedTicks * 100,6:n0} ns clearances for {numCells} cells");
+      // tempWatch2.Stop(); System.Console.WriteLine($"    new: {tempWatch2.ElapsedTicks * 100,6:n0} ns clearances for {numCells} cells, {tempWatch.ElapsedTicks / (float)tempWatch2.ElapsedTicks}x speedup");
 
-      // if (ohash == HashClearances(__instance))
-      //   System.Console.WriteLine($"  and hashes match!");
-      // else
-      //   System.Console.WriteLine($"  but hashes don't match! D:");
+      // if (ohash != HashClearances(__instance))
+      //   System.Console.WriteLine($"but hashes don't match! D:");
 
       return false;    // skip the original method
 

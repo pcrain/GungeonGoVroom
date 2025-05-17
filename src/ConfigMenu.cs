@@ -32,32 +32,54 @@ internal static class GGVConfig
 
   internal static void Update()
   {
-    #if !DEBUG // everything's always enabled in debug builds
-      FIX_DUCT_TAPE     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUCT_TAPE);
-      FIX_QUICK_RESTART = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.QUICK_RESTART);
-      FIX_ROOM_SHUFFLE  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ROOM_SHUFFLE);
-      FIX_AMMO_UI       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_UI);
-      FIX_ORBITAL_GUN   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ORBITAL_GUN);
-      FIX_COOP_TURBO    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.COOP_TURBO);
-      FIX_BULLET_TRAILS = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BULLET_TRAILS);
+    FIX_DUCT_TAPE     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUCT_TAPE);
+    FIX_QUICK_RESTART = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.QUICK_RESTART);
+    FIX_ROOM_SHUFFLE  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ROOM_SHUFFLE);
+    FIX_AMMO_UI       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_UI);
+    FIX_ORBITAL_GUN   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ORBITAL_GUN);
+    FIX_COOP_TURBO    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.COOP_TURBO);
+    FIX_BULLET_TRAILS = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BULLET_TRAILS);
+    OPT_LIGHT_CULL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
+    OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
+    OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
+    OPT_TITLE_SCREEN  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TITLE_SCREEN);
+    OPT_NUMBERS       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.NUMBERS);
+    OPT_FLOOD_FILL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.FLOOD_FILL);
+    OPT_TRAILS        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TRAILS);
+    OPT_PROJ_STATUS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
+    OPT_CHUNK_CHECKS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNK_CHECKS);
+    OPT_PATH_RECALC   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PATH_RECALC);
+    OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
+    OPT_CHUNKBUILD    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
+    OPT_POINTCAST     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
+    OPT_PIT_VFX       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIT_VFX);
+    OPT_ITEM_LOOKUPS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ITEM_LOOKUPS);
+    OPT_DUNGEON_DIMS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUNGEON_DIMS);
 
-      OPT_LIGHT_CULL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
-      OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
-      OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
-      OPT_TITLE_SCREEN  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TITLE_SCREEN);
-      OPT_NUMBERS       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.NUMBERS);
-      OPT_FLOOD_FILL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.FLOOD_FILL);
-      OPT_TRAILS        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TRAILS);
-      OPT_PROJ_STATUS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
-      OPT_CHUNK_CHECKS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNK_CHECKS);
-      OPT_PATH_RECALC   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PATH_RECALC);
-
-      OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
-      OPT_CHUNKBUILD    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
-      OPT_POINTCAST     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
-      OPT_PIT_VFX       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIT_VFX);
-      OPT_ITEM_LOOKUPS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ITEM_LOOKUPS);
-      OPT_DUNGEON_DIMS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUNGEON_DIMS);
+    #if DEBUG
+    System.Console.WriteLine($"FIX_DUCT_TAPE            = {FIX_DUCT_TAPE}");
+    System.Console.WriteLine($"FIX_QUICK_RESTART        = {FIX_QUICK_RESTART}");
+    System.Console.WriteLine($"FIX_ROOM_SHUFFLE         = {FIX_ROOM_SHUFFLE}");
+    System.Console.WriteLine($"FIX_AMMO_UI              = {FIX_AMMO_UI}");
+    System.Console.WriteLine($"FIX_ORBITAL_GUN          = {FIX_ORBITAL_GUN}");
+    System.Console.WriteLine($"FIX_COOP_TURBO           = {FIX_COOP_TURBO}");
+    System.Console.WriteLine($"FIX_BULLET_TRAILS        = {FIX_BULLET_TRAILS}");
+    System.Console.WriteLine($"OPT_LIGHT_CULL           = {OPT_LIGHT_CULL}");
+    System.Console.WriteLine($"OPT_BEAMS                = {OPT_BEAMS}");
+    System.Console.WriteLine($"OPT_GUI_EVENTS           = {OPT_GUI_EVENTS}");
+    System.Console.WriteLine($"OPT_TITLE_SCREEN         = {OPT_TITLE_SCREEN}");
+    System.Console.WriteLine($"OPT_NUMBERS              = {OPT_NUMBERS}");
+    System.Console.WriteLine($"OPT_FLOOD_FILL           = {OPT_FLOOD_FILL}");
+    System.Console.WriteLine($"OPT_TRAILS               = {OPT_TRAILS}");
+    System.Console.WriteLine($"OPT_PROJ_STATUS          = {OPT_PROJ_STATUS}");
+    System.Console.WriteLine($"OPT_CHUNK_CHECKS         = {OPT_CHUNK_CHECKS}");
+    System.Console.WriteLine($"OPT_PATH_RECALC          = {OPT_PATH_RECALC}");
+    System.Console.WriteLine($"OPT_MATH                 = {OPT_MATH}");
+    System.Console.WriteLine($"OPT_CHUNKBUILD           = {OPT_CHUNKBUILD}");
+    System.Console.WriteLine($"OPT_POINTCAST            = {OPT_POINTCAST}");
+    System.Console.WriteLine($"OPT_PIT_VFX              = {OPT_PIT_VFX}");
+    System.Console.WriteLine($"OPT_ITEM_LOOKUPS         = {OPT_ITEM_LOOKUPS}");
+    System.Console.WriteLine($"OPT_DUNGEON_DIMS         = {OPT_DUNGEON_DIMS}");
     #endif
   }
 
