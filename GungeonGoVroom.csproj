@@ -43,7 +43,9 @@
     <Reference Include="System"/>
     <Compile Include="src\DebugTools.cs"/>
     <Compile Include="src\AggressiveOptimizations.cs"/>
+    <Compile Include="src\Goop\Gooptimizations.cs"/>
     <Compile Include="src\ChunkGen\BuildForChunkOptimizer.cs"/>
+    <Compile Include="src\ChunkGen\OcclusionOptimizations.cs"/>
     <Compile Include="src\Extensions.cs"/>
     <Compile Include="src\SafeOptimizations.cs"/>
     <Compile Include="src\Bugfixes.cs"/>

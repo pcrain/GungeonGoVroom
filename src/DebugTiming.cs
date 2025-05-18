@@ -10,7 +10,9 @@ internal static class DebugTiming
     static IEnumerable<MethodBase> TargetMethods()
     {
         //NOTE: populate this with a yield return for each method to time
-        yield return AccessTools.Method(typeof(Pathfinding.Pathfinder), nameof(Pathfinding.Pathfinder.Initialize));
+        // yield return AccessTools.Method(typeof(Pathfinding.Pathfinder), nameof(Pathfinding.Pathfinder.Initialize));
+        // yield return AccessTools.Method(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.LateUpdate));
+        // yield return AccessTools.Method(typeof(OcclusionLayer), nameof(OcclusionLayer.GenerateOcclusionTexture));
         yield break;
     }
 
