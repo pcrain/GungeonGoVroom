@@ -4,7 +4,7 @@ namespace GGV;
 [HarmonyPatch]
 internal static class OcclusionOptimizations
 {
-    private static readonly float[] WEIGHTS = new float[25] {
+    private static readonly float[] WEIGHTS = new float[25] { // premultiplied kernel weights
       0.0144f, 0.0300f, 0.0360f, 0.0300f, 0.0144f,
       0.0300f, 0.0625f, 0.0750f, 0.0625f, 0.0300f,
       0.0360f, 0.0750f, 0.0900f, 0.0750f, 0.0360f,
@@ -20,7 +20,8 @@ internal static class OcclusionOptimizations
     private static readonly List<RoomHandler> _NearbyRooms = new();
 
     // start:   244,000ns to 418,200ns
-    // current: 160,000ns to 200.000ns
+    // v1:      160,000ns to 200,000ns
+    // v2:       40,000ns to 100,000ns
 
     /// <summary>Inlined and optimized logic for occlusion checks with complete vanilla parity.</summary>
     [HarmonyPatch(typeof(OcclusionLayer), nameof(OcclusionLayer.GenerateOcclusionTexture))]
@@ -33,7 +34,10 @@ internal static class OcclusionOptimizations
       o.m_gameManagerCached = GameManager.Instance;
       o.m_pixelatorCached   = Pixelator.Instance;
       if (o.m_pixelatorCached.UseTexturedOcclusion)
+      {
+        occlusionWatch.Stop();
         return true; // only the wild west uses textured occlusion, so if we somehow end up there...let the vanilla game take over
+      }
 
       o.cachedX = baseX;
       o.cachedY = baseY;
@@ -106,7 +110,7 @@ internal static class OcclusionOptimizations
         CellData[] cellColumn = cells[ci];
         for (int cj = occMinY; cj <= occMaxY; ++cj)
         {
-          int cacheIndex      = ci * dw + cj;
+          int cacheIndex      = ci * dh + cj;
           CellData cc         = cellColumn[cj];
           float trueOcclusion = cc == null ? 1f : cc.occlusionData.cellOcclusion;
           //NOTE: if our occlusion has changed, we need to invalidate the cached kernels of the 5x5 surrounding area
@@ -119,13 +123,11 @@ internal static class OcclusionOptimizations
           int kMinY = cj - KW; if (kMinY < 0)   kMinY = 0;
           for (int kx = kMinX; kx <= kMaxX; ++kx)
             for (int ky = kMinY; ky <= kMaxY; ++ky)
-              _CachedKernels[kx * dw + ky] = -1f;
+              _CachedKernels[kx * dh + ky] = -1f;
           _CachedOcclusions[cacheIndex] = trueOcclusion;
           ++changedCells;
         }
       }
-      if (changedCells > 0)
-        System.Console.WriteLine($"occlusion changed for {changedCells} cells");
       #endregion
 
       if (!o.m_gameManagerCached.IsLoadingLevel)
@@ -143,12 +145,12 @@ internal static class OcclusionOptimizations
               continue;
             }
 
-            int cacheIndex = x * dw + y;
+            int cacheIndex = x * dh + y;
             CellData cell = cells[x][y];
 
             // determine the base occlusion for the cell (inlined and optimized from GetCellOcclusion())
             float occlusion = _CachedKernels[cacheIndex];
-            // if (occlusion == -1f)
+            if (occlusion == -1f) // -1 means invalid cache, so recompute and re-cache
             {
               _CachedOcclusions[cacheIndex] = occlusion = ((cell != null) ? cell.occlusionData.cellOcclusion : 1f);
               if (x >= KW && y >= KW && x < d.m_width - KW && y < d.m_height - KW)
@@ -238,7 +240,7 @@ internal static class OcclusionOptimizations
 
       __result = o.m_occlusionTexture;
       occlusionWatch.Stop();
-      // System.Console.WriteLine($"ran occlusion checks for {textureArea} pixels in {occlusionWatch.ElapsedTicks*100,12:n0}ns");
+      System.Console.WriteLine($"ran occlusion updates for {changedCells,4:n0} / {textureArea,4:n0} cells in {occlusionWatch.ElapsedTicks*100,12:n0}ns");
 
       return false; // skip original method
     }
