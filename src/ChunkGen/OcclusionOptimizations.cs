@@ -13,7 +13,10 @@ internal static class OcclusionOptimizations
     };
     private static readonly float[] KERNEL = new float[5] { 0.12f, 0.25f, 0.3f, 0.25f, 0.12f };
     private const float KERNEL_TOTAL = 1.0816f; // result of matrix multiplying the kernel with itself
+    private const int KW = 2; // kernel width
 
+    private static float[] _CachedOcclusions = null;
+    private static float[] _CachedKernels = null;
     private static readonly List<RoomHandler> _NearbyRooms = new();
 
     // start:   244,000ns to 418,200ns
@@ -71,6 +74,62 @@ internal static class OcclusionOptimizations
         o.m_colorCache = new Color[textureArea];
       }
 
+      int dw = d.m_width;
+      int dh = d.m_height;
+      int dsize = dw * dh;
+      if (_CachedOcclusions == null)
+      {
+        _CachedOcclusions = new float[dsize];
+        _CachedKernels = new float[dsize];
+        for (int ki = 0; ki < dsize; ++ki)
+          _CachedKernels[ki] = -1f;
+      }
+      else if (_CachedOcclusions.Length < dsize)
+      {
+        Array.Resize(ref _CachedOcclusions, dsize);
+        Array.Resize(ref _CachedKernels, dsize);
+      }
+
+      #region Validate occlusion kernels
+      int changedCells = 0;
+      int baseMaxX = KW + baseX + (texW - 1) / o.textureMultiplier;
+      if (baseMaxX >= dw)
+        baseMaxX = dw - 1;
+      int baseMaxY = KW + baseY + (texH - 1) / o.textureMultiplier;
+      if (baseMaxY >= dh)
+        baseMaxY = dh - 1;
+      for (int ci = (baseX > KW) ? (baseX - KW) : 0; ci <= baseMaxX; ++ci)
+      {
+        for (int cj = (baseY > KW) ? (baseY - KW) : 0; cj <= baseMaxY; ++cj)
+        {
+          int cacheIndex = ci * dw + cj;
+          CellData cc = cells[ci][cj];
+          float trueOcclusion = cc == null ? 1f : cc.occlusionData.cellOcclusion;
+          //NOTE: if our occlusion has changed, we need to invalidate the cached kernels of the 5x5 surrounding area
+          if (_CachedOcclusions[cacheIndex] != trueOcclusion)
+          {
+            int kMaxX = ci + KW;
+            if (kMaxX >= dw)
+              kMaxX = dw - 1;
+
+            int kMaxY = cj + KW;
+            if (kMaxY >= dh)
+              kMaxY = dh - 1;
+
+            int kMinX = (ci > KW) ? (ci - KW) : 0;
+            int kMinY = (cj > KW) ? (cj - KW) : 0;
+            for (int kx = kMinX; kx <= kMaxX; ++kx)
+              for (int ky = kMinY; ky <= kMaxX; ++ky)
+                _CachedKernels[kx * dw + ky] = -1f;
+            _CachedOcclusions[cacheIndex] = trueOcclusion;
+            ++changedCells;
+          }
+        }
+      }
+      if (changedCells > 0)
+        System.Console.WriteLine($"occlusion changed for {changedCells} cells");
+      #endregion
+
       if (!o.m_gameManagerCached.IsLoadingLevel)
       {
         int pix = 0; // pixel index into color array
@@ -86,26 +145,32 @@ internal static class OcclusionOptimizations
               continue;
             }
 
+            int cacheIndex = x * dw + y;
             CellData cell = cells[x][y];
 
             // determine the base occlusion for the cell (inlined and optimized from GetCellOcclusion())
-            float occlusion = ((cell != null) ? cell.occlusionData.cellOcclusion : 1f);
-            if (x >= 2 && y >= 2 && x < d.m_width - 2 && y < d.m_height - 2)
+            float occlusion = _CachedKernels[cacheIndex];
+            if (occlusion == -1f)
             {
-              float occlusionAccum = 0f;
-              int k = 0;
-              for (int i = -2; i <= 2; i++)
+              _CachedOcclusions[cacheIndex] = occlusion = ((cell != null) ? cell.occlusionData.cellOcclusion : 1f);
+              if (x >= 2 && y >= 2 && x < d.m_width - 2 && y < d.m_height - 2)
               {
-                CellData[] cellColumn = cells[x + i];
-                for (int j = -2; j <= 2; j++)
+                float occlusionAccum = 0f;
+                int k = 0;
+                for (int i = -2; i <= 2; i++)
                 {
-                  CellData neighbor = cellColumn[y + j];
-                  occlusionAccum += ((neighbor != null) ? (neighbor.occlusionData.cellOcclusion * WEIGHTS[k++]) : WEIGHTS[k++]);
+                  CellData[] cellColumn = cells[x + i];
+                  for (int j = -2; j <= 2; j++)
+                  {
+                    CellData neighbor = cellColumn[y + j];
+                    occlusionAccum += ((neighbor != null) ? (neighbor.occlusionData.cellOcclusion * WEIGHTS[k++]) : WEIGHTS[k++]);
+                  }
                 }
+                float maxOcclusion = occlusionAccum / KERNEL_TOTAL;
+                if (maxOcclusion < occlusion)
+                  occlusion = maxOcclusion;
               }
-              float maxOcclusion = occlusionAccum / KERNEL_TOTAL;
-              if (maxOcclusion < occlusion)
-                occlusion = maxOcclusion;
+              _CachedKernels[cacheIndex] = occlusion;
             }
             if (occlusion >= 1f)
             {
