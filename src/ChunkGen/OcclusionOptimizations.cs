@@ -50,6 +50,9 @@ internal static class OcclusionOptimizations
       int texH           = num2 * o.textureMultiplier;
       int textureArea    = texW * texH;
       CellData[][] cells = d.cellData;
+      int dw             = d.m_width;
+      int dh             = d.m_height;
+      int dsize          = dw * dh;
 
       _NearbyRooms.Clear();
       RoomHandler p1Room = o.m_playerOneDead ? null : o.m_allPlayersCached[0].m_currentRoom;
@@ -66,64 +69,59 @@ internal static class OcclusionOptimizations
         o.m_occlusionTexture            = new Texture2D(texW, texH, TextureFormat.ARGB32, false);
         o.m_occlusionTexture.filterMode = FilterMode.Bilinear;
         o.m_occlusionTexture.wrapMode   = TextureWrapMode.Clamp;
-        o.m_colorCache = new Color[textureArea];
       }
       else if (o.m_occlusionTexture.width != texW || o.m_occlusionTexture.height != texH)
-      {
         o.m_occlusionTexture.Resize(texW, texH);
+      if (o.m_colorCache == null || o.m_colorCache.Length != textureArea)
         o.m_colorCache = new Color[textureArea];
-      }
 
-      int dw = d.m_width;
-      int dh = d.m_height;
-      int dsize = dw * dh;
+      #region Validate occlusion kernels
       if (_CachedOcclusions == null)
       {
         _CachedOcclusions = new float[dsize];
         _CachedKernels = new float[dsize];
         for (int ki = 0; ki < dsize; ++ki)
+        {
+          _CachedOcclusions[ki] = -1f;
           _CachedKernels[ki] = -1f;
+        }
       }
       else if (_CachedOcclusions.Length < dsize)
       {
         Array.Resize(ref _CachedOcclusions, dsize);
         Array.Resize(ref _CachedKernels, dsize);
       }
-
-      #region Validate occlusion kernels
       int changedCells = 0;
-      int baseMaxX = KW + baseX + (texW - 1) / o.textureMultiplier;
-      if (baseMaxX >= dw)
-        baseMaxX = dw - 1;
-      int baseMaxY = KW + baseY + (texH - 1) / o.textureMultiplier;
-      if (baseMaxY >= dh)
-        baseMaxY = dh - 1;
-      for (int ci = (baseX > KW) ? (baseX - KW) : 0; ci <= baseMaxX; ++ci)
+
+      int occMinX = (baseX > KW) ? (baseX - KW) : 0;
+      int occMinY = (baseY > KW) ? (baseY - KW) : 0;
+      int occMaxX = KW + baseX + (texW - 1) / o.textureMultiplier;
+      if (occMaxX >= dw)
+        occMaxX = dw - 1;
+      int occMaxY = KW + baseY + (texH - 1) / o.textureMultiplier;
+      if (occMaxY >= dh)
+        occMaxY = dh - 1;
+      for (int ci = occMinX; ci <= occMaxX; ++ci)
       {
-        for (int cj = (baseY > KW) ? (baseY - KW) : 0; cj <= baseMaxY; ++cj)
+        CellData[] cellColumn = cells[ci];
+        for (int cj = occMinY; cj <= occMaxY; ++cj)
         {
-          int cacheIndex = ci * dw + cj;
-          CellData cc = cells[ci][cj];
+          int cacheIndex      = ci * dw + cj;
+          CellData cc         = cellColumn[cj];
           float trueOcclusion = cc == null ? 1f : cc.occlusionData.cellOcclusion;
           //NOTE: if our occlusion has changed, we need to invalidate the cached kernels of the 5x5 surrounding area
-          if (_CachedOcclusions[cacheIndex] != trueOcclusion)
-          {
-            int kMaxX = ci + KW;
-            if (kMaxX >= dw)
-              kMaxX = dw - 1;
+          if (_CachedOcclusions[cacheIndex] == trueOcclusion)
+            continue;
 
-            int kMaxY = cj + KW;
-            if (kMaxY >= dh)
-              kMaxY = dh - 1;
-
-            int kMinX = (ci > KW) ? (ci - KW) : 0;
-            int kMinY = (cj > KW) ? (cj - KW) : 0;
-            for (int kx = kMinX; kx <= kMaxX; ++kx)
-              for (int ky = kMinY; ky <= kMaxX; ++ky)
-                _CachedKernels[kx * dw + ky] = -1f;
-            _CachedOcclusions[cacheIndex] = trueOcclusion;
-            ++changedCells;
-          }
+          int kMaxX = ci + KW; if (kMaxX >= dw) kMaxX = dw - 1;
+          int kMaxY = cj + KW; if (kMaxY >= dh) kMaxY = dh - 1;
+          int kMinX = ci - KW; if (kMinX < 0)   kMinX = 0;
+          int kMinY = cj - KW; if (kMinY < 0)   kMinY = 0;
+          for (int kx = kMinX; kx <= kMaxX; ++kx)
+            for (int ky = kMinY; ky <= kMaxY; ++ky)
+              _CachedKernels[kx * dw + ky] = -1f;
+          _CachedOcclusions[cacheIndex] = trueOcclusion;
+          ++changedCells;
         }
       }
       if (changedCells > 0)
@@ -150,17 +148,17 @@ internal static class OcclusionOptimizations
 
             // determine the base occlusion for the cell (inlined and optimized from GetCellOcclusion())
             float occlusion = _CachedKernels[cacheIndex];
-            if (occlusion == -1f)
+            // if (occlusion == -1f)
             {
               _CachedOcclusions[cacheIndex] = occlusion = ((cell != null) ? cell.occlusionData.cellOcclusion : 1f);
-              if (x >= 2 && y >= 2 && x < d.m_width - 2 && y < d.m_height - 2)
+              if (x >= KW && y >= KW && x < d.m_width - KW && y < d.m_height - KW)
               {
                 float occlusionAccum = 0f;
                 int k = 0;
-                for (int i = -2; i <= 2; i++)
+                for (int i = -KW; i <= KW; i++)
                 {
                   CellData[] cellColumn = cells[x + i];
-                  for (int j = -2; j <= 2; j++)
+                  for (int j = -KW; j <= KW; j++)
                   {
                     CellData neighbor = cellColumn[y + j];
                     occlusionAccum += ((neighbor != null) ? (neighbor.occlusionData.cellOcclusion * WEIGHTS[k++]) : WEIGHTS[k++]);
@@ -189,7 +187,7 @@ internal static class OcclusionOptimizations
               if (x < 1 || x > d.m_width - 2 || y < 3 || y > d.m_height - 2)
                 break;
 
-              RoomHandler room = cells[x][y].parentRoom ?? cells[x][y].nearestRoom;
+              RoomHandler room = cell.parentRoom ?? cell.nearestRoom;
               if (room == null)
                 goto definitelyObscured;
 
@@ -210,7 +208,7 @@ internal static class OcclusionOptimizations
                 break;
               if (x > 1 && (cells[x - 1][y]?.isExitCell ?? false))
                 break;
-              if (x < d.m_width - 1 && cells[x + 1][y] != null && cells[x + 1][y].isExitCell)
+              if (x < d.m_width - 1 && (cells[x + 1][y]?.isExitCell ?? false))
                 break;
 
             definitelyObscured:
@@ -240,7 +238,7 @@ internal static class OcclusionOptimizations
 
       __result = o.m_occlusionTexture;
       occlusionWatch.Stop();
-      System.Console.WriteLine($"ran occlusion checks for {textureArea} pixels in {occlusionWatch.ElapsedTicks*100,12:n0}ns");
+      // System.Console.WriteLine($"ran occlusion checks for {textureArea} pixels in {occlusionWatch.ElapsedTicks*100,12:n0}ns");
 
       return false; // skip original method
     }
