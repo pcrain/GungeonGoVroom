@@ -28,14 +28,21 @@ internal static class OcclusionOptimizations
     [HarmonyPrefix]
     private static bool FastGenerateOcclusionTexture(OcclusionLayer __instance, int baseX, int baseY, DungeonData d, ref Texture2D __result)
     {
+      if (!GGVConfig.OPT_OCCLUSION)
+        return true;
+
+      #if DEBUG
       System.Diagnostics.Stopwatch occlusionWatch = System.Diagnostics.Stopwatch.StartNew();
+      #endif
 
       OcclusionLayer o      = __instance;
       o.m_gameManagerCached = GameManager.Instance;
       o.m_pixelatorCached   = Pixelator.Instance;
       if (o.m_pixelatorCached.UseTexturedOcclusion)
       {
+        #if DEBUG
         occlusionWatch.Stop();
+        #endif
         return true; // only the wild west uses textured occlusion, so if we somehow end up there...let the vanilla game take over
       }
 
@@ -177,14 +184,20 @@ internal static class OcclusionOptimizations
               o.m_colorCache[pix++] = Color.clear;
               continue;
             }
+            float alpha = (occlusion < 0) ? 1f : (1f - occlusion * occlusion);
+            if (cell == null)
+            {
+              o.m_colorCache[pix++] = new Color(0f, 0f, 0f, alpha);
+              continue;
+            }
 
             // determine the R value from the cell (inlined and optimized from GetRValueForCell())
             float r = 0f;
             while (true) // convenience loop we exit out of as soon as we have a definitive value
             {
-              if (cell == null || cell.isExitCell || (cell.type == CellType.WALL && !cell.IsAnyFaceWall()))
+              if (cell.isExitCell || (cell.type == CellType.WALL && !cell.IsAnyFaceWall()))
                 break;
-              if (y - 2 >= 0 && cells[x][y - 2] != null && cells[x][y - 2].isExitCell)
+              if (y >= 2 && (cells[x][y - 2]?.isExitCell ?? false))
                 break;
               if (x < 1 || x > d.m_width - 2 || y < 3 || y > d.m_height - 2)
                 break;
@@ -200,17 +213,15 @@ internal static class OcclusionOptimizations
                 if (_NearbyRooms[rn] == room)
                   goto definitelyObscured;
 
-              if (cell.isExitNonOccluder || cell.isExitCell)
+              if (cell.isExitNonOccluder)
                 break;
-              if (y > 1 && (cells[x][y - 1]?.isExitCell ?? false))
+              if (cells[x][y - 1]?.isExitCell ?? false)
                 break;
-              if (y > 2 && (cells[x][y - 2]?.isExitCell ?? false))
+              if (cells[x][y - 3]?.isExitCell ?? false)
                 break;
-              if (y > 3 && (cells[x][y - 3]?.isExitCell ?? false))
+              if (x > 1 && (cells[x - 1][y]?.isExitCell ?? false)) // x could be equal to one above so this can't be factored out
                 break;
-              if (x > 1 && (cells[x - 1][y]?.isExitCell ?? false))
-                break;
-              if (x < d.m_width - 1 && (cells[x + 1][y]?.isExitCell ?? false))
+              if (cells[x + 1][y]?.isExitCell ?? false)
                 break;
 
             definitelyObscured:
@@ -220,7 +231,7 @@ internal static class OcclusionOptimizations
 
             // determine the G value from the cell (inlined and optimized from GetGValueForCell())
             float g = 0f;
-            if (cell != null && (cell.type != CellType.WALL || cell.IsLowerFaceWall() || cell.IsUpperFacewall()))
+            if (cell.type != CellType.WALL || cell.IsLowerFaceWall() || cell.IsUpperFacewall())
             {
               RoomHandler nearestRoom = cell.nearestRoom;
               if (nearestRoom.visibility == RoomHandler.VisibilityStatus.CURRENT)
@@ -229,7 +240,7 @@ internal static class OcclusionOptimizations
                 g = 1f;
             }
 
-            o.m_colorCache[pix++] = new Color(r, g, 0f, (occlusion < 0) ? 1f : (1f - occlusion * occlusion));
+            o.m_colorCache[pix++] = new Color(r, g, 0f, alpha);
             continue;
           }
         }
@@ -239,8 +250,11 @@ internal static class OcclusionOptimizations
       o.m_occlusionTexture.Apply();
 
       __result = o.m_occlusionTexture;
+
+      #if DEBUG
       occlusionWatch.Stop();
-      System.Console.WriteLine($"ran occlusion updates for {changedCells,4:n0} / {textureArea,4:n0} cells in {occlusionWatch.ElapsedTicks*100,12:n0}ns");
+      // System.Console.WriteLine($"ran occlusion updates for {changedCells,4:n0} / {textureArea,4:n0} cells in {occlusionWatch.ElapsedTicks*100,12:n0}ns");
+      #endif
 
       return false; // skip original method
     }

@@ -23,6 +23,7 @@ internal static class GGVConfig
   internal static bool OPT_CHUNK_CHECKS  = true;
   internal static bool OPT_PATH_RECALC   = true;
   internal static bool OPT_VIS_CHECKS    = true;
+  internal static bool OPT_OCCLUSION     = true;
 
   internal static bool OPT_MATH          = true;
   internal static bool OPT_CHUNKBUILD    = true;
@@ -43,6 +44,7 @@ internal static class GGVConfig
     FIX_BULLET_TRAILS = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BULLET_TRAILS);
 
     OPT_VIS_CHECKS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.VIS_CHECKS);
+    OPT_OCCLUSION     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.OCCLUSION);
     OPT_LIGHT_CULL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
     OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
     OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
@@ -70,6 +72,7 @@ internal static class GGVConfig
     System.Console.WriteLine($"FIX_ORBITAL_GUN          = {FIX_ORBITAL_GUN}");
     System.Console.WriteLine($"FIX_COOP_TURBO           = {FIX_COOP_TURBO}");
     System.Console.WriteLine($"FIX_BULLET_TRAILS        = {FIX_BULLET_TRAILS}");
+    System.Console.WriteLine($"OPT_OCCLUSION            = {OPT_OCCLUSION}");
     System.Console.WriteLine($"OPT_VIS_CHECKS           = {OPT_VIS_CHECKS}");
     System.Console.WriteLine($"OPT_LIGHT_CULL           = {OPT_LIGHT_CULL}");
     System.Console.WriteLine($"OPT_BEAMS                = {OPT_BEAMS}");
@@ -109,6 +112,7 @@ public static class ConfigMenu
   internal const string BULLET_TRAILS = "Bullet Trail Fix";
 
   internal const string SAFE_OPT      = "Safe Optimizations";
+  internal const string OCCLUSION     = "Optimize Occlusion";
   internal const string VIS_CHECKS    = "Optimize Visibility Checks";
   internal const string LIGHT_CULL    = "Optimize Light Culling";
   internal const string BEAMS         = "Optimize Beams";
@@ -145,6 +149,7 @@ public static class ConfigMenu
     sf.FancyToggle(BULLET_TRAILS, "Fixes the trails of projectiles\ndisappearing if they travel too slowly\n(e.g., during timeslow effects).");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
+    so.FancyToggle(OCCLUSION, "Speeds up occlusion calculations by\nusing optimized algorithms and caching.\nSaves a large amount of CPU.");
     so.FancyToggle(VIS_CHECKS, "Skips redundant sprite visibility checks\nwhen the results aren't actually used.\nSaves a significant amount of CPU.");
     so.FancyToggle(LIGHT_CULL, "Uses optimized inlined logic for\ndetermining whether lights should be culled.\nSaves a significant amount of CPU.");
     so.FancyToggle(BEAMS, "Pools beam bones to reduce memory usage.\n\nSaves a modest amount of RAM and CPU.");

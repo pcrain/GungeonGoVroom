@@ -22,6 +22,7 @@ Currently included bugfixes are:
 These are changes that improve Gungeon's performance without altering vanilla behavior, and which have a negligible chance of interfering with other mods. Safe optimizations should be suitable for all players, and are all enabled by default.
 
 Currently included safe optimizations are:
+  - **Optimize Occlusion**: Speeds up occlusion calculations by using optimized algorithms and caching. Saves a large amount of CPU.
   - **Optimize Visibility Checks**: Skips redundant sprite visibility checks when the results aren't actually used. Saves a significant amount of CPU.
   - **Optimize Light Culling**: Uses optimized inlined logic for determining whether lights should be culled. Saves a significant amount of CPU.
   - **Optimize Beams**: Pools beam bones to reduce memory usage.  Saves a modest amount of RAM and CPU.
