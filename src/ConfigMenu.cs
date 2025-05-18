@@ -32,6 +32,7 @@ internal static class GGVConfig
   internal static bool OPT_ITEM_LOOKUPS  = true;
   internal static bool OPT_DUNGEON_DIMS  = true;
   internal static bool OPT_DEPTH_CHECKS  = true;
+  internal static bool OPT_MOUSE_EVENTS  = true;
 
   internal static void Update()
   {
@@ -63,6 +64,7 @@ internal static class GGVConfig
     OPT_ITEM_LOOKUPS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ITEM_LOOKUPS);
     OPT_DUNGEON_DIMS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUNGEON_DIMS);
     OPT_DEPTH_CHECKS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DEPTH_CHECKS);
+    OPT_MOUSE_EVENTS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MOUSE_EVENTS);
 
     #if DEBUG
     System.Console.WriteLine($"FIX_DUCT_TAPE            = {FIX_DUCT_TAPE}");
@@ -91,6 +93,7 @@ internal static class GGVConfig
     System.Console.WriteLine($"OPT_ITEM_LOOKUPS         = {OPT_ITEM_LOOKUPS}");
     System.Console.WriteLine($"OPT_DUNGEON_DIMS         = {OPT_DUNGEON_DIMS}");
     System.Console.WriteLine($"OPT_DEPTH_CHECKS         = {OPT_DEPTH_CHECKS}");
+    System.Console.WriteLine($"OPT_MOUSE_EVENTS         = {OPT_MOUSE_EVENTS}");
     #endif
   }
 
@@ -133,6 +136,7 @@ public static class ConfigMenu
   internal const string ITEM_LOOKUPS  = "Optimize Item Lookups";
   internal const string DUNGEON_DIMS  = "Optimize Dungeon Size Checks";
   internal const string DEPTH_CHECKS  = "Optimize Sprite Depth Checks";
+  internal const string MOUSE_EVENTS  = "Optimize GUI Mouse Events";
 
   internal static void Init()
   {
@@ -164,6 +168,7 @@ public static class ConfigMenu
 
     Gunfig ao = _Gunfig.AddSubMenu(AGGR_OPT);
     ao.FancyToggleOff(MATH, "Speeds up some geometry calculations\nby using optimized algorithms.\nSaves a significant amount of CPU.");
+    ao.FancyToggleOff(MOUSE_EVENTS, "Prevents checks for whether the mouse is\nover a menu item when no menus are open.\nSaves a significant amount of CPU.");
     ao.FancyToggleOff(CHUNKBUILD, "Reuses temporary storage structures when\nrebuilding chunk data during level gen.\nSaves a significant amount of RAM.");
     ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing statics instead of delegates.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(DUNGEON_DIMS, "Speeds up dungeon size lookups by\nusing fields instead of properties.\nSaves a modest amount of CPU.");
