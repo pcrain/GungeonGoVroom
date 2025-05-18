@@ -42,6 +42,7 @@ These are changes that improve Gungeon's performance without altering vanilla be
 Currently included aggressive optimizations are:
   - **Optimize Math**: Speeds up some geometry calculations by using optimized algorithms. Saves a significant amount of CPU.
   - **Optimize GUI Mouse Events**: Prevents checks for whether the mouse is over a menu item when no menus are open. Saves a significant amount of CPU.
+  - **Optimize Goop Updates**: Speeds up goop updates by using a faster iterator over goop data. Saves a significant amount of CPU.
   - **Optimize Chunk Building**: Reuses temporary storage structures when rebuilding chunk data during level gen. Saves a significant amount of RAM.
   - **Optimize Pointcast**: Speeds up pointcast physics calculations by using statics instead of delegates. Saves a modest amount of CPU.
   - **Optimize Dungeon Size Checks**: Speeds up dungeon size lookups by using fields instead of properties. Saves a modest amount of CPU.

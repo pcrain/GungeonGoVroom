@@ -8,10 +8,27 @@ internal static class Extensions
         cursor.Emit(OpCodes.Call, t.GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic));
     }
 
+    private static MethodInfo _WriteLine = typeof(System.Console).GetMethod(nameof(System.Console.WriteLine), new Type[]{typeof(string)});
+    /// <summary>Convenience method for debug print with an ILCursor</summary>
+    [System.Diagnostics.Conditional("DEBUG")]
+    public static void DebugPrint(this ILCursor cursor, string test)
+    {
+        cursor.Emit(OpCodes.Ldstr, test);
+        cursor.Emit(OpCodes.Call, _WriteLine);
+    }
+
     /// <summary>Declare a local variable in an ILManipulator</summary>
     public static VariableDefinition DeclareLocal<T>(this ILContext il)
     {
         VariableDefinition v = new VariableDefinition(il.Import(typeof(T)));
+        il.Body.Variables.Add(v);
+        return v;
+    }
+
+    /// <summary>Declare a local variable in an ILManipulator</summary>
+    public static VariableDefinition DeclareLocal(this ILContext il, Type t)
+    {
+        VariableDefinition v = new VariableDefinition(il.Import(t));
         il.Body.Variables.Add(v);
         return v;
     }

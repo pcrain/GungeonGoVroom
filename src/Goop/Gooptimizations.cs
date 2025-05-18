@@ -1,10 +1,13 @@
 namespace GGV;
 
-// [HarmonyPatch] //NOTE: this doesn't seem to be significantly faster, so it's disabled
+using static DeadlyDeadlyGoopManager;
+
+[HarmonyPatch]
 internal static class GoopPatches
 {
-    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.RebuildMeshUvsAndColors))]
-    [HarmonyPrefix]
+    //NOTE: this doesn't seem to be significantly faster, so it's disabled
+    // [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.RebuildMeshUvsAndColors))]
+    // [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerRebuildMeshUvsAndColorsPatch(DeadlyDeadlyGoopManager __instance, int chunkX, int chunkY)
     {
         // System.Diagnostics.Stopwatch colorsWatch = System.Diagnostics.Stopwatch.StartNew();
@@ -64,5 +67,162 @@ internal static class GoopPatches
         chunkMesh.colors32 = __instance.m_colorArray;
         // colorsWatch.Stop(); System.Console.WriteLine($"    {colorsWatch.ElapsedTicks,-10} ticks to update goops");
         return false;    // skip the original method
+    }
+
+    private const BindingFlags _ANY_FLAGS
+      = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+    private static readonly Type _IntVecHashSetType
+      = typeof(HashSet<>).MakeGenericType(typeof(IntVector2));
+    private static readonly Type _IntVecHashSetEnumeratorType
+      = typeof(HashSet<>).GetNestedType("Enumerator", _ANY_FLAGS).MakeGenericType(typeof(IntVector2));
+    private static readonly MethodInfo _IntVecHashSetEnumeratorCurrent
+      = _IntVecHashSetEnumeratorType.GetMethod("get_Current", _ANY_FLAGS);
+    private static readonly MethodInfo _IntVecHashSetEnumeratorMoveNext
+      = _IntVecHashSetEnumeratorType.GetMethod("MoveNext", _ANY_FLAGS);
+    private static readonly Type _IntVecDictType
+      = typeof(Dictionary<,>).MakeGenericType(typeof(IntVector2), typeof(GoopPositionData));
+    private static readonly Type _IntVecKVPType
+      = typeof(KeyValuePair<,>).MakeGenericType(typeof(IntVector2), typeof(GoopPositionData));
+    private static readonly Type _IntVecDictEnumeratorType
+      = typeof(Dictionary<,>).GetNestedType("Enumerator", _ANY_FLAGS).MakeGenericType(typeof(IntVector2), typeof(GoopPositionData));
+    private static readonly MethodInfo _IntVecDictEnumeratorCurrent
+      = _IntVecDictEnumeratorType.GetMethod("get_Current", _ANY_FLAGS);
+    private static readonly MethodInfo _IntVecDictEnumeratorMoveNext
+      = _IntVecDictEnumeratorType.GetMethod("MoveNext", _ANY_FLAGS);
+    private static readonly MethodInfo _Dispose
+      = typeof(IDisposable).GetMethod(nameof(IDisposable.Dispose));
+
+    /// <summary>Replace expensiv hashset iteration -> dictionary lookups with dictionary iteration</summary>
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.LateUpdate))]
+    [HarmonyILManipulator]
+    private static void DeadlyDeadlyGoopManagerLateUpdatePatchIL(ILContext il)
+    {
+        if (!GGVConfig.OPT_GOOP)
+          return;
+
+        ILCursor cursor = new ILCursor(il);
+
+        if (!cursor.TryGotoNext(MoveType.AfterLabel,
+          instr => instr.MatchLdarg(0), // the DeadlyDeadlyGoopManager instance
+          instr => instr.MatchLdfld<DeadlyDeadlyGoopManager>("m_goopedPositions"),
+          instr => instr.MatchCallvirt(_IntVecHashSetType.GetMethod("GetEnumerator")),
+          instr => instr.MatchStloc(5) // m_goopedPositions foreach enumerator
+          ))
+        {
+          GGVDebug.Log($"  ddgm patch failed at point 1");
+          return;
+        }
+
+        VariableDefinition intVecDictEnumerator = il.DeclareLocal(_IntVecDictEnumeratorType);
+        cursor.Emit(OpCodes.Ldarg_0);
+        cursor.Emit(OpCodes.Ldfld, typeof(DeadlyDeadlyGoopManager).GetField("m_goopedCells", _ANY_FLAGS));
+        cursor.Emit(OpCodes.Callvirt, _IntVecDictType.GetMethod("GetEnumerator"));
+        cursor.Emit(OpCodes.Stloc, intVecDictEnumerator);
+        cursor.RemoveRange(4);
+
+        if (!cursor.TryGotoNext(MoveType.AfterLabel,
+          instr => instr.MatchLdloca(5), // m_goopedPositions foreach enumerator
+          instr => instr.MatchCall(_IntVecHashSetEnumeratorCurrent),
+          instr => instr.MatchStloc(4), // IntVector2 value of enumerator == goopedPosition
+          instr => instr.MatchLdarg(0), // the DeadlyDeadlyGoopManager instance
+          instr => instr.MatchLdfld<DeadlyDeadlyGoopManager>("m_goopedCells"),
+          instr => instr.MatchLdloc(4), // IntVector2 value of enumerator
+          instr => instr.MatchCallvirt(_IntVecDictType.GetMethod("get_Item")),
+          instr => instr.MatchStloc(6) // GoopPositionData for the IntVector2
+          ))
+        {
+          GGVDebug.Log($"  ddgm patch failed at point 2");
+          return;
+        }
+        VariableDefinition intVecDictKVP = il.DeclareLocal(_IntVecKVPType);
+        cursor.Emit(OpCodes.Ldloca, intVecDictEnumerator); // m_goopedCells foreach enumerator
+        cursor.Emit(OpCodes.Call, _IntVecDictEnumeratorCurrent);
+        cursor.Emit(OpCodes.Stloc, intVecDictKVP); // store the kvp
+
+        cursor.Emit(OpCodes.Ldloca, intVecDictKVP); // load the kvp
+        cursor.Emit(OpCodes.Call, _IntVecKVPType.GetMethod("get_Key", _ANY_FLAGS));
+        cursor.Emit(OpCodes.Stloc, 4); // store the key in goopedPosition
+
+        cursor.Emit(OpCodes.Ldloca, intVecDictKVP); // load the kvp
+        cursor.Emit(OpCodes.Call, _IntVecKVPType.GetMethod("get_Value", _ANY_FLAGS));
+        cursor.Emit(OpCodes.Stloc, 6); // store the value in goopPositionData
+
+        cursor.RemoveRange(8);
+
+        if (!cursor.TryGotoNext(MoveType.AfterLabel,
+          instr => instr.MatchLdloca(5), // m_goopedPositions foreach enumerator
+          instr => instr.MatchCall(_IntVecHashSetEnumeratorMoveNext)
+          ))
+        {
+          GGVDebug.Log($"  ddgm patch failed at point 3");
+          return;
+        }
+        cursor.Emit(OpCodes.Ldloca, intVecDictEnumerator); // m_goopedCells foreach enumerator
+        cursor.Emit(OpCodes.Call, _IntVecDictEnumeratorMoveNext);
+        cursor.RemoveRange(2); // don't remove old instructions until AFTER the loop iteration is over or jump labels get messed up
+
+        if (!cursor.TryGotoNext(MoveType.AfterLabel,
+          // instr => instr.MatchLdloca(5), // m_goopedPositions foreach enumerator
+          // instr => instr.MatchConstrained(_IntVecHashSetEnumeratorType),
+          instr => instr.MatchCallvirt(_Dispose) // no othe Dispose() method, so this is safe (tm)
+          ))
+        {
+          GGVDebug.Log($"  ddgm patch failed at point 4");
+          return;
+        }
+        //WARNING: we get into deep trouble toying with finalizers...just pop the address of the old enumerator and replace it with our own
+        cursor.Emit(OpCodes.Pop); // pop the HashSet Ienumerator
+        cursor.Emit(OpCodes.Ldloca, intVecDictEnumerator); // load our own m_goopedCells foreach enumerator
+        cursor.Emit(OpCodes.Constrained, _IntVecDictEnumeratorType); // load our own constrained type
+        // we reuse the old dispose method, so we're done
+    }
+
+    private static readonly Color32 _Transparent = new Color32(0, 0, 0, 0);
+    //NOTE: I could possibly reuse a tweaked version of the LateUpdate() ILManipulator, but...it's really not worth it
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.RebuildMeshColors))]
+    [HarmonyPrefix]
+    private static bool DeadlyDeadlyGoopManagerRebuildMeshColorsPatch(DeadlyDeadlyGoopManager __instance, int chunkX, int chunkY)
+    {
+        if (!GGVConfig.OPT_GOOP)
+          return true; // call the original method
+
+        for (int i = 0; i < __instance.m_colorArray.Length; i++)
+          __instance.m_colorArray[i] = _Transparent;
+
+        int chunkSize = Mathf.RoundToInt(__instance.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+        int minX      = chunkX * chunkSize;
+        int maxX      = minX   + chunkSize;
+        int minY      = chunkY * chunkSize;
+        int maxY      = minY   + chunkSize;
+        VertexColorRebuildResult b = VertexColorRebuildResult.ALL_OK;
+        foreach (var kvp in __instance.m_goopedCells)
+        {
+          IntVector2 goopedPosition = kvp.Key;
+          GoopPositionData goopPositionData = kvp.Value;
+          if (goopPositionData.remainingLifespan < 0f || goopedPosition.x < minX || goopedPosition.x >= maxX || goopedPosition.y < minY || goopedPosition.y >= maxY)
+            continue;
+
+          int bi = goopPositionData.baseIndex;
+          if (bi < 0)
+            bi = goopPositionData.baseIndex = __instance.GetGoopBaseIndex(goopedPosition, chunkX, chunkY);
+
+          if (__instance.goopDefinition.CanBeFrozen)
+          {
+            Vector2 v = new Vector2((goopPositionData.IsFrozen ? 1 : 0), 0f);
+            __instance.m_uv2Array[bi    ] = v;
+            __instance.m_uv2Array[bi + 1] = v;
+            __instance.m_uv2Array[bi + 2] = v;
+            __instance.m_uv2Array[bi + 3] = v;
+          }
+          VertexColorRebuildResult a = __instance.AssignVertexColors(goopPositionData, goopedPosition, chunkX, chunkY);
+          b = (VertexColorRebuildResult)Mathf.Max((int)a, (int)b);
+        }
+
+        Mesh chunkMesh = __instance.GetChunkMesh(chunkX, chunkY);
+        if (__instance.goopDefinition.CanBeFrozen)
+          chunkMesh.uv2 = __instance.m_uv2Array;
+        chunkMesh.colors32 = __instance.m_colorArray;
+
+        return false; // skip the original method
     }
 }

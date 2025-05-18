@@ -1,6 +1,7 @@
 /* TODO: potential optimizations
   - (mtgapi) AddMissingReplacements is called way too aggressively
   - dfControl HitTest can use half as many GetComponent calls
+  - path.PreSmoothedPositions unused? memoy leak???
 */
 
 #region Global Usings

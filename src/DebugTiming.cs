@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 #if DEBUG
 /// <summary>Class for timing how long various methods take to run</summary>
-[HarmonyPatch]
+// [HarmonyPatch]
 internal static class DebugTiming
 {
     static IEnumerable<MethodBase> TargetMethods()
@@ -14,7 +14,7 @@ internal static class DebugTiming
         // yield return AccessTools.Method(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.LateUpdate));
         // yield return AccessTools.Method(typeof(OcclusionLayer), nameof(OcclusionLayer.GenerateOcclusionTexture));
         // yield return AccessTools.Method(typeof(dfGUIManager), nameof(dfGUIManager.HitTestAll));
-        yield return AccessTools.Method(typeof(Patches), nameof(Patches.HitTestPatch));
+        // yield return AccessTools.Method(typeof(Patches), nameof(Patches.ShadowSystemLateUpdatePatch));
         yield break;
     }
 

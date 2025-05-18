@@ -396,7 +396,7 @@ internal static partial class Patches
     /// <summary>Don't do hit tests for GUI controls when the game isn't even paused or responding to them.</summary>
     [HarmonyPatch(typeof(dfGUIManager), nameof(dfGUIManager.HitTest))]
     [HarmonyPrefix]
-    internal static bool HitTestPatch(dfGUIManager __instance, Vector2 screenPosition, ref dfControl __result)
+    private static bool HitTestPatch(dfGUIManager __instance, Vector2 screenPosition, ref dfControl __result)
     {
         //NOTE: alternate fix is to make controls that don't accept mouse events non-interactive (even though they're marked as interactive)
         //NOTE: DisplayingConversationBar doesn't seem to be a necessary check, the mouse works fine when it's open curiously
