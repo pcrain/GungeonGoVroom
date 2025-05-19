@@ -669,8 +669,15 @@ internal static class Gooptimizations
       Vector2 worldPos       = new Vector2(pos.x * GOOP_GRID_SIZE, pos.y * GOOP_GRID_SIZE);
       Vector2 worldCenterPos = new Vector2(worldPos.x + GOOP_GRID_SIZE * 0.5f, worldPos.y + GOOP_GRID_SIZE * 0.5f);
       for (int i = 0; i < m_goopExceptions.Count; i++)
-        if (m_goopExceptions[i] != null && (m_goopExceptions[i].First - worldCenterPos).sqrMagnitude < m_goopExceptions[i].Second)
+      {
+        if (m_goopExceptions[i] == null)
+          continue;
+        Vector2 v = m_goopExceptions[i].First;
+        float dx = (v.x - worldCenterPos.x);
+        float dy = (v.y - worldCenterPos.y);
+        if ((dx * dx + dy * dy) < m_goopExceptions[i].Second)
           return false;
+      }
 
       if (!__instance.m_goopedCells.TryGetValue(pos, out GoopPositionData currentGoop)) // cache currentGoop for the future
       {
@@ -775,5 +782,136 @@ internal static class Gooptimizations
       currentGoop.lastSourceID = sourceId;
 
       return false;
+    }
+
+    //                   original: 1530ns avg
+    // with FastGetRadiusFraction:  930ns avg
+    //         with FastSetCircle:  810ns avg
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.AddGoopPoints))]
+    [HarmonyPrefix]
+    private static bool DeadlyDeadlyGoopManagerAddGoopPointsPatch(DeadlyDeadlyGoopManager __instance, List<Vector2> points, float radius, Vector2 excludeCenter, float excludeRadius)
+    {
+      if (!GGVConfig.OPT_GOOP)
+        return true;
+
+      System.Diagnostics.Stopwatch gooppointsWatch = System.Diagnostics.Stopwatch.StartNew();
+
+      Vector2 minPoint = Vector2Extensions.max;
+      Vector2 maxPoint = Vector2Extensions.min;
+      for (int i = 0; i < points.Count; i++)
+      {
+        minPoint = Vector2.Min(minPoint, points[i]);
+        maxPoint = Vector2.Max(maxPoint, points[i]);
+      }
+
+      //NOTE: GOOP_GRID_SIZE == 0.25f
+
+      int minX   = Mathf.FloorToInt((minPoint.x - radius) / GOOP_GRID_SIZE);
+      int maxX   = Mathf.CeilToInt((maxPoint.x + radius) / GOOP_GRID_SIZE);
+      int minY   = Mathf.FloorToInt((minPoint.y - radius) / GOOP_GRID_SIZE);
+      int maxY   = Mathf.CeilToInt((maxPoint.y + radius) / GOOP_GRID_SIZE);
+      int width  = maxX - minX + 1;
+      int height = maxY - minY + 1;
+
+      int goopRadius          = Mathf.RoundToInt(radius / GOOP_GRID_SIZE);
+      s_goopPointRadius       = radius / GOOP_GRID_SIZE;
+      s_goopPointRadiusSquare = s_goopPointRadius * s_goopPointRadius;
+      m_pointsArray.ReinitializeWithDefault(width, height, false, 1f);
+
+      //NOTE: debugging without this for now looking for other optimizations
+      // bool usesLifespan = __instance.goopDefinition.usesLifespan; // the floats don't even get used unless the goop uses lifespan
+
+      for (int j = 0; j < points.Count; j++)
+      {
+        s_goopPointCenter.x = (int)(points[j].x / GOOP_GRID_SIZE) - minX;
+        s_goopPointCenter.y = (int)(points[j].y / GOOP_GRID_SIZE) - minY;
+        FastSetCircle(m_pointsArray, s_goopPointCenter.x, s_goopPointCenter.y, goopRadius, true, true);
+      }
+
+      int x2 = (int)(excludeCenter.x / GOOP_GRID_SIZE) - minX;
+      int y2 = (int)(excludeCenter.y / GOOP_GRID_SIZE) - minY;
+      int innerExcludeRadius = Mathf.RoundToInt(excludeRadius / GOOP_GRID_SIZE);
+      FastSetCircle(m_pointsArray, x2, y2, innerExcludeRadius, false, false);
+
+      for (int k = 0; k < width; k++)
+        for (int l = 0; l < height; l++)
+          if (m_pointsArray[k, l])
+            __instance.AddGoopedPosition(new IntVector2(minX + k, minY + l), m_pointsArray.GetFloat(k, l));
+
+      gooppointsWatch.Stop();
+      long nanos = gooppointsWatch.ElapsedTicks * 100;
+      _totalNanos += nanos;
+      _totalGoops++;
+
+      GGVDebug.Log($"    {nanos,10:n0}ns gooppoints, {_totalNanos,16:n0}ns total, {(double)_totalNanos / _totalGoops,10:n0}ns average");
+      return false;
+    }
+    private static long _totalNanos = 0;
+    private static long _totalGoops = 0;
+
+    //NOTE: apparently this is called the midpoint circle algorithm, neat
+    public static void FastSetCircle(BitArray2D bitArray, int xMid, int yMid, int radius, bool value, bool updateFractions)
+    {
+      int xOff          = radius;
+      int yOff          = 0;
+      int midpointError = 1 - xOff;
+      float[] floats    = bitArray.m_floats;
+      bool[] bits       = bitArray.m_bits;
+      int bitsW         = bitArray.m_width;
+      int bitsH         = bitArray.m_height;
+
+      while (yOff <= xOff)
+      {
+        for (int i = 0; i < 2; ++i)
+        {
+          int xRad = (i == 0) ? xOff : yOff;
+          int yRad = (i == 0) ? yOff : xOff;
+          int yMin = yMid - yRad;
+          if (yMin < 0)
+            yMin = 0;
+          int yMax = yMid + yRad;
+          if (yMax >= bitsH)
+            yMax = bitsH - 1;
+
+          for (int j = 0; j < 2; ++j)
+          {
+            int x = xMid + ((j == 0) ? xRad : -xRad);
+            if (x < 0 || x >= bitArray.m_width)
+              continue;
+            for (int y = yMin; y <= yMax; y++)
+            {
+              int bit = x + y * bitsW;
+              bits[bit] = value;
+              if (!updateFractions)
+                continue;
+
+              float xDist  = s_goopPointCenter.x - x;
+              float yDist  = s_goopPointCenter.y - y;
+              float sqrMag = xDist * xDist + yDist * yDist;
+              if (sqrMag >= s_goopPointRadiusSquare)
+                continue;
+              if (sqrMag < 0.25f)
+              {
+                floats[bit] = 0f;
+                continue;
+              }
+
+              float t = Mathf.Sqrt(sqrMag) / s_goopPointRadius;
+              float f = t * t * (2 * t * t - 5 * t + 4); // equivalent to BraveMathCollege.SmoothStepToLinearStepInterpolate(0f, 1f, t);
+              if (f < floats[bit])
+                floats[bit] = f;
+            }
+          }
+        }
+
+        yOff++;
+        if (midpointError <= 0)
+        {
+          midpointError += 2 * yOff + 1;
+          continue;
+        }
+        xOff--;
+        midpointError += 2 * (yOff - xOff) + 1;
+      }
     }
 }
