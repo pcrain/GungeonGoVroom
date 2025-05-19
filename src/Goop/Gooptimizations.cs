@@ -3,8 +3,92 @@ namespace GGV;
 using static DeadlyDeadlyGoopManager;
 
 [HarmonyPatch]
-internal static class GoopPatches
+internal static class Gooptimizations
 {
+    private class ExtraGoopData
+    {
+      private static ExtraGoopData _NullEGD       = new ExtraGoopData(null);
+      private static ExtraGoopData _CachedEGD     = _NullEGD; // not in _AllEGDs;
+      private static List<ExtraGoopData> _AllEGDs = new();
+
+      public DeadlyDeadlyGoopManager manager;
+      public UInt64[,,] goopedCellBitfield;
+
+      private int _xChunks;
+      private int _yChunks;
+
+      // private since it should never be constructed outside of Get() and static fields
+      private ExtraGoopData(DeadlyDeadlyGoopManager manager)
+      {
+        this.manager = manager;
+        if (manager == null)
+          return; // for _NullEGd
+
+        DungeonData d = GameManager.Instance.Dungeon.data;
+        this._xChunks = Mathf.CeilToInt((float)d.m_width / (float)manager.CHUNK_SIZE);
+        this._yChunks = Mathf.CeilToInt((float)d.m_height / (float)manager.CHUNK_SIZE);
+        this.goopedCellBitfield = new UInt64[this._xChunks,this._yChunks,7];
+        _AllEGDs.Add(this);
+      }
+
+      internal static ExtraGoopData Get(DeadlyDeadlyGoopManager manager)
+      {
+        if (_CachedEGD.manager == manager)
+          return _CachedEGD;
+        for (int i = _AllEGDs.Count - 1; i >= 0; --i)
+        {
+          if (_AllEGDs[i].manager != manager)
+            continue;
+          return _CachedEGD = _AllEGDs[i];
+        }
+        return _CachedEGD = new ExtraGoopData(manager);
+      }
+
+      internal static void ClearLevelData()
+      {
+        _AllEGDs.Clear();
+        _CachedEGD = _NullEGD;
+      }
+
+      // currently unused
+      private static bool TestGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
+      {
+        int chunkSize     = (int)(manager.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+        int chunkX        = (int)(pos.x / (float)chunkSize);
+        int chunkY        = (int)(pos.y / (float)chunkSize);
+        int bitOffset     = (pos.x % chunkSize) * chunkSize + (pos.y % chunkSize);
+        ExtraGoopData egd = ExtraGoopData.Get(manager);
+        return (egd.goopedCellBitfield[chunkX, chunkY, bitOffset / 64] & (1ul << (bitOffset % 64))) > 0;
+      }
+
+      internal static void SetGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
+      {
+        int chunkSize     = (int)(manager.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+        int chunkX        = (int)(pos.x / (float)chunkSize);
+        int chunkY        = (int)(pos.y / (float)chunkSize);
+        int bitOffset     = (pos.x % chunkSize) * chunkSize + (pos.y % chunkSize);
+        ExtraGoopData egd = ExtraGoopData.Get(manager);
+        egd.goopedCellBitfield[chunkX, chunkY, bitOffset / 64] |= (1ul << (bitOffset % 64));
+      }
+
+      internal static void ClearGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
+      {
+        int chunkSize     = (int)(manager.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+        int chunkX        = (int)(pos.x / (float)chunkSize);
+        int chunkY        = (int)(pos.y / (float)chunkSize);
+        int bitOffset     = (pos.x % chunkSize) * chunkSize + (pos.y % chunkSize);
+        ExtraGoopData egd = ExtraGoopData.Get(manager);
+        egd.goopedCellBitfield[chunkX, chunkY, bitOffset / 64] &= ~(1ul << (bitOffset % 64));
+      }
+    }
+
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.ClearPerLevelData))]
+    [HarmonyPostfix]
+    private static void DeadlyDeadlyGoopManagerClearPerLevelDataPatch()
+    {
+      ExtraGoopData.ClearLevelData();
+    }
+
     //NOTE: this doesn't seem to be significantly faster, so it's disabled
     [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.RebuildMeshUvsAndColors))]
     [HarmonyPrefix]
@@ -262,7 +346,43 @@ internal static class GoopPatches
       __instance.m_goopedCells.Remove(entry);
       DeadlyDeadlyGoopManager.allGoopPositionMap.Remove(entry);
       __instance.SetDirty(entry);
+      ExtraGoopData.ClearGoopedBit(__instance, entry);
       return false;    // skip the original method
+    }
+
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.AddGoopedPosition))]
+    [HarmonyILManipulator]
+    private static void DeadlyDeadlyGoopManagerAddGoopedPositionPatchIL(ILContext il)
+    {
+      if (!GGVConfig.OPT_GOOP)
+        return;
+
+      ILCursor cursor = new ILCursor(il);
+      if (!cursor.TryGotoNext(MoveType.Before,
+        instr => instr.MatchLdsfld<DeadlyDeadlyGoopManager>("allGoopPositionMap"),
+        instr => instr.MatchLdarg(1), // the IntVector2 goop poistion
+        instr => instr.MatchLdarg(0))) // the DeadlyDeadlyGoopManager instance
+        return;
+
+      cursor.Emit(OpCodes.Ldarg_0);
+      cursor.Emit(OpCodes.Ldarg_1);
+      cursor.CallPrivate(typeof(ExtraGoopData), nameof(ExtraGoopData.SetGoopedBit));
+    }
+
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.HasGoopedPositionCountForChunk))]
+    [HarmonyPrefix]
+    private static bool FastHasGoopedPositionCountForChunk(DeadlyDeadlyGoopManager __instance, int chunkX, int chunkY, ref bool __result)
+    {
+      ExtraGoopData egd = ExtraGoopData.Get(__instance);
+      for (int i = 0; i < 7; ++i)
+        if (egd.goopedCellBitfield[chunkX, chunkY, i] > 0)
+        {
+          __result = true;
+          return false;
+        }
+
+      __result = false;
+      return false;
     }
 
     /// <summary>Removes a lot of unnecessary function calls.</summary>
