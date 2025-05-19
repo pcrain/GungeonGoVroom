@@ -405,8 +405,9 @@ internal static class Gooptimizations
 
       int x = ((int)(goopPosition.x * DeadlyDeadlyGoopManager.GOOP_GRID_SIZE)) / __instance.CHUNK_SIZE;
       int y = ((int)(goopPosition.y * DeadlyDeadlyGoopManager.GOOP_GRID_SIZE)) / __instance.CHUNK_SIZE;
-      int w = __instance.m_dirtyFlags.GetLength(0);
-      int h = __instance.m_dirtyFlags.GetLength(1);
+      bool[,] dirtyFlags = __instance.m_dirtyFlags;
+      int w = dirtyFlags.GetLength(0);
+      int h = dirtyFlags.GetLength(1);
       if (x < 0 || x >= w || y < 0 || y >= h)
         return false;
 
@@ -415,24 +416,185 @@ internal static class Gooptimizations
       bool rightDirty  = x < w - 1 && goopPosition.x % chunkSize == chunkSize - 1;
       bool bottomDirty = y > 0     && goopPosition.y % chunkSize == 0;
       bool topDirty    = y < h - 1 && goopPosition.y % chunkSize == chunkSize - 1;
-      __instance.m_dirtyFlags[x, y] = true;
-      if (leftDirty)
-        __instance.m_dirtyFlags[x - 1, y] = true;
-      if (rightDirty)
-        __instance.m_dirtyFlags[x + 1, y] = true;
-      if (bottomDirty)
-        __instance.m_dirtyFlags[x, y - 1] = true;
-      if (topDirty)
-        __instance.m_dirtyFlags[x, y + 1] = true;
-      if (leftDirty && bottomDirty)
-        __instance.m_dirtyFlags[x - 1, y - 1] = true;
-      if (leftDirty && topDirty)
-        __instance.m_dirtyFlags[x - 1, y + 1] = true;
-      if (rightDirty && bottomDirty)
-        __instance.m_dirtyFlags[x + 1, y - 1] = true;
-      if (rightDirty && topDirty)
-        __instance.m_dirtyFlags[x + 1, y + 1] = true;
+      dirtyFlags[x, y] = true;
+
+      if (leftDirty)                 dirtyFlags[x - 1, y    ] = true;
+      if (rightDirty)                dirtyFlags[x + 1, y    ] = true;
+      if (bottomDirty)               dirtyFlags[x,     y - 1] = true;
+      if (topDirty)                  dirtyFlags[x,     y + 1] = true;
+      if (leftDirty && bottomDirty)  dirtyFlags[x - 1, y - 1] = true;
+      if (leftDirty && topDirty)     dirtyFlags[x - 1, y + 1] = true;
+      if (rightDirty && bottomDirty) dirtyFlags[x + 1, y - 1] = true;
+      if (rightDirty && topDirty)    dirtyFlags[x + 1, y + 1] = true;
 
       return false;
+    }
+
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.AssignVertexColors))]
+    [HarmonyPrefix]
+    private static bool DeadlyDeadlyGoopManagerAssignVertexColorsPatch(DeadlyDeadlyGoopManager __instance, GoopPositionData goopData, IntVector2 goopPos, int chunkX, int chunkY, ref VertexColorRebuildResult __result)
+    {
+      if (!GGVConfig.OPT_GOOP)
+        return true;
+
+      bool onFireOrFrozenNeighbor = false;
+      Color32 color  = __instance.goopDefinition.baseColor32;
+      Color32 color2 = color;
+      Color32 color3 = color;
+      Color32 color4 = color;
+      int bi = goopData.baseIndex;
+
+      if (goopData.IsOnFire)
+        color = __instance.goopDefinition.fireColor32;
+      else
+      {
+        Color32 igniteColor = __instance.goopDefinition.igniteColor32;
+        for (int i = 0; i < 8; i++)
+        {
+          if (goopData.neighborGoopData[i] == null || !goopData.neighborGoopData[i].IsOnFire)
+            continue;
+
+          onFireOrFrozenNeighbor = true;
+          switch (i)
+          {
+          case 0:
+            color3 = igniteColor;
+            color4 = igniteColor;
+            break;
+          case 1:
+            color4 = igniteColor;
+            break;
+          case 2:
+            color4 = igniteColor;
+            color2 = igniteColor;
+            break;
+          case 3:
+            color2 = igniteColor;
+            break;
+          case 4:
+            color2 = igniteColor;
+            color = igniteColor;
+            break;
+          case 5:
+            color = igniteColor;
+            break;
+          case 6:
+            color = igniteColor;
+            color3 = igniteColor;
+            break;
+          case 7:
+            color3 = igniteColor;
+            break;
+          }
+        }
+      }
+
+      if (!goopData.IsOnFire && !onFireOrFrozenNeighbor)
+      {
+        if (goopData.IsFrozen)
+          color = __instance.goopDefinition.frozenColor32;
+        else
+        {
+          Vector2 uvVec = new Vector2(0.5f, 0f);
+          Color32 prefreezeColor = __instance.goopDefinition.prefreezeColor32;
+          for (int j = 0; j < 8; j++)
+          {
+            if (goopData.neighborGoopData[j] == null || !goopData.neighborGoopData[j].IsFrozen)
+              continue;
+
+            onFireOrFrozenNeighbor = true;
+            switch (j)
+            {
+            case 0:
+              __instance.m_uv2Array[bi + 2] = uvVec;
+              color3 = prefreezeColor;
+              __instance.m_uv2Array[bi + 3] = uvVec;
+              color4 = prefreezeColor;
+              break;
+            case 1:
+              __instance.m_uv2Array[bi + 3] = uvVec;
+              color4 = prefreezeColor;
+              break;
+            case 2:
+              __instance.m_uv2Array[bi + 3] = uvVec;
+              color4 = prefreezeColor;
+              __instance.m_uv2Array[bi + 1] = uvVec;
+              color2 = prefreezeColor;
+              break;
+            case 3:
+              __instance.m_uv2Array[bi + 1] = uvVec;
+              color2 = prefreezeColor;
+              break;
+            case 4:
+              __instance.m_uv2Array[bi + 1] = uvVec;
+              color2 = prefreezeColor;
+              __instance.m_uv2Array[bi] = uvVec;
+              color = prefreezeColor;
+              break;
+            case 5:
+              __instance.m_uv2Array[bi] = uvVec;
+              color = prefreezeColor;
+              break;
+            case 6:
+              __instance.m_uv2Array[bi] = uvVec;
+              color = prefreezeColor;
+              __instance.m_uv2Array[bi + 2] = uvVec;
+              color3 = prefreezeColor;
+              break;
+            case 7:
+              __instance.m_uv2Array[bi + 2] = uvVec;
+              color3 = prefreezeColor;
+              break;
+            }
+          }
+        }
+      }
+
+      if (goopData.remainingLifespan < __instance.goopDefinition.fadePeriod)
+      {
+        float t = goopData.remainingLifespan / __instance.goopDefinition.fadePeriod;
+        Color32 fc = __instance.goopDefinition.fadeColor32;
+        // inlined lerping woo
+        color = new Color32(
+          (byte)(fc.r + (color.r - fc.r) * t),
+          (byte)(fc.g + (color.g - fc.g) * t),
+          (byte)(fc.b + (color.b - fc.b) * t),
+          (byte)(fc.a + (color.a - fc.a) * t));
+        if (onFireOrFrozenNeighbor)
+        {
+          color2 = new Color32(
+            (byte)(fc.r + (color2.r - fc.r) * t),
+            (byte)(fc.g + (color2.g - fc.g) * t),
+            (byte)(fc.b + (color2.b - fc.b) * t),
+            (byte)(fc.a + (color2.a - fc.a) * t));
+          color3 = new Color32(
+            (byte)(fc.r + (color3.r - fc.r) * t),
+            (byte)(fc.g + (color3.g - fc.g) * t),
+            (byte)(fc.b + (color3.b - fc.b) * t),
+            (byte)(fc.a + (color3.a - fc.a) * t));
+          color4 = new Color32(
+            (byte)(fc.r + (color4.r - fc.r) * t),
+            (byte)(fc.g + (color4.g - fc.g) * t),
+            (byte)(fc.b + (color4.b - fc.b) * t),
+            (byte)(fc.a + (color4.a - fc.a) * t));
+        }
+      }
+      if (onFireOrFrozenNeighbor)
+      {
+        __instance.m_colorArray[bi] = color;
+        __instance.m_colorArray[bi + 1] = color2;
+        __instance.m_colorArray[bi + 2] = color3;
+        __instance.m_colorArray[bi + 3] = color4;
+      }
+      else
+      {
+        __instance.m_colorArray[bi] = color;
+        __instance.m_colorArray[bi + 1] = color;
+        __instance.m_colorArray[bi + 2] = color;
+        __instance.m_colorArray[bi + 3] = color;
+      }
+
+      __result = VertexColorRebuildResult.ALL_OK;
+      return false;    // skip the original method
     }
 }

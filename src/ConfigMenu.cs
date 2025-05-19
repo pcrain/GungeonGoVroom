@@ -171,9 +171,9 @@ public static class ConfigMenu
     so.FancyToggle(PATH_RECALC, "Optimize algorithm for computing\nclearances used for pathing.\nSaves a small amount of CPU.");
 
     Gunfig ao = _Gunfig.AddSubMenu(AGGR_OPT);
+    ao.FancyToggleOff(GOOP, "Speeds up goop updates by using\nfaster iterators and lookup algorithms.\nSaves a large amount of CPU.");
     ao.FancyToggleOff(MATH, "Speeds up some geometry calculations\nby using optimized algorithms.\nSaves a significant amount of CPU.");
     ao.FancyToggleOff(MOUSE_EVENTS, "Prevents checks for whether the mouse is\nover a menu item when no menus are open.\nSaves a significant amount of CPU.");
-    ao.FancyToggleOff(GOOP, "Speeds up goop updates by using\na faster iterator over goop data.\nSaves a significant amount of CPU.");
     ao.FancyToggleOff(CHUNKBUILD, "Reuses temporary storage structures when\nrebuilding chunk data during level gen.\nSaves a significant amount of RAM.");
     ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing statics instead of delegates.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(DUNGEON_DIMS, "Speeds up dungeon size lookups by\nusing fields instead of properties.\nSaves a modest amount of CPU.");
