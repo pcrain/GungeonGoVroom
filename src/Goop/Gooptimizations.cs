@@ -52,7 +52,7 @@ internal static class Gooptimizations
 
       internal static bool TestGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
       {
-        int chunkSize     = (int)(manager.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+        int chunkSize     = (int)(manager.CHUNK_SIZE / GOOP_GRID_SIZE);
         int chunkX        = (int)(pos.x / (float)chunkSize);
         int chunkY        = (int)(pos.y / (float)chunkSize);
         int bitOffset     = (pos.x % chunkSize) * chunkSize + (pos.y % chunkSize);
@@ -62,7 +62,7 @@ internal static class Gooptimizations
 
       internal static void SetGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
       {
-        int chunkSize     = (int)(manager.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+        int chunkSize     = (int)(manager.CHUNK_SIZE / GOOP_GRID_SIZE);
         int chunkX        = (int)(pos.x / (float)chunkSize);
         int chunkY        = (int)(pos.y / (float)chunkSize);
         int bitOffset     = (pos.x % chunkSize) * chunkSize + (pos.y % chunkSize);
@@ -72,7 +72,7 @@ internal static class Gooptimizations
 
       internal static void ClearGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
       {
-        int chunkSize     = (int)(manager.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+        int chunkSize     = (int)(manager.CHUNK_SIZE / GOOP_GRID_SIZE);
         int chunkX        = (int)(pos.x / (float)chunkSize);
         int chunkY        = (int)(pos.y / (float)chunkSize);
         int bitOffset     = (pos.x % chunkSize) * chunkSize + (pos.y % chunkSize);
@@ -101,7 +101,7 @@ internal static class Gooptimizations
         for (int i = 0; i < __instance.m_colorArray.Length; i++)
           __instance.m_colorArray[i].a = 0;
 
-        int chunkSize   = Mathf.RoundToInt(__instance.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+        int chunkSize   = Mathf.RoundToInt(__instance.CHUNK_SIZE / GOOP_GRID_SIZE);
         int xmin        = chunkX * chunkSize;
         int xmax        = xmin   + chunkSize;
         int ymin        = chunkY * chunkSize;
@@ -280,7 +280,7 @@ internal static class Gooptimizations
         for (int i = 0; i < __instance.m_colorArray.Length; i++)
           __instance.m_colorArray[i] = _Transparent;
 
-        int chunkSize = Mathf.RoundToInt(__instance.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+        int chunkSize = Mathf.RoundToInt(__instance.CHUNK_SIZE / GOOP_GRID_SIZE);
         int minX      = chunkX * chunkSize;
         int maxX      = minX   + chunkSize;
         int minY      = chunkY * chunkSize;
@@ -357,25 +357,6 @@ internal static class Gooptimizations
       return false;    // skip the original method
     }
 
-    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.AddGoopedPosition))]
-    [HarmonyILManipulator]
-    private static void DeadlyDeadlyGoopManagerAddGoopedPositionPatchIL(ILContext il)
-    {
-      if (!GGVConfig.OPT_GOOP)
-        return;
-
-      ILCursor cursor = new ILCursor(il);
-      if (!cursor.TryGotoNext(MoveType.Before,
-        instr => instr.MatchLdsfld<DeadlyDeadlyGoopManager>("allGoopPositionMap"),
-        instr => instr.MatchLdarg(1), // the IntVector2 goop poistion
-        instr => instr.MatchLdarg(0))) // the DeadlyDeadlyGoopManager instance
-        return;
-
-      cursor.Emit(OpCodes.Ldarg_0);
-      cursor.Emit(OpCodes.Ldarg_1);
-      cursor.CallPrivate(typeof(ExtraGoopData), nameof(ExtraGoopData.SetGoopedBit));
-    }
-
     [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.HasGoopedPositionCountForChunk))]
     [HarmonyPrefix]
     private static bool FastHasGoopedPositionCountForChunk(DeadlyDeadlyGoopManager __instance, int chunkX, int chunkY, ref bool __result)
@@ -403,15 +384,15 @@ internal static class Gooptimizations
       if (!GGVConfig.OPT_GOOP)
         return true;
 
-      int x = ((int)(goopPosition.x * DeadlyDeadlyGoopManager.GOOP_GRID_SIZE)) / __instance.CHUNK_SIZE;
-      int y = ((int)(goopPosition.y * DeadlyDeadlyGoopManager.GOOP_GRID_SIZE)) / __instance.CHUNK_SIZE;
+      int x = ((int)(goopPosition.x * GOOP_GRID_SIZE)) / __instance.CHUNK_SIZE;
+      int y = ((int)(goopPosition.y * GOOP_GRID_SIZE)) / __instance.CHUNK_SIZE;
       bool[,] dirtyFlags = __instance.m_dirtyFlags;
       int w = dirtyFlags.GetLength(0);
       int h = dirtyFlags.GetLength(1);
       if (x < 0 || x >= w || y < 0 || y >= h)
         return false;
 
-      int chunkSize    = (int)(__instance.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+      int chunkSize    = (int)(__instance.CHUNK_SIZE / GOOP_GRID_SIZE);
       bool leftDirty   = x > 0     && goopPosition.x % chunkSize == 0;
       bool rightDirty  = x < w - 1 && goopPosition.x % chunkSize == chunkSize - 1;
       bool bottomDirty = y > 0     && goopPosition.y % chunkSize == 0;
@@ -430,6 +411,7 @@ internal static class Gooptimizations
       return false;
     }
 
+    /// <summary>Inline a bunch of function calls for performance.</summary>
     [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.AssignVertexColors))]
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerAssignVertexColorsPatch(DeadlyDeadlyGoopManager __instance, GoopPositionData goopData, IntVector2 goopPos, int chunkX, int chunkY, ref VertexColorRebuildResult __result)
@@ -604,10 +586,9 @@ internal static class Gooptimizations
     {
         if (GGVConfig.OPT_GOOP)
           return HandleRecursiveElectrificationFast(__instance, cellIndex);
-        return orig; // disabled for now
+        return orig;
     }
 
-    //TODO: test this
     private static Queue<GoopPositionData> _GoopsToElectrify = new();
     private static IEnumerator HandleRecursiveElectrificationFast(DeadlyDeadlyGoopManager __instance, IntVector2 cellIndex)
     {
@@ -652,5 +633,147 @@ internal static class Gooptimizations
           enumeratorCounter = 0;
         }
       }
+    }
+
+    //NOTE: obsoleted by DeadlyDeadlyGoopManagerAddGoopedPositionPatch
+    // [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.AddGoopedPosition))]
+    // [HarmonyILManipulator]
+    // private static void DeadlyDeadlyGoopManagerAddGoopedPositionPatchIL(ILContext il)
+    // {
+    //   if (!GGVConfig.OPT_GOOP)
+    //     return;
+
+    //   ILCursor cursor = new ILCursor(il);
+    //   if (!cursor.TryGotoNext(MoveType.Before,
+    //     instr => instr.MatchLdsfld<DeadlyDeadlyGoopManager>("allGoopPositionMap"),
+    //     instr => instr.MatchLdarg(1), // the IntVector2 goop poistion
+    //     instr => instr.MatchLdarg(0))) // the DeadlyDeadlyGoopManager instance
+    //     return;
+
+    //   cursor.Emit(OpCodes.Ldarg_0);
+    //   cursor.Emit(OpCodes.Ldarg_1);
+    //   cursor.CallPrivate(typeof(ExtraGoopData), nameof(ExtraGoopData.SetGoopedBit));
+    // }
+
+    /// <summary>Cache lookup value for __instance.m_goopedCells[pos] and inline a lot of other expensive logic</summary>
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.AddGoopedPosition))]
+    [HarmonyPrefix]
+    private static bool DeadlyDeadlyGoopManagerAddGoopedPositionPatch(DeadlyDeadlyGoopManager __instance, IntVector2 pos, float radiusFraction = 0f, bool suppressSplashes = false, int sourceId = -1, int sourceFrameCount = -1)
+    {
+      if (!GGVConfig.OPT_GOOP)
+        return true;
+
+      if (GameManager.Instance.IsLoadingLevel)
+        return false;
+
+      Vector2 worldPos       = new Vector2(pos.x * GOOP_GRID_SIZE, pos.y * GOOP_GRID_SIZE);
+      Vector2 worldCenterPos = new Vector2(worldPos.x + GOOP_GRID_SIZE * 0.5f, worldPos.y + GOOP_GRID_SIZE * 0.5f);
+      for (int i = 0; i < m_goopExceptions.Count; i++)
+        if (m_goopExceptions[i] != null && (m_goopExceptions[i].First - worldCenterPos).sqrMagnitude < m_goopExceptions[i].Second)
+          return false;
+
+      if (!__instance.m_goopedCells.TryGetValue(pos, out GoopPositionData currentGoop)) // cache currentGoop for the future
+      {
+        IntVector2 cellPosition = new IntVector2((int)worldPos.x, (int)worldPos.y);
+        DungeonData dd = GameManager.Instance.Dungeon.data;
+        if (cellPosition.x < 0 || cellPosition.y < 0 || cellPosition.x >= dd.m_width || cellPosition.y >= dd.m_height)
+          return false;
+
+        CellData cellData = dd[cellPosition];
+        if (cellData == null || cellData.forceDisallowGoop || (cellData.cellVisualData.absorbsDebris && __instance.goopDefinition.CanBeFrozen))
+          return false;
+
+        if (__instance.goopDefinition.CanBeFrozen && cellData.doesDamage) // inlined SolidifyLavaInCell() and removed redundant checks
+        {
+          cellData.doesDamage = false;
+          if (dd.m_sizzleSystem == null)
+            dd.InitializeSizzleSystem();
+          Vector3 particlePos = cellPosition.ToCenterVector3(cellPosition.y);
+          dd.SpawnWorldParticle(dd.m_sizzleSystem, particlePos + UnityEngine.Random.insideUnitCircle.ToVector3ZUp() / 3f);
+          if (UnityEngine.Random.value < 0.5f)
+            dd.SpawnWorldParticle(dd.m_sizzleSystem, particlePos + UnityEngine.Random.insideUnitCircle.ToVector3ZUp() / 3f);
+        }
+
+        if (cellData.type != CellType.FLOOR && !cellData.forceAllowGoop) // defer face wall and hash checks until we know we're not on a floor
+        {
+          if (!cellData.IsLowerFaceWall())
+            return false;
+          if (pos.GetHashedRandomValue() > 0.75f)
+            return false;
+        }
+
+        bool wasOnFire = false;
+        if (allGoopPositionMap.TryGetValue(pos, out DeadlyDeadlyGoopManager otherGoopManager))
+        {
+          GoopPositionData goopPositionData = otherGoopManager.m_goopedCells[pos];
+          int frameCount = ((sourceFrameCount == -1) ? Time.frameCount : sourceFrameCount);
+          if (goopPositionData.frameGooped > frameCount || goopPositionData.eternal)
+            return false;
+          if (goopPositionData.IsOnFire)
+            wasOnFire = true;
+          otherGoopManager.RemoveGoopedPosition(pos);
+        }
+
+        GoopPositionData newGoop = new GoopPositionData(pos, __instance.m_goopedCells, __instance.goopDefinition.GetLifespan(radiusFraction));
+        newGoop.frameGooped = ((sourceFrameCount == -1) ? Time.frameCount : sourceFrameCount);
+        newGoop.lastSourceID = sourceId;
+        if (!suppressSplashes && m_DoGoopSpawnSplashes && UnityEngine.Random.value < 0.02f)
+        {
+          if (__instance.m_genericSplashPrefab == null)
+            __instance.m_genericSplashPrefab = ResourceCache.Acquire("Global VFX/Generic_Goop_Splash") as GameObject;
+
+          GameObject gameObject = SpawnManager.SpawnVFX(__instance.m_genericSplashPrefab, worldPos.ToVector3ZUp(worldPos.y), Quaternion.identity);
+          gameObject.GetComponent<tk2dBaseSprite>().usesOverrideMaterial = true;
+          gameObject.GetComponent<Renderer>().material.SetColor(TintColorPropertyID, __instance.goopDefinition.baseColor32);
+        }
+        newGoop.eternal = __instance.goopDefinition.eternal;
+        newGoop.selfIgnites = __instance.goopDefinition.SelfIgnites;
+        newGoop.remainingTimeTilSelfIgnition = __instance.goopDefinition.selfIgniteDelay;
+        __instance.m_goopedPositions.Add(pos);
+        __instance.m_goopedCells.Add(pos, newGoop);
+        allGoopPositionMap.Add(pos, __instance);
+        ExtraGoopData.SetGoopedBit(__instance, pos);
+        RoomHandler absoluteRoomFromPosition = GameManager.Instance.Dungeon.data.GetAbsoluteRoomFromPosition(cellPosition);
+        absoluteRoomFromPosition.RegisterGoopManagerInRoom(__instance);
+
+        if (cellData.OnCellGooped != null)
+          cellData.OnCellGooped(cellData);
+        if (cellData.cellVisualData.floorType == CellVisualData.CellFloorType.Ice)
+          __instance.FreezeCell(pos);
+        if (wasOnFire && __instance.goopDefinition.CanBeIgnited)
+          __instance.IgniteCell(pos);
+        __instance.SetDirty(pos);
+
+        return false;
+      }
+
+      if (currentGoop.remainingLifespan < __instance.goopDefinition.fadePeriod)
+        __instance.SetDirty(pos);
+
+      if (currentGoop.IsOnFire && __instance.goopDefinition.ignitionChangesLifetime)
+      {
+        if (currentGoop.remainingLifespan > 0f)
+          currentGoop.remainingLifespan = __instance.goopDefinition.ignitedLifetime;
+      }
+      else
+      {
+        if (!suppressSplashes && m_DoGoopSpawnSplashes && (currentGoop.lastSourceID < 0 || currentGoop.lastSourceID != sourceId) && UnityEngine.Random.value < 0.001f)
+        {
+          if (__instance.m_genericSplashPrefab == null)
+            __instance.m_genericSplashPrefab = ResourceCache.Acquire("Global VFX/Generic_Goop_Splash") as GameObject;
+          GameObject gameObject2 = SpawnManager.SpawnVFX(__instance.m_genericSplashPrefab, worldPos.ToVector3ZUp(worldPos.y), Quaternion.identity);
+          gameObject2.GetComponent<tk2dBaseSprite>().usesOverrideMaterial = true;
+          gameObject2.GetComponent<Renderer>().material.SetColor(TintColorPropertyID, __instance.goopDefinition.baseColor32);
+        }
+        float newMaxLifespan = __instance.goopDefinition.GetLifespan(radiusFraction);
+        if (newMaxLifespan > currentGoop.remainingLifespan)
+          currentGoop.remainingLifespan = newMaxLifespan;
+        currentGoop.lifespanOverridden = true;
+        currentGoop.HasPlayedFireOutro = false;
+        currentGoop.hasBeenFrozen = 0;
+      }
+      currentGoop.lastSourceID = sourceId;
+
+      return false;
     }
 }
