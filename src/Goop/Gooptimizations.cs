@@ -6,8 +6,8 @@ using static DeadlyDeadlyGoopManager;
 internal static class GoopPatches
 {
     //NOTE: this doesn't seem to be significantly faster, so it's disabled
-    // [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.RebuildMeshUvsAndColors))]
-    // [HarmonyPrefix]
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.RebuildMeshUvsAndColors))]
+    [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerRebuildMeshUvsAndColorsPatch(DeadlyDeadlyGoopManager __instance, int chunkX, int chunkY)
     {
         // System.Diagnostics.Stopwatch colorsWatch = System.Diagnostics.Stopwatch.StartNew();
@@ -215,7 +215,8 @@ internal static class GoopPatches
             __instance.m_uv2Array[bi + 3] = v;
           }
           VertexColorRebuildResult a = __instance.AssignVertexColors(goopPositionData, goopedPosition, chunkX, chunkY);
-          b = (VertexColorRebuildResult)Mathf.Max((int)a, (int)b);
+          if ((int)a > (int)b)
+            b = a;
         }
 
         Mesh chunkMesh = __instance.GetChunkMesh(chunkX, chunkY);
@@ -224,5 +225,84 @@ internal static class GoopPatches
         chunkMesh.colors32 = __instance.m_colorArray;
 
         return false; // skip the original method
+    }
+
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.RemoveGoopedPosition), new[]{typeof(IntVector2)})]
+    [HarmonyPrefix]
+    private static bool DeadlyDeadlyGoopManagerRemoveGoopedPositionPatch(DeadlyDeadlyGoopManager __instance, IntVector2 entry)
+    {
+      if (!GGVConfig.OPT_GOOP)
+        return true;
+
+      // if goop data is defined for the current position, we can just look at our neighbors and don't need 8 dictionary lookups
+      if (__instance.m_goopedCells.TryGetValue(entry, out GoopPositionData current))
+      {
+        for (int i = 0; i < 8; ++i)
+        {
+          GoopPositionData neighbor = current.neighborGoopData[i];
+          if (neighbor == null)
+            continue;
+          int ni = (i + 4) % 8;
+          neighbor.neighborGoopData[ni] = null;
+          neighbor.NeighborsAsIntFuckDiagonals = (neighbor.NeighborsAsInt &= ~(1 << 7 - ni)) & 0xAA;
+        }
+      }
+      else // revert to vanilla behavior
+      {
+        for (int i = 0; i < 8; i++)
+        {
+          if (!__instance.m_goopedCells.TryGetValue(entry + IntVector2.CardinalsAndOrdinals[i], out GoopPositionData neighbor))
+            continue;
+          int ni = (i + 4) % 8;
+          neighbor.neighborGoopData[ni] = null;
+          neighbor.NeighborsAsIntFuckDiagonals = (neighbor.NeighborsAsInt &= ~(1 << 7 - ni)) & 0xAA;
+        }
+      }
+      __instance.m_goopedPositions.Remove(entry);
+      __instance.m_goopedCells.Remove(entry);
+      DeadlyDeadlyGoopManager.allGoopPositionMap.Remove(entry);
+      __instance.SetDirty(entry);
+      return false;    // skip the original method
+    }
+
+    /// <summary>Removes a lot of unnecessary function calls.</summary>
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.SetDirty))]
+    [HarmonyPrefix]
+    private static bool DeadlyDeadlyGoopManagerSetDirtyPatch(DeadlyDeadlyGoopManager __instance, IntVector2 goopPosition)
+    {
+      if (!GGVConfig.OPT_GOOP)
+        return true;
+
+      int x = ((int)(goopPosition.x * DeadlyDeadlyGoopManager.GOOP_GRID_SIZE)) / __instance.CHUNK_SIZE;
+      int y = ((int)(goopPosition.y * DeadlyDeadlyGoopManager.GOOP_GRID_SIZE)) / __instance.CHUNK_SIZE;
+      int w = __instance.m_dirtyFlags.GetLength(0);
+      int h = __instance.m_dirtyFlags.GetLength(1);
+      if (x < 0 || x >= w || y < 0 || y >= h)
+        return false;
+
+      int chunkSize    = (int)(__instance.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+      bool leftDirty   = x > 0     && goopPosition.x % chunkSize == 0;
+      bool rightDirty  = x < w - 1 && goopPosition.x % chunkSize == chunkSize - 1;
+      bool bottomDirty = y > 0     && goopPosition.y % chunkSize == 0;
+      bool topDirty    = y < h - 1 && goopPosition.y % chunkSize == chunkSize - 1;
+      __instance.m_dirtyFlags[x, y] = true;
+      if (leftDirty)
+        __instance.m_dirtyFlags[x - 1, y] = true;
+      if (rightDirty)
+        __instance.m_dirtyFlags[x + 1, y] = true;
+      if (bottomDirty)
+        __instance.m_dirtyFlags[x, y - 1] = true;
+      if (topDirty)
+        __instance.m_dirtyFlags[x, y + 1] = true;
+      if (leftDirty && bottomDirty)
+        __instance.m_dirtyFlags[x - 1, y - 1] = true;
+      if (leftDirty && topDirty)
+        __instance.m_dirtyFlags[x - 1, y + 1] = true;
+      if (rightDirty && bottomDirty)
+        __instance.m_dirtyFlags[x + 1, y - 1] = true;
+      if (rightDirty && topDirty)
+        __instance.m_dirtyFlags[x + 1, y + 1] = true;
+
+      return false;
     }
 }
