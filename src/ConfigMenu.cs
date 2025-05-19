@@ -175,11 +175,11 @@ public static class ConfigMenu
     ao.FancyToggleOff(MATH, "Speeds up some geometry calculations\nby using optimized algorithms.\nSaves a significant amount of CPU.");
     ao.FancyToggleOff(MOUSE_EVENTS, "Prevents checks for whether the mouse is\nover a menu item when no menus are open.\nSaves a significant amount of CPU.");
     ao.FancyToggleOff(CHUNKBUILD, "Reuses temporary storage structures when\nrebuilding chunk data during level gen.\nSaves a significant amount of RAM.");
-    ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing statics instead of delegates.\nSaves a modest amount of CPU.");
+    ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing statics instead of delegates.\nSaves a modest amount of CPU and RAM.");
     ao.FancyToggleOff(DUNGEON_DIMS, "Speeds up dungeon size lookups by\nusing fields instead of properties.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(DEPTH_CHECKS, "Speeds up attached sprite depth checks\nby caching property accesses.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(PIT_VFX, "Speeds up pit VFX calculations by skipping\nseveral redundant tile checks.\nSaves a small amount of CPU.");
-    ao.FancyToggleOff(ITEM_LOOKUPS, "Speeds up passive / active item lookups\nby skipping delegate creation.\nSaves a small amount of RAM.");
+    ao.FancyToggleOff(ITEM_LOOKUPS, "Speeds up passive / active item lookups\nby skipping delegate creation.\nSaves a small amount of CPU and RAM.");
 
     GGVConfig.Update();
     Gunfig.OnAllModsLoaded += LateInit;

@@ -17,6 +17,8 @@ internal static class DebugTiming
         // yield return AccessTools.Method(typeof(Patches), nameof(Patches.ShadowSystemLateUpdatePatch));
         // yield return AccessTools.Method(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.HasGoopedPositionCountForChunk));
         // yield return AccessTools.Method(typeof(Gooptimizations), "FastHasGoopedPositionCountForChunk");
+        // yield return AccessTools.Method(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.HandleRecursiveElectrification));
+        yield return AccessTools.Method(typeof(Gooptimizations), "HandleRecursiveElectrificationFast");
         yield break;
     }
 

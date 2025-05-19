@@ -40,15 +40,15 @@ Currently included safe optimizations are:
 These are changes that improve Gungeon's performance without altering vanilla behavior, but could theoretically interfere with other mods. While these optimizations currently have no known compatibility issues with other mods and should be suitable for all players, they are all *DISABLED* by default.
 
 Currently included aggressive optimizations are:
+  - **Optimize Goop Updates**: Speeds up goop updates by using faster iterators and lookup algorithms. Saves a large amount of CPU.
   - **Optimize Math**: Speeds up some geometry calculations by using optimized algorithms. Saves a significant amount of CPU.
   - **Optimize GUI Mouse Events**: Prevents checks for whether the mouse is over a menu item when no menus are open. Saves a significant amount of CPU.
-  - **Optimize Goop Updates**: Speeds up goop updates by using a faster iterator over goop data. Saves a significant amount of CPU.
   - **Optimize Chunk Building**: Reuses temporary storage structures when rebuilding chunk data during level gen. Saves a significant amount of RAM.
-  - **Optimize Pointcast**: Speeds up pointcast physics calculations by using statics instead of delegates. Saves a modest amount of CPU.
+  - **Optimize Pointcast**: Speeds up pointcast physics calculations by using statics instead of delegates. Saves a modest amount of CPU and RAM.
   - **Optimize Dungeon Size Checks**: Speeds up dungeon size lookups by using fields instead of properties. Saves a modest amount of CPU.
   - **Optimize Sprite Depth Checks**: Speeds up attached sprite depth checks by caching property accesses. Saves a modest amount of CPU.
   - **Optimize Pit VFX**: Speeds up pit VFX calculations by skipping several redundant tile checks. Saves a small amount of CPU.
-  - **Optimize Item Lookups**: Speeds up passive / active item lookups by skipping delegate creation. Saves a small amount of RAM.
+  - **Optimize Item Lookups**: Speeds up passive / active item lookups by skipping delegate creation. Saves a small amount of CPU and RAM.
 
 ## Issues? Suggestions?
 

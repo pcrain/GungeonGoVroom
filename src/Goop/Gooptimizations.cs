@@ -597,4 +597,60 @@ internal static class Gooptimizations
       __result = VertexColorRebuildResult.ALL_OK;
       return false;    // skip the original method
     }
+
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.HandleRecursiveElectrification))]
+    [HarmonyPostfix]
+    private static IEnumerator HandleRecursiveElectrificationPatch(IEnumerator orig, DeadlyDeadlyGoopManager __instance, IntVector2 cellIndex)
+    {
+        if (GGVConfig.OPT_GOOP)
+          return HandleRecursiveElectrificationFast(__instance, cellIndex);
+        return orig; // disabled for now
+    }
+
+    //TODO: test this
+    private static Queue<GoopPositionData> _GoopsToElectrify = new();
+    private static IEnumerator HandleRecursiveElectrificationFast(DeadlyDeadlyGoopManager __instance, IntVector2 cellIndex)
+    {
+      const float MAX_CELLS_PER_ITER = 200;
+
+      GoopPositionData initialGoopData = __instance.m_goopedCells[cellIndex];
+      if (!__instance.goopDefinition.CanBeElectrified || initialGoopData.IsFrozen || initialGoopData.remainingLifespan < __instance.goopDefinition.fadePeriod)
+        yield break;
+
+      uint currentSemaphore = initialGoopData.elecTriggerSemaphore = ++__instance.m_lastElecSemaphore;
+      int enumeratorCounter = 0;
+      _GoopsToElectrify.Enqueue(initialGoopData);
+      while (_GoopsToElectrify.Count > 0)
+      {
+        GoopPositionData curGoopData = _GoopsToElectrify.Dequeue();
+        if (curGoopData == null)
+          continue;
+
+        if (!curGoopData.IsFrozen && curGoopData.remainingLifespan >= __instance.goopDefinition.fadePeriod)
+        {
+          if (!curGoopData.IsElectrified)
+          {
+            curGoopData.IsElectrified = true;
+            curGoopData.remainingElecTimer = 0f;
+          }
+          curGoopData.remainingElectrifiedTime = __instance.goopDefinition.electrifiedTime;
+        }
+
+        for (int i = 0; i < 8; i++)
+        {
+          GoopPositionData neighbor = curGoopData.neighborGoopData[i];
+          if (neighbor != null && neighbor.elecTriggerSemaphore < currentSemaphore && (!neighbor.IsElectrified || neighbor.remainingElectrifiedTime < __instance.goopDefinition.electrifiedTime - 0.01f))
+          {
+            neighbor.elecTriggerSemaphore = currentSemaphore;
+            _GoopsToElectrify.Enqueue(neighbor);
+          }
+        }
+
+        if (++enumeratorCounter > MAX_CELLS_PER_ITER)
+        {
+          yield return null;
+          enumeratorCounter = 0;
+        }
+      }
+    }
 }
