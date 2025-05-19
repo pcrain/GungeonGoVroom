@@ -50,8 +50,7 @@ internal static class Gooptimizations
         _CachedEGD = _NullEGD;
       }
 
-      // currently unused
-      private static bool TestGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
+      internal static bool TestGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
       {
         int chunkSize     = (int)(manager.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
         int chunkX        = (int)(pos.x / (float)chunkSize);
@@ -86,7 +85,8 @@ internal static class Gooptimizations
     [HarmonyPostfix]
     private static void DeadlyDeadlyGoopManagerClearPerLevelDataPatch()
     {
-      ExtraGoopData.ClearLevelData();
+      if (GGVConfig.OPT_GOOP)
+        ExtraGoopData.ClearLevelData();
     }
 
     //NOTE: this doesn't seem to be significantly faster, so it's disabled
@@ -94,16 +94,18 @@ internal static class Gooptimizations
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerRebuildMeshUvsAndColorsPatch(DeadlyDeadlyGoopManager __instance, int chunkX, int chunkY)
     {
-        // System.Diagnostics.Stopwatch colorsWatch = System.Diagnostics.Stopwatch.StartNew();
+        if (!GGVConfig.OPT_GOOP)
+          return true;
+
         Mesh chunkMesh = __instance.GetChunkMesh(chunkX, chunkY);
         for (int i = 0; i < __instance.m_colorArray.Length; i++)
           __instance.m_colorArray[i].a = 0;
 
-        int chunkBase   = Mathf.RoundToInt(__instance.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
-        int xmin        = chunkX * chunkBase;
-        int xmax        = xmin + chunkBase;
-        int ymin        = chunkY * chunkBase;
-        int ymax        = ymin + chunkBase;
+        int chunkSize   = Mathf.RoundToInt(__instance.CHUNK_SIZE / DeadlyDeadlyGoopManager.GOOP_GRID_SIZE);
+        int xmin        = chunkX * chunkSize;
+        int xmax        = xmin   + chunkSize;
+        int ymin        = chunkY * chunkSize;
+        int ymax        = ymin   + chunkSize;
         var goopedCells = __instance.m_goopedCells;
 
         DeadlyDeadlyGoopManager.GoopPositionData goopData = default;
@@ -112,11 +114,17 @@ internal static class Gooptimizations
         int numUvOptions                                  = __instance.m_centerUVOptions.Count;
         Vector2 uvVec                                     = default;
 
+        UInt64[,,] goopBitfield = ExtraGoopData.Get(__instance).goopedCellBitfield;
+        int bitOffset = -1;
         for (int j = xmin; j < xmax; j++)
         {
           goopPos.x = j;
           for (int k = ymin; k < ymax; k++)
           {
+            ++bitOffset;
+            if ((goopBitfield[chunkX, chunkY, bitOffset / 64] & (1ul << (bitOffset % 64))) == 0)
+              continue; // skip dictionary lookup if the cell definitely isn't gooped
+
             goopPos.y = k;
             if (!goopedCells.TryGetValue(goopPos, out goopData) || goopData.remainingLifespan <= 0f)
               continue;
@@ -149,7 +157,6 @@ internal static class Gooptimizations
         chunkMesh.uv       = __instance.m_uvArray;
         chunkMesh.uv2      = __instance.m_uv2Array;
         chunkMesh.colors32 = __instance.m_colorArray;
-        // colorsWatch.Stop(); System.Console.WriteLine($"    {colorsWatch.ElapsedTicks,-10} ticks to update goops");
         return false;    // skip the original method
     }
 
@@ -373,6 +380,9 @@ internal static class Gooptimizations
     [HarmonyPrefix]
     private static bool FastHasGoopedPositionCountForChunk(DeadlyDeadlyGoopManager __instance, int chunkX, int chunkY, ref bool __result)
     {
+      if (!GGVConfig.OPT_GOOP)
+        return true;
+
       ExtraGoopData egd = ExtraGoopData.Get(__instance);
       for (int i = 0; i < 7; ++i)
         if (egd.goopedCellBitfield[chunkX, chunkY, i] > 0)
