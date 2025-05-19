@@ -784,9 +784,10 @@ internal static class Gooptimizations
       return false;
     }
 
-    //                   original: 1530ns avg
-    // with FastGetRadiusFraction:  930ns avg
-    //         with FastSetCircle:  810ns avg
+    //                   original: 153,000ns avg
+    // with FastGetRadiusFraction:  93,000ns avg
+    //         with FastSetCircle:  81,000ns avg
+    //         with inline floats:  74,000ns avg
     [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.AddGoopPoints))]
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerAddGoopPointsPatch(DeadlyDeadlyGoopManager __instance, List<Vector2> points, float radius, Vector2 excludeCenter, float excludeRadius)
@@ -794,22 +795,26 @@ internal static class Gooptimizations
       if (!GGVConfig.OPT_GOOP)
         return true;
 
-      System.Diagnostics.Stopwatch gooppointsWatch = System.Diagnostics.Stopwatch.StartNew();
+      // System.Diagnostics.Stopwatch gooppointsWatch = System.Diagnostics.Stopwatch.StartNew();
 
-      Vector2 minPoint = Vector2Extensions.max;
-      Vector2 maxPoint = Vector2Extensions.min;
-      for (int i = 0; i < points.Count; i++)
+      float minPointX = points[0].x;
+      float maxPointX = points[0].x;
+      float minPointY = points[0].y;
+      float maxPointY = points[0].y;
+      for (int i = 1; i < points.Count; i++)
       {
-        minPoint = Vector2.Min(minPoint, points[i]);
-        maxPoint = Vector2.Max(maxPoint, points[i]);
+        if      (points[i].x < minPointX) minPointX = points[i].x;
+        else if (points[i].x > maxPointX) maxPointX = points[i].x;
+        if      (points[i].y < minPointY) minPointY = points[i].y;
+        else if (points[i].y > maxPointY) maxPointY = points[i].y;
       }
 
       //NOTE: GOOP_GRID_SIZE == 0.25f
 
-      int minX   = Mathf.FloorToInt((minPoint.x - radius) / GOOP_GRID_SIZE);
-      int maxX   = Mathf.CeilToInt((maxPoint.x + radius) / GOOP_GRID_SIZE);
-      int minY   = Mathf.FloorToInt((minPoint.y - radius) / GOOP_GRID_SIZE);
-      int maxY   = Mathf.CeilToInt((maxPoint.y + radius) / GOOP_GRID_SIZE);
+      int minX   = Mathf.FloorToInt((minPointX - radius) / GOOP_GRID_SIZE);
+      int maxX   = Mathf.CeilToInt((maxPointX + radius) / GOOP_GRID_SIZE);
+      int minY   = Mathf.FloorToInt((minPointY - radius) / GOOP_GRID_SIZE);
+      int maxY   = Mathf.CeilToInt((maxPointY + radius) / GOOP_GRID_SIZE);
       int width  = maxX - minX + 1;
       int height = maxY - minY + 1;
 
@@ -818,36 +823,38 @@ internal static class Gooptimizations
       s_goopPointRadiusSquare = s_goopPointRadius * s_goopPointRadius;
       m_pointsArray.ReinitializeWithDefault(width, height, false, 1f);
 
-      //NOTE: debugging without this for now looking for other optimizations
-      // bool usesLifespan = __instance.goopDefinition.usesLifespan; // the floats don't even get used unless the goop uses lifespan
-
+      bool usesLifespan = __instance.goopDefinition.usesLifespan; // the floats don't even get used unless the goop uses lifespan
       for (int j = 0; j < points.Count; j++)
       {
         s_goopPointCenter.x = (int)(points[j].x / GOOP_GRID_SIZE) - minX;
         s_goopPointCenter.y = (int)(points[j].y / GOOP_GRID_SIZE) - minY;
-        FastSetCircle(m_pointsArray, s_goopPointCenter.x, s_goopPointCenter.y, goopRadius, true, true);
+        FastSetCircle(m_pointsArray, s_goopPointCenter.x, s_goopPointCenter.y, goopRadius, true, updateFractions: usesLifespan);
       }
 
       int x2 = (int)(excludeCenter.x / GOOP_GRID_SIZE) - minX;
       int y2 = (int)(excludeCenter.y / GOOP_GRID_SIZE) - minY;
       int innerExcludeRadius = Mathf.RoundToInt(excludeRadius / GOOP_GRID_SIZE);
-      FastSetCircle(m_pointsArray, x2, y2, innerExcludeRadius, false, false);
+      FastSetCircle(m_pointsArray, x2, y2, innerExcludeRadius, false, updateFractions: false);
 
+      bool[] bits = m_pointsArray.m_bits;
+      float[] floats = m_pointsArray.m_floats;
       for (int k = 0; k < width; k++)
         for (int l = 0; l < height; l++)
-          if (m_pointsArray[k, l])
-            __instance.AddGoopedPosition(new IntVector2(minX + k, minY + l), m_pointsArray.GetFloat(k, l));
+        {
+          int index = k + l * m_pointsArray.m_width;
+          if (bits[index])
+            __instance.AddGoopedPosition(new IntVector2(minX + k, minY + l), floats[index]);
+        }
 
-      gooppointsWatch.Stop();
-      long nanos = gooppointsWatch.ElapsedTicks * 100;
-      _totalNanos += nanos;
-      _totalGoops++;
-
-      GGVDebug.Log($"    {nanos,10:n0}ns gooppoints, {_totalNanos,16:n0}ns total, {(double)_totalNanos / _totalGoops,10:n0}ns average");
+      // gooppointsWatch.Stop();
+      // long nanos = gooppointsWatch.ElapsedTicks * 100;
+      // _totalNanos += nanos;
+      // _totalGoops++;
+      // GGVDebug.Log($"    {nanos,10:n0}ns gooppoints, {_totalNanos,16:n0}ns total, {(double)_totalNanos / _totalGoops,10:n0}ns average");
       return false;
     }
-    private static long _totalNanos = 0;
-    private static long _totalGoops = 0;
+    // private static long _totalNanos = 0;
+    // private static long _totalGoops = 0;
 
     //NOTE: apparently this is called the midpoint circle algorithm, neat
     public static void FastSetCircle(BitArray2D bitArray, int xMid, int yMid, int radius, bool value, bool updateFractions)
@@ -876,8 +883,11 @@ internal static class Gooptimizations
           for (int j = 0; j < 2; ++j)
           {
             int x = xMid + ((j == 0) ? xRad : -xRad);
-            if (x < 0 || x >= bitArray.m_width)
+            if (x < 0 || x >= bitsW)
               continue;
+
+            float xDist = s_goopPointCenter.x - x;
+            float xDistSqr = xDist * xDist;
             for (int y = yMin; y <= yMax; y++)
             {
               int bit = x + y * bitsW;
@@ -885,9 +895,8 @@ internal static class Gooptimizations
               if (!updateFractions)
                 continue;
 
-              float xDist  = s_goopPointCenter.x - x;
               float yDist  = s_goopPointCenter.y - y;
-              float sqrMag = xDist * xDist + yDist * yDist;
+              float sqrMag = xDistSqr + yDist * yDist;
               if (sqrMag >= s_goopPointRadiusSquare)
                 continue;
               if (sqrMag < 0.25f)
