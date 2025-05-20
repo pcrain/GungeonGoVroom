@@ -51,6 +51,7 @@
     <Compile Include="src\Bugfixes.cs"/>
     <Compile Include="src\ConfigMenu.cs"/>
     <Compile Include="src\DebugTiming.cs"/>
+    <Compile Include="src\Testing.cs"/>
     <Compile Include="src\Main.cs"/>
     <Compile Include="src\BeamPoolers\CustomTrailPooler.cs"/>
     <Compile Include="src\BeamPoolers\RaidenBeamPooler.cs"/>

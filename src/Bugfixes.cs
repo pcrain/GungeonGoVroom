@@ -287,4 +287,28 @@ internal static partial class Patches
         }
     }
 
+    /// <summary>Fixes Evolver reverting to its second form after dropping it, picking it back up, and killing 5 enemies.</summary>
+    [HarmonyPatch]
+    private static class EvolverDevolvePatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_EVOLVER)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(EvolverGunController), nameof(EvolverGunController.OnDestroy))]
+        [HarmonyPrefix]
+        private static bool EvolverGunControllerOnDestroyPatch(EvolverGunController __instance)
+        {
+            __instance.Disengage();
+            return false; // everything else is redundant
+        }
+    }
+
 }

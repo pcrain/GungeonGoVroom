@@ -17,6 +17,7 @@ Currently included bugfixes are:
   - **Co-op Turbo Mode Fix**: Fixes co-op partner in turbo mode not getting turbo mode speed buffs until their stats have changed at least once.
   - **Bullet Trail Fix**: Fixes the trails of projectiles disappearing if they travel too slowly (e.g., during timeslow effects).
   - **Beam Damage Cap Fix**: Fixes beams not ignoring boss damage caps even when set to do so. (No such beam exists in vanilla, mostly for modded use).
+  - **Evolver Devolve Fix**: Fixes Evolver devolving to its 2nd form after dropping it, picking it back up, and killing 5 enemies to level it up.
 
 ### Safe Optimizations
 

@@ -12,6 +12,7 @@ internal static class GGVConfig
   internal static bool FIX_COOP_TURBO    = true;
   internal static bool FIX_BULLET_TRAILS = true;
   internal static bool FIX_DAMAGE_CAPS   = true;
+  internal static bool FIX_EVOLVER       = true;
 
   internal static bool OPT_PROJ_STATUS   = true;
   internal static bool OPT_GUI_EVENTS    = true;
@@ -46,6 +47,7 @@ internal static class GGVConfig
     FIX_COOP_TURBO    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.COOP_TURBO);
     FIX_BULLET_TRAILS = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BULLET_TRAILS);
     FIX_DAMAGE_CAPS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DAMAGE_CAPS);
+    FIX_EVOLVER       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.EVOLVER);
 
     OPT_VIS_CHECKS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.VIS_CHECKS);
     OPT_OCCLUSION     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.OCCLUSION);
@@ -79,6 +81,7 @@ internal static class GGVConfig
     System.Console.WriteLine($"FIX_COOP_TURBO           = {FIX_COOP_TURBO}");
     System.Console.WriteLine($"FIX_BULLET_TRAILS        = {FIX_BULLET_TRAILS}");
     System.Console.WriteLine($"FIX_DAMAGE_CAPS          = {FIX_DAMAGE_CAPS}");
+    System.Console.WriteLine($"FIX_EVOLVER              = {FIX_EVOLVER}");
     System.Console.WriteLine($"OPT_OCCLUSION            = {OPT_OCCLUSION}");
     System.Console.WriteLine($"OPT_VIS_CHECKS           = {OPT_VIS_CHECKS}");
     System.Console.WriteLine($"OPT_LIGHT_CULL           = {OPT_LIGHT_CULL}");
@@ -120,6 +123,7 @@ internal static class ConfigMenu
   internal const string COOP_TURBO    = "Co-op Turbo Mode Fix";
   internal const string BULLET_TRAILS = "Bullet Trail Fix";
   internal const string DAMAGE_CAPS   = "Beam Damage Cap Fix";
+  internal const string EVOLVER       = "Evolver Devolve Fix";
 
   internal const string SAFE_OPT      = "Safe Optimizations";
   internal const string OCCLUSION     = "Optimize Occlusion";
@@ -160,6 +164,7 @@ internal static class ConfigMenu
     sf.FancyToggle(COOP_TURBO, "Fixes co-op partner in turbo mode not\ngetting turbo mode speed buffs until\ntheir stats have changed at least once.");
     sf.FancyToggle(BULLET_TRAILS, "Fixes the trails of projectiles\ndisappearing if they travel too slowly\n(e.g., during timeslow effects).");
     sf.FancyToggle(DAMAGE_CAPS, "Fixes beams not ignoring boss damage caps\neven when set to do so. (No\nsuch beam exists in vanilla, mostly for modded use).");
+    sf.FancyToggle(EVOLVER, "Fixes Evolver devolving to its 2nd form\nafter dropping it, picking it back up,\nand killing 5 enemies to level it up.");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
     so.FancyToggle(OCCLUSION, "Speeds up occlusion calculations by\nusing optimized algorithms and caching.\nSaves a large amount of CPU.");
