@@ -3,7 +3,7 @@ namespace GGV;
 internal static class Extensions
 {
     /// <summary>Convenience method for calling an internal / private static function with an ILCursor</summary>
-    public static void CallPrivate(this ILCursor cursor, Type t, string name)
+    internal static void CallPrivate(this ILCursor cursor, Type t, string name)
     {
         cursor.Emit(OpCodes.Call, t.GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic));
     }
@@ -11,14 +11,14 @@ internal static class Extensions
     private static MethodInfo _WriteLine = typeof(System.Console).GetMethod(nameof(System.Console.WriteLine), new Type[]{typeof(string)});
     /// <summary>Convenience method for debug print with an ILCursor</summary>
     [System.Diagnostics.Conditional("DEBUG")]
-    public static void DebugPrint(this ILCursor cursor, string test)
+    internal static void DebugPrint(this ILCursor cursor, string test)
     {
         cursor.Emit(OpCodes.Ldstr, test);
         cursor.Emit(OpCodes.Call, _WriteLine);
     }
 
     /// <summary>Declare a local variable in an ILManipulator</summary>
-    public static VariableDefinition DeclareLocal<T>(this ILContext il)
+    internal static VariableDefinition DeclareLocal<T>(this ILContext il)
     {
         VariableDefinition v = new VariableDefinition(il.Import(typeof(T)));
         il.Body.Variables.Add(v);
@@ -26,7 +26,7 @@ internal static class Extensions
     }
 
     /// <summary>Declare a local variable in an ILManipulator</summary>
-    public static VariableDefinition DeclareLocal(this ILContext il, Type t)
+    internal static VariableDefinition DeclareLocal(this ILContext il, Type t)
     {
         VariableDefinition v = new VariableDefinition(il.Import(t));
         il.Body.Variables.Add(v);

@@ -6,7 +6,7 @@ internal static class GGVConfig
 {
   internal static bool FIX_DUCT_TAPE     = true;
   internal static bool FIX_QUICK_RESTART = true;
-  internal static bool FIX_ROOM_SHUFFLE  = true;
+  internal static bool FIX_SHUFFLE       = true;
   internal static bool FIX_AMMO_UI       = true;
   internal static bool FIX_ORBITAL_GUN   = true;
   internal static bool FIX_COOP_TURBO    = true;
@@ -39,7 +39,7 @@ internal static class GGVConfig
   {
     FIX_DUCT_TAPE     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUCT_TAPE);
     FIX_QUICK_RESTART = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.QUICK_RESTART);
-    FIX_ROOM_SHUFFLE  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ROOM_SHUFFLE);
+    FIX_SHUFFLE       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.SHUFFLE);
     FIX_AMMO_UI       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_UI);
     FIX_ORBITAL_GUN   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ORBITAL_GUN);
     FIX_COOP_TURBO    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.COOP_TURBO);
@@ -71,7 +71,7 @@ internal static class GGVConfig
     #if DEBUG
     System.Console.WriteLine($"FIX_DUCT_TAPE            = {FIX_DUCT_TAPE}");
     System.Console.WriteLine($"FIX_QUICK_RESTART        = {FIX_QUICK_RESTART}");
-    System.Console.WriteLine($"FIX_ROOM_SHUFFLE         = {FIX_ROOM_SHUFFLE}");
+    System.Console.WriteLine($"FIX_ROOM_SHUFFLE         = {FIX_SHUFFLE}");
     System.Console.WriteLine($"FIX_AMMO_UI              = {FIX_AMMO_UI}");
     System.Console.WriteLine($"FIX_ORBITAL_GUN          = {FIX_ORBITAL_GUN}");
     System.Console.WriteLine($"FIX_COOP_TURBO           = {FIX_COOP_TURBO}");
@@ -104,14 +104,14 @@ internal static class GGVConfig
   internal static void Update(string _unused1, string _unused2) => Update();
 }
 
-public static class ConfigMenu
+internal static class ConfigMenu
 {
   internal static Gunfig _Gunfig = null;
 
   internal const string BUG_FIX       = "Bugfixes";
   internal const string DUCT_TAPE     = "Duct Tape Fix";
   internal const string QUICK_RESTART = "Quicksave Fix";
-  internal const string ROOM_SHUFFLE  = "Room Shuffle Fix";
+  internal const string SHUFFLE       = "Shuffle Fix";
   internal const string AMMO_UI       = "Ammo UI Fix";
   internal const string ORBITAL_GUN   = "Orbital Gun Fix";
   internal const string COOP_TURBO    = "Co-op Turbo Mode Fix";
@@ -150,7 +150,7 @@ public static class ConfigMenu
     Gunfig sf = _Gunfig.AddSubMenu(BUG_FIX);
     sf.FancyToggle(DUCT_TAPE, "Fixes duct-taped guns sometimes breaking\nwhen using the elevator save button.");
     sf.FancyToggle(QUICK_RESTART, "Fixes once-per-run rooms not properly\nresetting with Quick Restart, preventing them\nfrom respawning until visiting the Breach.");
-    sf.FancyToggle(ROOM_SHUFFLE, "Fixes an off-by-one error in room randomization,\nmaking certain rooms always / never spawn in\ncertain unintended situations.");
+    sf.FancyToggle(SHUFFLE, "Fixes an off-by-one error in shuffling algorithms,\nmaking rooms always / never spawn in\nunintended situations, among other issues.");
     sf.FancyToggle(AMMO_UI, "Fixes a rendering issue with final projectiles\nin the ammo indicator causing them to render\nabove UI elements they shouldn't.");
     sf.FancyToggle(ORBITAL_GUN, "Fixes orbital guns visually firing from\nthe wrong location if created while the player\nis facing left.");
     sf.FancyToggle(COOP_TURBO, "Fixes co-op partner in turbo mode not\ngetting turbo mode speed buffs until\ntheir stats have changed at least once.");

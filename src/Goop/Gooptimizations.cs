@@ -818,7 +818,7 @@ internal static class Gooptimizations
     // private static long _totalGoops = 0;
 
     //NOTE: apparently this is called the midpoint circle algorithm, neat
-    public static void FastSetCircle(BitArray2D bitArray, int xMid, int yMid, int radius, bool value, bool updateFractions)
+    private static void FastSetCircle(BitArray2D bitArray, int xMid, int yMid, int radius, bool value, bool updateFractions)
     {
       int xOff          = radius;
       int yOff          = 0;

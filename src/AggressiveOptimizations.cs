@@ -331,7 +331,7 @@ internal static partial class Patches
 
         [HarmonyPatch(typeof(BraveMathCollege), nameof(BraveMathCollege.ClosestPointOnRectangle))]
         [HarmonyPrefix]
-        public static bool FastClosestPointOnRectanglePatch(Vector2 point, Vector2 origin, Vector2 dimensions, ref Vector2 __result)
+        private static bool FastClosestPointOnRectanglePatch(Vector2 point, Vector2 origin, Vector2 dimensions, ref Vector2 __result)
         {
           float x = point.x;
           float y = point.y;

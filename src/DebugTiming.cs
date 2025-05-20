@@ -7,7 +7,7 @@ using System.Diagnostics;
 // [HarmonyPatch]
 internal static class DebugTiming
 {
-    static IEnumerable<MethodBase> TargetMethods()
+    private static IEnumerable<MethodBase> TargetMethods()
     {
         //NOTE: populate this with a yield return for each method to time
         // yield return AccessTools.Method(typeof(Pathfinding.Pathfinder), nameof(Pathfinding.Pathfinder.Initialize));
@@ -18,7 +18,7 @@ internal static class DebugTiming
         // yield return AccessTools.Method(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.HasGoopedPositionCountForChunk));
         // yield return AccessTools.Method(typeof(Gooptimizations), "FastHasGoopedPositionCountForChunk");
         // yield return AccessTools.Method(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.HandleRecursiveElectrification));
-        yield return AccessTools.Method(typeof(Gooptimizations), "HandleRecursiveElectrificationFast");
+        // yield return AccessTools.Method(typeof(Gooptimizations), "HandleRecursiveElectrificationFast");
         yield break;
     }
 

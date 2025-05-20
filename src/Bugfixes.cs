@@ -8,7 +8,7 @@ internal static partial class Patches
     {
         private static bool Prepare(MethodBase original)
         {
-          if (!GGVConfig.FIX_ROOM_SHUFFLE)
+          if (!GGVConfig.FIX_SHUFFLE)
             return false;
           if (original == null)
             GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
@@ -17,9 +17,20 @@ internal static partial class Patches
           return true;
         }
 
-        private static MethodBase TargetMethod() {
+        private static IEnumerable<MethodBase> TargetMethods()
+        {
             // refer to C# reflection documentation:
-            return typeof(BraveUtility).GetMethod("GenerationShuffle", BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(typeof(int));
+            MethodInfo genShuffle = typeof(BraveUtility).GetMethod("GenerationShuffle", BindingFlags.Static | BindingFlags.Public);
+            yield return genShuffle.MakeGenericMethod(typeof(int));
+            yield return genShuffle.MakeGenericMethod(typeof(IntVector2));
+            yield return genShuffle.MakeGenericMethod(typeof(Tuple<RuntimeRoomExitData, RuntimeRoomExitData>));
+            yield return genShuffle.MakeGenericMethod(typeof(PrototypeRoomExit));
+
+            MethodInfo standardShuffle = typeof(BraveUtility).GetMethod("Shuffle", BindingFlags.Static | BindingFlags.Public);
+            yield return standardShuffle.MakeGenericMethod(typeof(int));
+            yield return standardShuffle.MakeGenericMethod(typeof(IntVector2));
+            yield return standardShuffle.MakeGenericMethod(typeof(AIActor));
+            yield return standardShuffle.MakeGenericMethod(typeof(IPaydayItem));
         }
 
         [HarmonyILManipulator]

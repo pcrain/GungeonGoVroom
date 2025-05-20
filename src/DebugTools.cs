@@ -1,5 +1,5 @@
 // comment out to suppress patch loading information
-// #define LOGPATCHES
+#define LOGPATCHES
 
 namespace GGV;
 
@@ -41,14 +41,14 @@ internal static class GGVDebug
 {
     // Log with the console only in debug mode
     [System.Diagnostics.Conditional("DEBUG")]
-    public static void Log(string text)
+    internal static void Log(string text)
     {
         System.Console.WriteLine("[GGV]: " + text);
     }
 
     // Log patch information with the console only in debug mode
     [System.Diagnostics.Conditional("DEBUG")]
-    public static void LogPatch(string text)
+    internal static void LogPatch(string text)
     {
         #if LOGPATCHES
         System.Console.WriteLine("[GGV]: " + text);
@@ -57,7 +57,7 @@ internal static class GGVDebug
 
     // Warn with the console only in debug mode
     [System.Diagnostics.Conditional("DEBUG")]
-    public static void Warn(string text)
+    internal static void Warn(string text)
     {
         ETGModConsole.Log($"<color=#ffffaaff>{text}</color>");
     }
@@ -65,13 +65,13 @@ internal static class GGVDebug
 
 internal static class Dissect // reflection helper methods
 {
-    public static void DumpComponents(this GameObject g)
+    internal static void DumpComponents(this GameObject g)
     {
         foreach (var c in g.GetComponents(typeof(object)))
             ETGModConsole.Log("  "+c.GetType().Name);
     }
 
-    public static void DumpFieldsAndProperties<T>(T o)
+    internal static void DumpFieldsAndProperties<T>(T o)
     {
         Type type = typeof(T);
         foreach (var f in type.GetFields())
@@ -80,7 +80,7 @@ internal static class Dissect // reflection helper methods
             Console.WriteLine(" prop {0} = {1}", d.Name, d.GetValue(o));
     }
 
-    public static void CompareFieldsAndProperties<T>(T o1, T o2)
+    internal static void CompareFieldsAndProperties<T>(T o1, T o2)
     {
         // Type type = o.GetType();
         Type type = typeof(T);
