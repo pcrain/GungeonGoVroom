@@ -249,4 +249,42 @@ internal static partial class Patches
         }
     }
 
+    /// <summary>Fixes ignoreDamageCaps not working on beams.</summary>
+    [HarmonyPatch]
+    private static class BeamDamageCapPatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_DAMAGE_CAPS)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(BasicBeamController), nameof(BasicBeamController.FrameUpdate))]
+        [HarmonyILManipulator]
+        private static void BasicBeamControllerFrameUpdateIL(ILContext il)
+        {
+            ILCursor cursor = new ILCursor(il);
+            for (int i = 0; i < 3; ++i) // move right before the 3rd ApplyDamage() call
+                if (!cursor.TryGotoNext(i == 2 ? MoveType.Before : MoveType.After,
+                  instr => instr.MatchCallvirt<HealthHaver>(nameof(HealthHaver.ApplyDamage))))
+                    return;
+
+            if (!cursor.TryGotoPrev(MoveType.After, instr => instr.MatchLdcI4(0))) // hardcoded false for ignoreDamageCaps
+                return;
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.CallPrivate(typeof(BeamDamageCapPatch), nameof(BeamShouldIgnoreDamageCaps));
+        }
+
+        private static bool BeamShouldIgnoreDamageCaps(bool origVal, BasicBeamController beam)
+        {
+            return origVal || (beam.projectile && beam.projectile.ignoreDamageCaps);
+        }
+    }
+
 }

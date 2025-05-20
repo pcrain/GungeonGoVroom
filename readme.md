@@ -16,6 +16,7 @@ Currently included bugfixes are:
   - **Orbital Gun Fix**: Fixes orbital guns visually firing from the wrong location if created while the player is facing left.
   - **Co-op Turbo Mode Fix**: Fixes co-op partner in turbo mode not getting turbo mode speed buffs until their stats have changed at least once.
   - **Bullet Trail Fix**: Fixes the trails of projectiles disappearing if they travel too slowly (e.g., during timeslow effects).
+  - **Beam Damage Cap Fix**: Fixes beams not ignoring boss damage caps even when set to do so. (No such beam exists in vanilla, mostly for modded use).
 
 ### Safe Optimizations
 
