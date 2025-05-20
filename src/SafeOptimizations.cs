@@ -370,7 +370,11 @@ internal static partial class Patches
           return true;
         }
 
+        #if DEBUG
+        private static readonly List<int> oldClearances = new();
+        private static readonly List<int> newClearances = new();
         private static bool callOriginal = false;
+        #endif
         [HarmonyPatch(typeof(Pathfinding.Pathfinder), nameof(Pathfinding.Pathfinder.RecalculateClearances), new[]{typeof(int), typeof(int), typeof(int), typeof(int)})]
         [HarmonyPrefix]
         private static bool RecalculateClearancesPatch(Pathfinding.Pathfinder __instance, int minX, int minY, int maxX, int maxY)
@@ -378,75 +382,193 @@ internal static partial class Patches
           #if DEBUG
           if (callOriginal)
             return true;
-          #endif
-
-          int numCells = (maxX - minX + 1) * (maxY - minY + 1);
-
-          #if DEBUG
           callOriginal = true;
           System.Diagnostics.Stopwatch tempWatch = System.Diagnostics.Stopwatch.StartNew();
           __instance.RecalculateClearances(minX, minY, maxX, maxY);
           tempWatch.Stop();
           callOriginal = false;
-          ulong ohash = HashClearances(__instance);
+          ulong ohash = HashClearances(__instance, oldClearances);
           System.Diagnostics.Stopwatch tempWatch2 = System.Diagnostics.Stopwatch.StartNew();
           #endif
 
           var nodes = __instance.m_nodes;
           int w = __instance.m_width;
-          int mapXMax = __instance.m_width - 1;
-          int mapYMax = __instance.m_height - 1;
-          // handle some edge cases where we might reuse stale nodes just barely outside our range
-          int borderX = (maxX < mapXMax) ? (maxX + 1) : mapXMax;
-          int borderY = (maxY < mapYMax) ? (maxY + 1) : mapYMax;
-          for (int i = borderX; i >= minX; i--)
+          int h = __instance.m_height;
+
+          // bottom right is either 1 or 0 depending on whether it's blocked
+          Pathfinder.PathNode bottomRightNode = nodes[maxX + maxY * w];
+          CellData bottomRightCell = bottomRightNode.CellData;
+          if ((bottomRightCell == null || bottomRightCell.isOccupied || bottomRightCell.type == CellType.WALL || (bottomRightCell.type == CellType.PIT && !bottomRightCell.fallingPrevented)))
+            bottomRightNode.SquareClearance = 0;
+          else
+            bottomRightNode.SquareClearance = 1;
+
+          // compute bottom row the old way
+          for (int i = maxX - 1; i >= minX; i--)
           {
-            for (int j = borderY; j >= minY; j--)
+              int nodeIndex    = i + maxY * w;
+              CellData cell    = nodes[nodeIndex].CellData;
+              int maxClearance = nodes[nodeIndex + 1].SquareClearance + 1;
+              int curClearance = 0; // this node itself might be a wall / blocked cell
+              // seek downward until we find a blocked cell
+              for (; curClearance < maxClearance; ++curClearance)
+              {
+                int nextY = maxY + curClearance;
+                if (nextY == h) // out of bounds, so we're done
+                  goto advanceLeft;
+                CellData nextCell = nodes[i + nextY * w].CellData;
+                if ((nextCell == null || nextCell.isOccupied || nextCell.type == CellType.WALL || (nextCell.type == CellType.PIT && !nextCell.fallingPrevented)))
+                  goto advanceLeft;
+              }
+              // seek rightward until we find a blocked cell, and subtract 1 from our clearance if we find anything
+              int newMaxi = i + maxClearance;
+              if (newMaxi > w)
+                newMaxi = w;
+              for (int newi = i; newi < newMaxi; ++newi)
+              {
+                CellData nextCell = nodes[newi + (maxY + maxClearance - 1) * w].CellData;
+                if ((nextCell == null || nextCell.isOccupied || nextCell.type == CellType.WALL || (nextCell.type == CellType.PIT && !nextCell.fallingPrevented)))
+                {
+                  curClearance -= 1;
+                  break;
+                }
+              }
+            advanceLeft:
+              nodes[nodeIndex].SquareClearance = curClearance;
+          }
+
+          // compute right column the old way
+          for (int j = maxY - 1; j >= minY; j--)
+          {
+              int nodeIndex    = maxX + j * w;
+              CellData cell    = nodes[nodeIndex].CellData;
+              int maxClearance = nodes[nodeIndex + w].SquareClearance + 1;
+              int curClearance = 0; // this node itself might be a wall / blocked cell
+              // seek rightward until we find a blocked cell
+              for (; curClearance < maxClearance; ++curClearance)
+              {
+                int nextX = maxX + curClearance;
+                if (nextX == w) // out of bounds, so we're done
+                  goto advanceUp;
+                // CellData nextCell = nodes[i + (maxY + curClearance) * w].CellData;
+                CellData nextCell = nodes[nextX + j * w].CellData;
+                if ((nextCell == null || nextCell.isOccupied || nextCell.type == CellType.WALL || (nextCell.type == CellType.PIT && !nextCell.fallingPrevented)))
+                  goto advanceUp;
+              }
+              // seek downward until we find a blocked cell, and subtract 1 from our clearance if we find anything
+              int newMaxj = j + maxClearance;
+              if (newMaxj > h)
+                newMaxj = h;
+              for (int newj = j; newj < newMaxj; ++newj)
+              {
+                CellData nextCell = nodes[maxX + maxClearance - 1 + newj * w].CellData;
+                if ((nextCell == null || nextCell.isOccupied || nextCell.type == CellType.WALL || (nextCell.type == CellType.PIT && !nextCell.fallingPrevented)))
+                {
+                  curClearance -= 1;
+                  break;
+                }
+              }
+            advanceUp:
+              nodes[nodeIndex].SquareClearance = curClearance;
+          }
+
+          // dynamic programming our way to happiness for the remaining cells
+          for (int i = maxX - 1; i >= minX; i--)
+          {
+            for (int j = maxY - 1; j >= minY; j--)
             {
               int nodeIndex = i + j * w;
               Pathfinder.PathNode node = nodes[nodeIndex];
               CellData cell = node.CellData;
               if ((cell == null || cell.isOccupied || cell.type == CellType.WALL || (cell.type == CellType.PIT && !cell.fallingPrevented)))
-                node.SquareClearance = 0;
-              else if (i == mapXMax || j == mapYMax)
-                node.SquareClearance = 1;
-              else
               {
-                int minClearance = nodes[nodeIndex + w + 1].SquareClearance;
-                int right = nodes[nodeIndex + 1].SquareClearance;
-                if (right < minClearance)
-                  minClearance = right;
-                int below = nodes[nodeIndex + w].SquareClearance;
-                if (below < minClearance)
-                  minClearance = below;
-                int nextClearance = 1 + minClearance;
-
-                int maxClearanceX = maxX - i + 1;
-                int maxClearanceY = maxY - j + 1;
-                int maxClearance = (maxClearanceX > maxClearanceY) ? maxClearanceX : maxClearanceY;
-
-                node.SquareClearance = (nextClearance < maxClearance) ? nextClearance : maxClearance;
+                node.SquareClearance = 0;
+                continue;
               }
+
+              int minClearance = nodes[nodeIndex + w + 1].SquareClearance;
+              int right = nodes[nodeIndex + 1].SquareClearance;
+              if (right < minClearance)
+                minClearance = right;
+              int below = nodes[nodeIndex + w].SquareClearance;
+              if (below < minClearance)
+                minClearance = below;
+              int nextClearance = 1 + minClearance;
+
+              int maxClearanceX = maxX - i + 1;
+              int maxClearanceY = maxY - j + 1;
+              int maxClearance = (maxClearanceX > maxClearanceY) ? maxClearanceX : maxClearanceY;
+
+              node.SquareClearance = (nextClearance < maxClearance) ? nextClearance : maxClearance;
             }
           }
 
           #if DEBUG
           tempWatch2.Stop();
-          // System.Console.WriteLine($"    new: {tempWatch2.ElapsedTicks * 100,6:n0} ns clearances for {numCells} cells, {tempWatch.ElapsedTicks / (float)tempWatch2.ElapsedTicks}x speedup");
+          int numCells = (maxX - minX + 1) * (maxY - minY + 1);
+          System.Console.WriteLine($"    new: {tempWatch2.ElapsedTicks * 100,6:n0} ns clearances for {numCells} cells, {tempWatch.ElapsedTicks / (float)tempWatch2.ElapsedTicks}x speedup");
 
-          if (ohash != HashClearances(__instance))
+          if (ohash != HashClearances(__instance, newClearances))
           {
             ETGModConsole.Log("PATH NOTE HASHES DON'T MATCH");
             System.Console.WriteLine($"but hashes don't match! D:");
+            Diff(oldClearances, newClearances, w, h);
           }
 
-          static ulong HashClearances(Pathfinding.Pathfinder p)
+          static void Diff(List<int> good, List<int> bad, int w, int h)
           {
+            const string CLR = "\u001b[0m";
+            const string RED = "\u001b[31m";
+            const string GRN = "\u001b[32m";
+            const string BLU = "\u001b[34m";
+            const string CHARS = "0123456789abcdefghijklmnopqrstuvwxyz";
+
+            using (StreamWriter file = File.CreateText(System.IO.Path.Combine(Paths.GameRootPath, "pathing.txt")))
+            {
+                for (int i = 0; i < w; ++i)
+                {
+                  for (int j = 0; j < h; ++j)
+                  {
+                    int n = i + j * w;
+                    if (good[n] != bad[n])
+                      file.Write($"{GRN}{CHARS[good[n]]}{CLR}");
+                    else if (good[n] == 0)
+                      file.Write($"{BLU}{CHARS[good[n]]}{CLR}");
+                    else
+                      file.Write($"{CHARS[good[n]]}");
+                  }
+                  file.WriteLine("");
+                }
+
+                file.WriteLine("");
+
+                for (int i = 0; i < w; ++i)
+                {
+                  for (int j = 0; j < h; ++j)
+                  {
+                    int n = i + j * w;
+                    if (good[n] != bad[n])
+                      file.Write($"{RED}{CHARS[bad[n]]}{CLR}");
+                    else if (good[n] == 0)
+                      file.Write($"{BLU}{CHARS[bad[n]]}{CLR}");
+                    else
+                      file.Write($"{CHARS[good[n]]}");
+                  }
+                  file.WriteLine("");
+                }
+            }
+
+          }
+
+          static ulong HashClearances(Pathfinding.Pathfinder p, List<int> clearances)
+          {
+            clearances.Clear();
             ulong hash = 69420;
             foreach (var node in p.m_nodes)
             {
               hash = hash * 1337;
               hash = hash ^ (ulong)node.SquareClearance;
+              clearances.Add(node.SquareClearance);
             }
             return hash;
           }
