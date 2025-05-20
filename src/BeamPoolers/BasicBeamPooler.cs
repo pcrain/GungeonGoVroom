@@ -7,12 +7,22 @@ internal static class BasicBeamPooler
 {
     private static readonly LinkedList<BeamBone> _BonePool = new();
     private static int _TotalBones = 0;
-    private static bool _Enabled = false; // cannot be enabled / disabled at run time without causing issues, so lock it in during patching
 
     private static readonly Type _BoneListType = typeof(LinkedList<>).MakeGenericType(typeof(BeamBone));
     private static readonly MethodInfo _AddFirstBone = _BoneListType.GetMethod("AddFirst", new[]{typeof(BeamBone)});
     private static readonly MethodInfo _AddLastBone = _BoneListType.GetMethod("AddLast", new[]{typeof(BeamBone)});
     private static readonly MethodInfo _AddBeforeBone = _BoneListType.GetMethod("AddBefore", new[]{typeof(LinkedListNode<BeamBone>), typeof(BeamBone)});
+
+    private static bool Prepare(MethodBase original)
+    {
+      if (!GGVConfig.OPT_BEAMS)
+        return false;
+      if (original == null)
+        GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+      else
+        GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+      return true;
+    }
 
     // #if DEBUG
     // [HarmonyPatch(typeof(BeamBone), MethodType.Constructor, new[] {typeof(float), typeof(float), typeof(int)})]
@@ -153,9 +163,6 @@ internal static class BasicBeamPooler
     [HarmonyILManipulator]
     private static void StartPatch(ILContext il)
     {
-        _Enabled = GGVConfig.OPT_BEAMS;
-        if (!_Enabled)
-          return;
         ILCursor cursor = new ILCursor(il);
         if (!cursor.ReplaceNextIntConstructorAndAddFirst()) return;
         if (!cursor.ReplaceNextIntConstructorAndAddLast()) return;
@@ -167,9 +174,6 @@ internal static class BasicBeamPooler
     [HarmonyILManipulator]
     private static void SeparateBeamPatch(ILContext il)
     {
-        _Enabled = GGVConfig.OPT_BEAMS;
-        if (!_Enabled)
-          return;
         ILCursor cursor = new ILCursor(il);
 
         if (cursor.ReplaceNextConstructionWithRental(il, nameof(BasicBeamPooler.RentCopy)) is not VariableDefinition node)
@@ -195,9 +199,6 @@ internal static class BasicBeamPooler
     [HarmonyILManipulator]
     private static void HandleBeamFramePatch(ILContext il)
     {
-        _Enabled = GGVConfig.OPT_BEAMS;
-        if (!_Enabled)
-          return;
         ILCursor cursor = new ILCursor(il);
         if (!cursor.ReplaceNextIntConstructorAndAddFirst()) return; // line 1324
         if (!cursor.ReplaceNextRemoveLast())                return; // line 1329
@@ -241,7 +242,7 @@ internal static class BasicBeamPooler
     [HarmonyPrefix]
     static void BasicBeamControllerOnDestroyPatch(BasicBeamController __instance)
     {
-        if (_Enabled && __instance.m_bones != null)
+        if (__instance.m_bones != null)
             ReturnAll(__instance.m_bones);
     }
     #endregion

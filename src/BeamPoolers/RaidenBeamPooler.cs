@@ -7,7 +7,17 @@ internal static class RaidenBeamPooler
 {
     private static readonly LinkedList<Bone> _BonePool = new();
     private static int _TotalBones = 0;
-    private static bool _Enabled = false; // cannot be enabled / disabled at run time without causing issues, so lock it in during patching
+
+    private static bool Prepare(MethodBase original)
+    {
+      if (!GGVConfig.OPT_BEAMS)
+        return false;
+      if (original == null)
+        GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+      else
+        GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+      return true;
+    }
 
     [HarmonyPatch(typeof(Bone), MethodType.Constructor, new[] {typeof(Vector2)})]
     [HarmonyPostfix]
@@ -79,9 +89,6 @@ internal static class RaidenBeamPooler
     [HarmonyILManipulator]
     private static void StartPatch(ILContext il)
     {
-        _Enabled = GGVConfig.OPT_BEAMS;
-        if (!_Enabled)
-          return;
         ILCursor cursor = new ILCursor(il);
         if (!cursor.ReplaceConstructor()) return;
         if (!cursor.ReplaceConstructor()) return;
@@ -93,9 +100,6 @@ internal static class RaidenBeamPooler
     [HarmonyILManipulator]
     private static void HandleBeamFramePatch(ILContext il)
     {
-        _Enabled = GGVConfig.OPT_BEAMS;
-        if (!_Enabled)
-          return;
         ILCursor cursor = new ILCursor(il);
         if (!cursor.ReplaceClear()) return;
         // GGVDebug.Log("patched RaidenBeamController.HandleBeamFrame!");
@@ -105,8 +109,6 @@ internal static class RaidenBeamPooler
     [HarmonyPrefix]
     static void BasicBeamControllerOnDestroyPatch(RaidenBeamController __instance)
     {
-        if (!_Enabled)
-            return;
         if (__instance.m_bones != null)
             ReturnAll(__instance.m_bones);
     }

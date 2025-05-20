@@ -21,13 +21,21 @@ internal static class BuildForChunkOptimizer
   private static Color[]     colorsA = new Color[0];
   private static Vector2[]      uvsA = new Vector2[0];
 
+  private static bool Prepare(MethodBase original)
+  {
+    if (!GGVConfig.OPT_CHUNKBUILD)
+      return false;
+    if (original == null)
+      GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+    else
+      GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+    return true;
+  }
+
   [HarmonyPatch(typeof(RenderMeshBuilder), nameof(RenderMeshBuilder.BuildForChunk))]
   [HarmonyPrefix]
   private static bool RenderMeshBuilderBuildForChunkPatch(tk2dTileMap tileMap, SpriteChunk chunk, bool useColor, bool skipPrefabs, int baseX, int baseY, LayerInfo layerData)
   {
-      if (!GGVConfig.OPT_CHUNKBUILD)
-          return true; // call the original method
-
       if (firstBuild)
       {
         for (int i = 0; i < _MAX_MATS; ++i)

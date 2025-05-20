@@ -9,7 +9,17 @@ internal static class CustomTrailPooler
   private static readonly LinkedList<Point> _ActiveNodes = new(); // contains empty nodes
   private static readonly LinkedList<Tuple<Transform,Point[]>> _ActiveTransforms = new();
   private static readonly LinkedList<Tuple<Transform,Point[]>> _InactiveTransforms = new();
-  private static bool _Enabled = false; // cannot be enabled / disabled at run time without causing issues, so lock it in during patching
+
+  private static bool Prepare(MethodBase original)
+  {
+    if (!GGVConfig.OPT_TRAILS)
+      return false;
+    if (original == null)
+      GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+    else
+      GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+    return true;
+  }
 
   // [HarmonyPatch(typeof(CustomTrailRenderer.Point), MethodType.Constructor, new[] {typeof(Transform)})]
   // [HarmonyPrefix]
@@ -93,8 +103,6 @@ internal static class CustomTrailPooler
   [HarmonyPrefix]
   private static void CustomTrailRendererClearPatch(CustomTrailRenderer __instance)
   {
-    if (!_Enabled)
-      return;
     for (int num = __instance.numPoints - 1; num >= 0; num--)
       __instance.points[num] = Return(__instance.points[num]);
     __instance.numPoints = 0;
@@ -104,9 +112,6 @@ internal static class CustomTrailPooler
   [HarmonyILManipulator]
   private static void CustomTrailRendererUpdateMeshPatchIL(ILContext il)
   {
-      _Enabled = GGVConfig.OPT_TRAILS;
-      if (!_Enabled)
-        return;
       ILCursor cursor = new ILCursor(il);
       if (!cursor.TryGotoNext(MoveType.Before,
         instr => instr.MatchLdnull(),
@@ -133,9 +138,6 @@ internal static class CustomTrailPooler
   [HarmonyILManipulator]
   private static void CustomTrailRendererInsertPointPatchIL(ILContext il)
   {
-      _Enabled = GGVConfig.OPT_TRAILS;
-      if (!_Enabled)
-        return;
       ILCursor cursor = new ILCursor(il);
       if (!cursor.TryGotoNext(MoveType.Before,
         instr => instr.MatchNewobj<Point>(),

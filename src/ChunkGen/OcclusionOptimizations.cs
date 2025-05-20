@@ -19,6 +19,17 @@ internal static class OcclusionOptimizations
     private static float[] _CachedKernels = null;
     private static readonly List<RoomHandler> _NearbyRooms = new();
 
+    private static bool Prepare(MethodBase original)
+    {
+      if (!GGVConfig.OPT_OCCLUSION)
+        return false;
+      if (original == null)
+        GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+      else
+        GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+      return true;
+    }
+
     // start:   244,000ns to 418,200ns
     // v1:      160,000ns to 200,000ns
     // v2:       40,000ns to 100,000ns
@@ -28,9 +39,6 @@ internal static class OcclusionOptimizations
     [HarmonyPrefix]
     private static bool FastGenerateOcclusionTexture(OcclusionLayer __instance, int baseX, int baseY, DungeonData d, ref Texture2D __result)
     {
-      if (!GGVConfig.OPT_OCCLUSION)
-        return true;
-
       #if DEBUG
       System.Diagnostics.Stopwatch occlusionWatch = System.Diagnostics.Stopwatch.StartNew();
       #endif

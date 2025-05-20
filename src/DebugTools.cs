@@ -1,3 +1,6 @@
+// comment out to suppress patch loading information
+// #define LOGPATCHES
+
 namespace GGV;
 
 using System.Diagnostics;
@@ -41,6 +44,15 @@ internal static class GGVDebug
     public static void Log(string text)
     {
         System.Console.WriteLine("[GGV]: " + text);
+    }
+
+    // Log patch information with the console only in debug mode
+    [System.Diagnostics.Conditional("DEBUG")]
+    public static void LogPatch(string text)
+    {
+        #if LOGPATCHES
+        System.Console.WriteLine("[GGV]: " + text);
+        #endif
     }
 
     // Warn with the console only in debug mode

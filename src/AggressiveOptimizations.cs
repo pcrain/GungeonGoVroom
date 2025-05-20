@@ -6,6 +6,17 @@ internal static partial class Patches
     [HarmonyPatch]
     private static class OptimiseIntVectorPointcastPatch
     {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.OPT_POINTCAST)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
         private static MethodBase TargetMethod() {
           return typeof(PhysicsEngine).GetMethod("Pointcast", new Type[] {
             typeof(IntVector2), typeof(SpeculativeRigidbody).MakeByRefType(), typeof(bool),
@@ -39,12 +50,6 @@ internal static partial class Patches
           bool collideWithRigidbodies, int rayMask, CollisionLayer? sourceLayer, bool collideWithTriggers,
           params SpeculativeRigidbody[] ignoreList)
         {
-          if (!GGVConfig.OPT_POINTCAST)
-          {
-            result = null; // must be assigned, so leave it null
-            return true; // call original
-          }
-          // GGVDebug.Log($"speed o:");
           if (collideWithTiles && __instance.TileMap)
           {
             __instance.TileMap.GetTileAtPosition(PhysicsEngine.PixelToUnit(point), out var x, out var y);
@@ -91,14 +96,23 @@ internal static partial class Patches
 
     /// <summary>Speed up slow logic in HandleAmbientPitVFX()</summary>
     [HarmonyPatch]
-    static class DungeonHandleAmbientPitVFXPatch
+    private static class DungeonHandleAmbientPitVFXPatch
     {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.OPT_PIT_VFX)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
         [HarmonyPatch(typeof(Dungeon), nameof(Dungeon.HandleAmbientPitVFX))]
         static IEnumerator Postfix(IEnumerator orig, Dungeon __instance)
         {
-            if (GGVConfig.OPT_PIT_VFX)
-              return HandleAmbientPitVFXFast(__instance);
-            return orig; // disabled for now
+          return HandleAmbientPitVFXFast(__instance);
         }
 
         private static IEnumerator HandleAmbientPitVFXFast(Dungeon self)
@@ -222,82 +236,26 @@ internal static partial class Patches
         }
     }
 
-    /// <summary>Optimize ClosestPointOnRectangle() by avoiding function calls and taking advantage of the fact that rectangles are axis-aligned.</summary>
-    [HarmonyPatch(typeof(BraveMathCollege), nameof(BraveMathCollege.ClosestPointOnRectangle))]
-    [HarmonyPrefix]
-    public static bool FastClosestPointOnRectanglePatch(Vector2 point, Vector2 origin, Vector2 dimensions, ref Vector2 __result)
-    {
-      if (!GGVConfig.OPT_MATH)
-        return true; // call original method
-
-      float x = point.x;
-      float y = point.y;
-      float left = origin.x;
-      float right = left + dimensions.x;
-      float bottom = origin.y;
-      float top = bottom + dimensions.y;
-      if (x <= left)
-        __result = new Vector2(left, (y < bottom) ? bottom : (y > top) ? top : y);
-      else if (x >= right)
-        __result = new Vector2(right, (y < bottom) ? bottom : (y > top) ? top : y);
-      else if (y <= bottom)
-        __result = new Vector2((x < left) ? left : (x > right) ? right : x, bottom);
-      else if (y >= top)
-        __result = new Vector2((x < left) ? left : (x > right) ? right : x, top);
-      else // we're inside the rectangle, so find the closest edge
-      {
-
-        float midH = 0.5f * (left + right);
-        float midV = 0.5f * (bottom + top);
-        if (x < midH) // left half
-        {
-          if (y < midV) // bottom left quadrant
-          {
-            if ((x - left) < (y - bottom)) // closer to left edge than bottom
-              __result = new Vector2(left, y);
-            else // closer to bottom edge than left
-              __result = new Vector2(x, bottom);
-          }
-          else // top left quadrant
-          {
-            if ((x - left) < (top - y)) // closer to left edge than top
-              __result = new Vector2(left, y);
-            else // closer to top edge than left
-              __result = new Vector2(x, top);
-          }
-        }
-        else // right half
-        {
-          if (y < midV) // bottom right quadrant
-          {
-            if ((right - x) < (y - bottom)) // closer to right edge than bottom
-              __result = new Vector2(right, y);
-            else // closer to bottom edge than right
-              __result = new Vector2(x, bottom);
-          }
-          else // top right quadrant
-          {
-            if ((right - x) < (top - y)) // closer to right edge than top
-              __result = new Vector2(right, y);
-            else // closer to top edge than right
-              __result = new Vector2(x, top);
-          }
-        }
-      }
-      return false;
-    }
-
     /// <summary>Optimize calls to DungeonData Width and Height properties by caching results of CellData creation and using fields instead</summary>
     [HarmonyPatch]
     private static class DungeonWidthAndHeightPatches
     {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.OPT_DUNGEON_DIMS)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
         /// <summary>Vanilla only ever calls ClearCachedCellData() after resizing Dungeon.data.cellData, so we can just adjust the width and height immediately.</summary>
         [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.ClearCachedCellData))]
         [HarmonyPostfix]
         private static void ClearCachedCellData(DungeonData __instance)
         {
-          if (!GGVConfig.OPT_DUNGEON_DIMS)
-            return;
           __instance.m_width = __instance.cellData.Length;
           __instance.m_height = __instance.cellData[0].Length;
         }
@@ -307,8 +265,6 @@ internal static partial class Patches
         [HarmonyPostfix]
         private static void ClearCachedCellData(DungeonData __instance, CellData[][] data)
         {
-          if (!GGVConfig.OPT_DUNGEON_DIMS)
-            return;
           __instance.m_width = __instance.cellData.Length;
           __instance.m_height = __instance.cellData[0].Length;
         }
@@ -337,8 +293,6 @@ internal static partial class Patches
         [HarmonyILManipulator]
         private static void DungeonDataWidthAndHeightPatchesIL(ILContext il, MethodBase original)
         {
-            if (!GGVConfig.OPT_DUNGEON_DIMS)
-              return;
             ILCursor cursor = new ILCursor(il);
             Type ot = original.DeclaringType;
             int replacements = 0;
@@ -360,49 +314,154 @@ internal static partial class Patches
         }
     }
 
-    /// <summary>Minimize property invocations when updating sprite z depths</summary>
-    [HarmonyPatch(typeof(tk2dBaseSprite), nameof(tk2dBaseSprite.UpdateZDepthInternal))]
-    [HarmonyPrefix]
-    private static bool FastUpdateZDepthInternal(tk2dBaseSprite __instance, float targetZValue, float currentYValue)
+    /// <summary>Optimize ClosestPointOnRectangle() by avoiding function calls and taking advantage of the fact that rectangles are axis-aligned.</summary>
+    [HarmonyPatch]
+    private static class MathOptimizations
     {
-      if (!GGVConfig.OPT_DEPTH_CHECKS)
-        return true;
-      __instance.IsZDepthDirty = false;
-      Vector3 position = __instance.m_transform.position;
-      if (position.z != targetZValue)
-      {
-        position.z = targetZValue;
-        __instance.m_transform.position = position;
-      }
-      if (__instance.attachedRenderers == null || __instance.attachedRenderers.Count <= 0)
-        return false;
-
-      bool isPerpendicular = __instance.IsPerpendicular;
-      for (int i = __instance.attachedRenderers.Count - 1; i >= 0; --i)
-      {
-        tk2dBaseSprite attachedSprite = __instance.attachedRenderers[i];
-        if (!attachedSprite || attachedSprite.attachParent != __instance)
+        private static bool Prepare(MethodBase original)
         {
-          __instance.attachedRenderers.RemoveAt(i);
-          continue;
+          if (!GGVConfig.OPT_MATH)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
         }
-        attachedSprite.UpdateZDepthAttached(targetZValue, currentYValue, isPerpendicular);
-        if (!attachedSprite.independentOrientation && isPerpendicular != attachedSprite.IsPerpendicular)
-          attachedSprite.IsPerpendicular = isPerpendicular;
-      }
-      return false;
+
+        [HarmonyPatch(typeof(BraveMathCollege), nameof(BraveMathCollege.ClosestPointOnRectangle))]
+        [HarmonyPrefix]
+        public static bool FastClosestPointOnRectanglePatch(Vector2 point, Vector2 origin, Vector2 dimensions, ref Vector2 __result)
+        {
+          float x = point.x;
+          float y = point.y;
+          float left = origin.x;
+          float right = left + dimensions.x;
+          float bottom = origin.y;
+          float top = bottom + dimensions.y;
+          if (x <= left)
+            __result = new Vector2(left, (y < bottom) ? bottom : (y > top) ? top : y);
+          else if (x >= right)
+            __result = new Vector2(right, (y < bottom) ? bottom : (y > top) ? top : y);
+          else if (y <= bottom)
+            __result = new Vector2((x < left) ? left : (x > right) ? right : x, bottom);
+          else if (y >= top)
+            __result = new Vector2((x < left) ? left : (x > right) ? right : x, top);
+          else // we're inside the rectangle, so find the closest edge
+          {
+
+            float midH = 0.5f * (left + right);
+            float midV = 0.5f * (bottom + top);
+            if (x < midH) // left half
+            {
+              if (y < midV) // bottom left quadrant
+              {
+                if ((x - left) < (y - bottom)) // closer to left edge than bottom
+                  __result = new Vector2(left, y);
+                else // closer to bottom edge than left
+                  __result = new Vector2(x, bottom);
+              }
+              else // top left quadrant
+              {
+                if ((x - left) < (top - y)) // closer to left edge than top
+                  __result = new Vector2(left, y);
+                else // closer to top edge than left
+                  __result = new Vector2(x, top);
+              }
+            }
+            else // right half
+            {
+              if (y < midV) // bottom right quadrant
+              {
+                if ((right - x) < (y - bottom)) // closer to right edge than bottom
+                  __result = new Vector2(right, y);
+                else // closer to bottom edge than right
+                  __result = new Vector2(x, bottom);
+              }
+              else // top right quadrant
+              {
+                if ((right - x) < (top - y)) // closer to right edge than top
+                  __result = new Vector2(right, y);
+                else // closer to top edge than right
+                  __result = new Vector2(x, top);
+              }
+            }
+          }
+          return false;
+        }
+    }
+
+    /// <summary>Minimize property invocations when updating sprite z depths</summary>
+    [HarmonyPatch]
+    private static class DepthCheckOptimizations
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.OPT_DEPTH_CHECKS)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(tk2dBaseSprite), nameof(tk2dBaseSprite.UpdateZDepthInternal))]
+        [HarmonyPrefix]
+        private static bool FastUpdateZDepthInternal(tk2dBaseSprite __instance, float targetZValue, float currentYValue)
+        {
+          __instance.IsZDepthDirty = false;
+          Vector3 position = __instance.m_transform.position;
+          if (position.z != targetZValue)
+          {
+            position.z = targetZValue;
+            __instance.m_transform.position = position;
+          }
+          if (__instance.attachedRenderers == null || __instance.attachedRenderers.Count <= 0)
+            return false;
+
+          bool isPerpendicular = __instance.IsPerpendicular;
+          for (int i = __instance.attachedRenderers.Count - 1; i >= 0; --i)
+          {
+            tk2dBaseSprite attachedSprite = __instance.attachedRenderers[i];
+            if (!attachedSprite || attachedSprite.attachParent != __instance)
+            {
+              __instance.attachedRenderers.RemoveAt(i);
+              continue;
+            }
+            attachedSprite.UpdateZDepthAttached(targetZValue, currentYValue, isPerpendicular);
+            if (!attachedSprite.independentOrientation && isPerpendicular != attachedSprite.IsPerpendicular)
+              attachedSprite.IsPerpendicular = isPerpendicular;
+          }
+          return false;
+        }
     }
 
     /// <summary>Don't do hit tests for GUI controls when the game isn't even paused or responding to them.</summary>
-    [HarmonyPatch(typeof(dfGUIManager), nameof(dfGUIManager.HitTest))]
-    [HarmonyPrefix]
-    private static bool HitTestPatch(dfGUIManager __instance, Vector2 screenPosition, ref dfControl __result)
+    [HarmonyPatch]
+    private static class GUIHitTestOptimizations
     {
-        //NOTE: alternate fix is to make controls that don't accept mouse events non-interactive (even though they're marked as interactive)
-        //NOTE: DisplayingConversationBar doesn't seem to be a necessary check, the mouse works fine when it's open curiously
-        __result = null;
-        if (GGVConfig.OPT_MOUSE_EVENTS && GameManager.HasInstance && !GameManager.Instance.IsPaused)
-          return false; // disable gui stuff completely while the game is not paused
-        return true;
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.OPT_MOUSE_EVENTS)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(dfGUIManager), nameof(dfGUIManager.HitTest))]
+        [HarmonyPrefix]
+        private static bool HitTestPatch(dfGUIManager __instance, Vector2 screenPosition, ref dfControl __result)
+        {
+            //NOTE: alternate fix is to make controls that don't accept mouse events non-interactive (even though they're marked as interactive)
+            //NOTE: DisplayingConversationBar doesn't seem to be a necessary check, the mouse works fine when it's open curiously
+            __result = null;
+            if (GameManager.HasInstance && !GameManager.Instance.IsPaused)
+              return false; // disable gui stuff completely while the game is not paused
+            return true;
+        }
     }
 }

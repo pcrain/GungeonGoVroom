@@ -81,12 +81,22 @@ internal static class Gooptimizations
       }
     }
 
+    private static bool Prepare(MethodBase original)
+    {
+      if (!GGVConfig.OPT_GOOP)
+        return false;
+      if (original == null)
+        GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+      else
+        GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+      return true;
+    }
+
     [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.ClearPerLevelData))]
     [HarmonyPostfix]
     private static void DeadlyDeadlyGoopManagerClearPerLevelDataPatch()
     {
-      if (GGVConfig.OPT_GOOP)
-        ExtraGoopData.ClearLevelData();
+      ExtraGoopData.ClearLevelData();
     }
 
     //NOTE: this doesn't seem to be significantly faster, so it's disabled
@@ -94,9 +104,6 @@ internal static class Gooptimizations
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerRebuildMeshUvsAndColorsPatch(DeadlyDeadlyGoopManager __instance, int chunkX, int chunkY)
     {
-        if (!GGVConfig.OPT_GOOP)
-          return true;
-
         Mesh chunkMesh = __instance.GetChunkMesh(chunkX, chunkY);
         for (int i = 0; i < __instance.m_colorArray.Length; i++)
           __instance.m_colorArray[i].a = 0;
@@ -188,9 +195,6 @@ internal static class Gooptimizations
     [HarmonyILManipulator]
     private static void DeadlyDeadlyGoopManagerLateUpdatePatchIL(ILContext il)
     {
-        if (!GGVConfig.OPT_GOOP)
-          return;
-
         ILCursor cursor = new ILCursor(il);
 
         if (!cursor.TryGotoNext(MoveType.AfterLabel,
@@ -274,9 +278,6 @@ internal static class Gooptimizations
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerRebuildMeshColorsPatch(DeadlyDeadlyGoopManager __instance, int chunkX, int chunkY)
     {
-        if (!GGVConfig.OPT_GOOP)
-          return true; // call the original method
-
         for (int i = 0; i < __instance.m_colorArray.Length; i++)
           __instance.m_colorArray[i] = _Transparent;
 
@@ -322,9 +323,6 @@ internal static class Gooptimizations
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerRemoveGoopedPositionPatch(DeadlyDeadlyGoopManager __instance, IntVector2 entry)
     {
-      if (!GGVConfig.OPT_GOOP)
-        return true;
-
       // if goop data is defined for the current position, we can just look at our neighbors and don't need 8 dictionary lookups
       if (__instance.m_goopedCells.TryGetValue(entry, out GoopPositionData current))
       {
@@ -361,9 +359,6 @@ internal static class Gooptimizations
     [HarmonyPrefix]
     private static bool FastHasGoopedPositionCountForChunk(DeadlyDeadlyGoopManager __instance, int chunkX, int chunkY, ref bool __result)
     {
-      if (!GGVConfig.OPT_GOOP)
-        return true;
-
       ExtraGoopData egd = ExtraGoopData.Get(__instance);
       for (int i = 0; i < 7; ++i)
         if (egd.goopedCellBitfield[chunkX, chunkY, i] > 0)
@@ -381,9 +376,6 @@ internal static class Gooptimizations
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerSetDirtyPatch(DeadlyDeadlyGoopManager __instance, IntVector2 goopPosition)
     {
-      if (!GGVConfig.OPT_GOOP)
-        return true;
-
       int x = ((int)(goopPosition.x * GOOP_GRID_SIZE)) / __instance.CHUNK_SIZE;
       int y = ((int)(goopPosition.y * GOOP_GRID_SIZE)) / __instance.CHUNK_SIZE;
       bool[,] dirtyFlags = __instance.m_dirtyFlags;
@@ -416,9 +408,6 @@ internal static class Gooptimizations
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerAssignVertexColorsPatch(DeadlyDeadlyGoopManager __instance, GoopPositionData goopData, IntVector2 goopPos, int chunkX, int chunkY, ref VertexColorRebuildResult __result)
     {
-      if (!GGVConfig.OPT_GOOP)
-        return true;
-
       bool onFireOrFrozenNeighbor = false;
       Color32 color  = __instance.goopDefinition.baseColor32;
       Color32 color2 = color;
@@ -584,9 +573,7 @@ internal static class Gooptimizations
     [HarmonyPostfix]
     private static IEnumerator HandleRecursiveElectrificationPatch(IEnumerator orig, DeadlyDeadlyGoopManager __instance, IntVector2 cellIndex)
     {
-        if (GGVConfig.OPT_GOOP)
-          return HandleRecursiveElectrificationFast(__instance, cellIndex);
-        return orig;
+      return HandleRecursiveElectrificationFast(__instance, cellIndex);
     }
 
     private static Queue<GoopPositionData> _GoopsToElectrify = new();
@@ -635,34 +622,11 @@ internal static class Gooptimizations
       }
     }
 
-    //NOTE: obsoleted by DeadlyDeadlyGoopManagerAddGoopedPositionPatch
-    // [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.AddGoopedPosition))]
-    // [HarmonyILManipulator]
-    // private static void DeadlyDeadlyGoopManagerAddGoopedPositionPatchIL(ILContext il)
-    // {
-    //   if (!GGVConfig.OPT_GOOP)
-    //     return;
-
-    //   ILCursor cursor = new ILCursor(il);
-    //   if (!cursor.TryGotoNext(MoveType.Before,
-    //     instr => instr.MatchLdsfld<DeadlyDeadlyGoopManager>("allGoopPositionMap"),
-    //     instr => instr.MatchLdarg(1), // the IntVector2 goop poistion
-    //     instr => instr.MatchLdarg(0))) // the DeadlyDeadlyGoopManager instance
-    //     return;
-
-    //   cursor.Emit(OpCodes.Ldarg_0);
-    //   cursor.Emit(OpCodes.Ldarg_1);
-    //   cursor.CallPrivate(typeof(ExtraGoopData), nameof(ExtraGoopData.SetGoopedBit));
-    // }
-
     /// <summary>Cache lookup value for __instance.m_goopedCells[pos] and inline a lot of other expensive logic</summary>
     [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.AddGoopedPosition))]
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerAddGoopedPositionPatch(DeadlyDeadlyGoopManager __instance, IntVector2 pos, float radiusFraction = 0f, bool suppressSplashes = false, int sourceId = -1, int sourceFrameCount = -1)
     {
-      if (!GGVConfig.OPT_GOOP)
-        return true;
-
       if (GameManager.Instance.IsLoadingLevel)
         return false;
 
@@ -792,9 +756,6 @@ internal static class Gooptimizations
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerAddGoopPointsPatch(DeadlyDeadlyGoopManager __instance, List<Vector2> points, float radius, Vector2 excludeCenter, float excludeRadius)
     {
-      if (!GGVConfig.OPT_GOOP)
-        return true;
-
       // System.Diagnostics.Stopwatch gooppointsWatch = System.Diagnostics.Stopwatch.StartNew();
 
       float minPointX = points[0].x;
