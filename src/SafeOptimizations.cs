@@ -373,35 +373,46 @@ internal static partial class Patches
         #if DEBUG
         private static readonly List<int> oldClearances = new();
         private static readonly List<int> newClearances = new();
+        private static int[] debugOriginalClearances = null;
         private static bool callOriginal = false;
         #endif
+
         [HarmonyPatch(typeof(Pathfinding.Pathfinder), nameof(Pathfinding.Pathfinder.RecalculateClearances), new[]{typeof(int), typeof(int), typeof(int), typeof(int)})]
         [HarmonyPrefix]
         private static bool RecalculateClearancesPatch(Pathfinding.Pathfinder __instance, int minX, int minY, int maxX, int maxY)
         {
+          #region Debug Prep
           #if DEBUG
           if (callOriginal)
             return true;
           callOriginal = true;
+          if (debugOriginalClearances == null || debugOriginalClearances.Length != __instance.m_nodes.Length)
+            debugOriginalClearances = new int[__instance.m_nodes.Length];
+          for (int i = 0; i < debugOriginalClearances.Length; ++i)
+            debugOriginalClearances[i] = __instance.m_nodes[i].SquareClearance;
           System.Diagnostics.Stopwatch tempWatch = System.Diagnostics.Stopwatch.StartNew();
           __instance.RecalculateClearances(minX, minY, maxX, maxY);
           tempWatch.Stop();
           callOriginal = false;
           ulong ohash = HashClearances(__instance, oldClearances);
+          for (int i = 0; i < debugOriginalClearances.Length; ++i)
+            __instance.m_nodes[i].SquareClearance = debugOriginalClearances[i];
           System.Diagnostics.Stopwatch tempWatch2 = System.Diagnostics.Stopwatch.StartNew();
           #endif
+          #endregion
 
           var nodes = __instance.m_nodes;
           int w = __instance.m_width;
           int h = __instance.m_height;
 
           // bottom right is either 1 or 0 depending on whether it's blocked
-          Pathfinder.PathNode bottomRightNode = nodes[maxX + maxY * w];
-          CellData bottomRightCell = bottomRightNode.CellData;
+          int bottomRightNodeIndex = maxX + maxY * w;
+          //WARNING: Pathnodes are STRUCTS and are copied by VALUE, so we can not assign them to a variable when updating them...they must be modified within the array
+          CellData bottomRightCell = nodes[bottomRightNodeIndex].CellData;
           if ((bottomRightCell == null || bottomRightCell.isOccupied || bottomRightCell.type == CellType.WALL || (bottomRightCell.type == CellType.PIT && !bottomRightCell.fallingPrevented)))
-            bottomRightNode.SquareClearance = 0;
+            nodes[bottomRightNodeIndex].SquareClearance = 0;
           else
-            bottomRightNode.SquareClearance = 1;
+            nodes[bottomRightNodeIndex].SquareClearance = 1;
 
           // compute bottom row the old way
           for (int i = maxX - 1; i >= minX; i--)
@@ -478,11 +489,10 @@ internal static partial class Patches
             for (int j = maxY - 1; j >= minY; j--)
             {
               int nodeIndex = i + j * w;
-              Pathfinder.PathNode node = nodes[nodeIndex];
-              CellData cell = node.CellData;
+              CellData cell = nodes[nodeIndex].CellData;
               if ((cell == null || cell.isOccupied || cell.type == CellType.WALL || (cell.type == CellType.PIT && !cell.fallingPrevented)))
               {
-                node.SquareClearance = 0;
+                nodes[nodeIndex].SquareClearance = 0;
                 continue;
               }
 
@@ -499,10 +509,11 @@ internal static partial class Patches
               int maxClearanceY = maxY - j + 1;
               int maxClearance = (maxClearanceX > maxClearanceY) ? maxClearanceX : maxClearanceY;
 
-              node.SquareClearance = (nextClearance < maxClearance) ? nextClearance : maxClearance;
+              nodes[nodeIndex].SquareClearance = (nextClearance < maxClearance) ? nextClearance : maxClearance;
             }
           }
 
+          #region Debug Comparisons to Original Algorithm
           #if DEBUG
           tempWatch2.Stop();
           int numCells = (maxX - minX + 1) * (maxY - minY + 1);
@@ -521,7 +532,7 @@ internal static partial class Patches
             const string RED = "\u001b[31m";
             const string GRN = "\u001b[32m";
             const string BLU = "\u001b[34m";
-            const string CHARS = "0123456789abcdefghijklmnopqrstuvwxyz";
+            const string CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXY";
 
             using (StreamWriter file = File.CreateText(System.IO.Path.Combine(Paths.GameRootPath, "pathing.txt")))
             {
@@ -572,7 +583,8 @@ internal static partial class Patches
             }
             return hash;
           }
-          #endif
+        #endif
+        #endregion
 
           return false;    // skip the original method
         }
