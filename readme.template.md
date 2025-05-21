@@ -2,7 +2,7 @@
 
 Gungeon Go Vroom fixes several bugs in vanilla Enter the Gungeon's code, and optimizes several other parts of Gungeon's code to reduce CPU usage, RAM usage, and lag spike frequency. Each fix and optimization can be individually toggled via the Mod Config menu (Options -> Mod Config -> Gungeon Go Vroom). *For safety and performance reasons, most changes will only take effect upon restarting the game.*
 
-Gungeon Go Vroom's changes are organized into three main categories:
+Gungeon Go Vroom's changes are organized into four main categories:
 
 ### Bugfixes
 
@@ -24,6 +24,13 @@ These are changes that improve Gungeon's performance without altering vanilla be
 
 Currently included aggressive optimizations are:
 {aggressive}
+
+### Experimental Optimizations
+
+These are experimental changes that improve Gungeon's performance in ways that might inadvertently alter vanilla behavior. Each experimental optimization will eventually be reclassified as either safe or aggressive once it has been thoroughly tested to exactly replicate vanilla behavior. These optimizations should still be suitable for most players, but they are all *DISABLED* by default.
+
+Currently included aggressive experimental are:
+{experimental}
 
 ## Issues? Suggestions?
 

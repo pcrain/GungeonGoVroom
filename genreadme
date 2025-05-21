@@ -17,13 +17,14 @@ def main():
   with open(TEMPLATE, 'r') as fin:
     ts = fin.read()
 
-  bugfixes   = []
-  safe       = []
-  aggressive = []
-  keys       = {}
+  bugfixes     = []
+  safe         = []
+  aggressive   = []
+  experimental = []
+  keys         = {}
 
   key_rx = re.compile(r'''^\s*internal const string ([^\s]*)\s*= \"(.*)\";.*$''')
-  desc_rx = re.compile(r'''^\s*(sf|so|ao)\.FancyToggle(?:Off)?\((.*), \"(.*)\"\);.*$''')
+  desc_rx = re.compile(r'''^\s*(sf|so|ao|eo)\.FancyToggle(?:Off)?\((.*), \"(.*)\"\);.*$''')
   with open(CHANGES, 'r') as fin:
     for line in fin.read().split("\n"):
       if m := key_rx.match(line):
@@ -37,13 +38,16 @@ def main():
           safe.append((keys[groups[1]], groups[2]))
         elif t == "ao":
           aggressive.append((keys[groups[1]], groups[2]))
+        elif t == "eo":
+          experimental.append((keys[groups[1]], groups[2]))
         else:
           print(line)
 
   formatData = {
-    "bugfixes"   : formatChanges(bugfixes),
-    "safe"       : formatChanges(safe),
-    "aggressive" : formatChanges(aggressive),
+    "bugfixes"     : formatChanges(bugfixes),
+    "safe"         : formatChanges(safe),
+    "aggressive"   : formatChanges(aggressive),
+    "experimental" : formatChanges(experimental),
   }
   parsed = ts.format(**formatData)
   with open(OUTPUT, 'w') as fout:

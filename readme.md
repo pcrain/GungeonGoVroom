@@ -2,7 +2,7 @@
 
 Gungeon Go Vroom fixes several bugs in vanilla Enter the Gungeon's code, and optimizes several other parts of Gungeon's code to reduce CPU usage, RAM usage, and lag spike frequency. Each fix and optimization can be individually toggled via the Mod Config menu (Options -> Mod Config -> Gungeon Go Vroom). *For safety and performance reasons, most changes will only take effect upon restarting the game.*
 
-Gungeon Go Vroom's changes are organized into three main categories:
+Gungeon Go Vroom's changes are organized into four main categories:
 
 ### Bugfixes
 
@@ -29,13 +29,11 @@ Currently included safe optimizations are:
   - **Optimize Light Culling**: Uses optimized inlined logic for determining whether lights should be culled. Saves a significant amount of CPU.
   - **Optimize Beams**: Pools beam bones to reduce memory usage.  Saves a modest amount of RAM and CPU.
   - **Optimize GUI Events**: Caches results of expensive lookups for finding GUI event handlers. Saves a modest amount of RAM.
-  - **Optimize Title Screen**: Prevents expensive scan for the current player on the title screen when none exists. Saves significant CPU on the title screen.
   - **Optimize Numerical Strings**: Caches strings for small numbers used frequently by SGUI's labels. Saves significant RAM while any console is open.
   - **Optimize Flood Filling**: Uses an optimized flood fill algorithm for floor post-processing. Saves a small amount of CPU and RAM.
   - **Optimize Bullet Trails**: Pools bullet trail particles to reduce memory usage. Saves a small amount of RAM.
   - **Optimize Projectile Prefabs**: Removes prefab effect data (e.g., poison) from projectiles that never apply those effects. Saves a small amount of RAM.
   - **Optimize Chunk Checks**: Optimize checks for whether sprite chunks are relevant to gameplay. Saves a small amount of CPU.
-  - **Optimize Path Recalculations**: Optimize algorithm for computing clearances used for pathing. Saves a small amount of CPU.
 
 ### Aggressive Optimizations
 
@@ -44,13 +42,21 @@ These are changes that improve Gungeon's performance without altering vanilla be
 Currently included aggressive optimizations are:
   - **Optimize Goop Updates**: Speeds up goop updates by using faster iterators and lookup algorithms. Saves a large amount of CPU.
   - **Optimize Math**: Speeds up some geometry calculations by using optimized algorithms. Saves a significant amount of CPU.
-  - **Optimize GUI Mouse Events**: Prevents checks for whether the mouse is over a menu item when no menus are open. Saves a significant amount of CPU.
   - **Optimize Chunk Building**: Reuses temporary storage structures when rebuilding chunk data during level gen. Saves a significant amount of RAM.
   - **Optimize Pointcast**: Speeds up pointcast physics calculations by using statics instead of delegates. Saves a modest amount of CPU and RAM.
   - **Optimize Dungeon Size Checks**: Speeds up dungeon size lookups by using fields instead of properties. Saves a modest amount of CPU.
   - **Optimize Sprite Depth Checks**: Speeds up attached sprite depth checks by caching property accesses. Saves a modest amount of CPU.
   - **Optimize Pit VFX**: Speeds up pit VFX calculations by skipping several redundant tile checks. Saves a small amount of CPU.
   - **Optimize Item Lookups**: Speeds up passive / active item lookups by skipping delegate creation. Saves a small amount of CPU and RAM.
+
+### Experimental Optimizations
+
+These are experimental changes that improve Gungeon's performance in ways that might inadvertently alter vanilla behavior. Each experimental optimization will eventually be reclassified as either safe or aggressive once it has been thoroughly tested to exactly replicate vanilla behavior. These optimizations should still be suitable for most players, but they are all *DISABLED* by default.
+
+Currently included aggressive experimental are:
+  - **Optimize GUI Mouse Events**: Prevents checks for whether the mouse is over a menu item when no menus are open. Saves significant CPU, but may break custom UIs.
+  - **Optimize Path Recalculations**: Optimizes clearance computations used for enemy pathing logic. Saves modest CPU, but may freeze enemies in place.
+  - **Optimize Title Screen**: Prevents scanning for the player on the title screen when no player exists. Saves small CPU, but may break floor loads.
 
 ## Issues? Suggestions?
 
