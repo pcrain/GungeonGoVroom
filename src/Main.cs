@@ -39,11 +39,11 @@ namespace GGV;
 
 public static class C // constants
 {
-    public static readonly bool DEBUG_BUILD = true; // set to false for release builds (must be readonly instead of const to avoid build warnings)
+    public static readonly bool DEBUG_BUILD = false; // set to false for release builds (must be readonly instead of const to avoid build warnings)
 
     public const string MOD_NAME     = "Gungeon Go Vroom";
     public const string MOD_INT_NAME = "GungeonGoVroom";
-    public const string MOD_VERSION  = "1.1.0";
+    public const string MOD_VERSION  = "1.2.0";
     public const string MOD_GUID     = "pretzel.etg.ggv";
     public const string MOD_PREFIX   = "ggv";
 

@@ -10,7 +10,7 @@ These are changes that modify vanilla Gungeon's behavior to fix various bugs wit
 
 Currently included bugfixes are:
   - **Duct Tape Fix**: Fixes duct-taped guns sometimes breaking when using the elevator save button.
-  - **Quicksave Fix**: Fixes once-per-run rooms not properly resetting with Quick Restart, preventing them from respawning until visiting the Breach.
+  - **Quick Restart Fix**: Fixes once-per-run rooms not properly resetting with Quick Restart, preventing them from respawning until visiting the Breach.
   - **Shuffle Fix**: Fixes an off-by-one error in shuffling algorithms, making rooms always / never spawn in unintended situations, among other issues.
   - **Ammo UI Fix**: Fixes a rendering issue with final projectiles in the ammo indicator causing them to render above UI elements they shouldn't.
   - **Orbital Gun Fix**: Fixes orbital guns visually firing from the wrong location if created while the player is facing left.

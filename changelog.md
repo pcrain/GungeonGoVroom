@@ -1,8 +1,15 @@
 # Changelog
 
-## 1.2.0 (TBD)
+## 1.2.0 (2025-05-20)
 
-- Made Gungeon Go Vroom load apply patches earlier in the load process so other mods can benefit from them
+- Made Gungeon Go Vroom apply patches earlier in the load process so other mods can benefit from them
+- Added several more new optimizations (see readme for full list)
+- Added "Experimental Optimizations" category
+- Added fix for beam weapons not ignoring damage caps even when the flag to do so is set (mostly for modded use, doesn't affect vanilla guns)
+- Added fix for Evolver devolving to its 2nd form when dropped, picked up, and used to kill 5 enemies
+- Improved fix for room shuffling algorithms to now apply more generally to all shuffling errors (now named "Shuffle Fix")
+- Renamed erroneously-labeled "Quicksave Fix" to more-appropriately labeled "Quick Restart Fix" 
+- Actually remembered to bundle Optimize IMGUI with the Thunderstore package
 
 ## 1.1.0 (2025-05-12)
 

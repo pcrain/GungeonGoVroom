@@ -255,7 +255,7 @@ if [ $# -gt 0 ] && [ "$1" == "-t" ]; then
 
     cd "${tdir}"
     /bin/rm -f "${projectname}.zip"
-    zip -q "${projectname}.zip" ./*
+    zip -rq "${projectname}.zip" ./*
     cd ..
     /bin/rm -f ./bin/*.zip
     zippath="./bin/${projectname}_${projectversion}_$(date +%F_%H-%M-%S).zip"
