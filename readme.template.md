@@ -29,7 +29,7 @@ Currently included aggressive optimizations are:
 
 These are experimental changes that improve Gungeon's performance in ways that might inadvertently alter vanilla behavior. Each experimental optimization will eventually be reclassified as either safe or aggressive once it has been thoroughly tested to exactly replicate vanilla behavior. These optimizations should still be suitable for most players, but they are all *DISABLED* by default.
 
-Currently included aggressive experimental are:
+Currently included experimental optimizations are:
 {experimental}
 
 ## Issues? Suggestions?

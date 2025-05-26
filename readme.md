@@ -53,7 +53,7 @@ Currently included aggressive optimizations are:
 
 These are experimental changes that improve Gungeon's performance in ways that might inadvertently alter vanilla behavior. Each experimental optimization will eventually be reclassified as either safe or aggressive once it has been thoroughly tested to exactly replicate vanilla behavior. These optimizations should still be suitable for most players, but they are all *DISABLED* by default.
 
-Currently included aggressive experimental are:
+Currently included experimental optimizations are:
   - **Optimize GUI Mouse Events**: Prevents checks for whether the mouse is over a menu item when no menus are open. Saves significant CPU, but may break custom UIs.
   - **Optimize Path Recalculations**: Optimizes clearance computations used for enemy pathing logic. Saves modest CPU, but may freeze enemies in place.
   - **Optimize Title Screen**: Prevents scanning for the player on the title screen when no player exists. Saves small CPU, but may break floor loads.

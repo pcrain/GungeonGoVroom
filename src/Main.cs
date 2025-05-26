@@ -43,7 +43,7 @@ public static class C // constants
 
     public const string MOD_NAME     = "Gungeon Go Vroom";
     public const string MOD_INT_NAME = "GungeonGoVroom";
-    public const string MOD_VERSION  = "1.2.0";
+    public const string MOD_VERSION  = "1.2.1";
     public const string MOD_GUID     = "pretzel.etg.ggv";
     public const string MOD_PREFIX   = "ggv";
 

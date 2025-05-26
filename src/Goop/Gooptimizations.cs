@@ -16,6 +16,9 @@ internal static class Gooptimizations
 
       private int _xChunks;
       private int _yChunks;
+      private int _cachedWidth;
+      private float _cachedHeight;
+      private DungeonData _cachedDungeon;
 
       // private since it should never be constructed outside of Get() and static fields
       private ExtraGoopData(DeadlyDeadlyGoopManager manager)
@@ -24,11 +27,40 @@ internal static class Gooptimizations
         if (manager == null)
           return; // for _NullEGd
 
-        DungeonData d = GameManager.Instance.Dungeon.data;
-        this._xChunks = Mathf.CeilToInt((float)d.m_width / (float)manager.CHUNK_SIZE);
-        this._yChunks = Mathf.CeilToInt((float)d.m_height / (float)manager.CHUNK_SIZE);
+        DungeonData d = this._cachedDungeon = GameManager.Instance.Dungeon.data;
+        this._cachedWidth = d.m_width;
+        this._cachedHeight = d.m_height;
+        this._xChunks = Mathf.CeilToInt((float)this._cachedWidth / (float)manager.CHUNK_SIZE);
+        this._yChunks = Mathf.CeilToInt((float)this._cachedHeight / (float)manager.CHUNK_SIZE);
         this.goopedCellBitfield = new UInt64[this._xChunks,this._yChunks,7];
         _AllEGDs.Add(this);
+      }
+
+      private void Resize()
+      {
+        int newWidth           = this._cachedDungeon.m_width;
+        int newHeight          = this._cachedDungeon.m_height;
+        int newxChunks         = Mathf.CeilToInt((float)newWidth / (float)manager.CHUNK_SIZE);
+        int newyChunks         = Mathf.CeilToInt((float)newHeight / (float)manager.CHUNK_SIZE);
+        UInt64[,,] newBitfield = new UInt64[newxChunks,newyChunks,7];
+
+        for (int i = 0; i < this._xChunks; ++i)
+          for (int j = 0; j < this._yChunks; ++j)
+            for (int k = 0; k < 7; ++k)
+              newBitfield[i,j,k] = this.goopedCellBitfield[i,j,k];
+
+        this._cachedWidth       = newWidth;
+        this._cachedHeight      = newHeight;
+        this._xChunks           = newxChunks;
+        this._yChunks           = newyChunks;
+        this.goopedCellBitfield = newBitfield;
+      }
+
+      internal static void ResizeAllBitfields()
+      {
+        GGVDebug.Log($"Resizing {_AllEGDs.Count} goop bitfields");
+        for (int i = _AllEGDs.Count - 1; i >= 0; --i)
+          _AllEGDs[i].Resize();
       }
 
       internal static ExtraGoopData Get(DeadlyDeadlyGoopManager manager)
@@ -97,6 +129,17 @@ internal static class Gooptimizations
     private static void DeadlyDeadlyGoopManagerClearPerLevelDataPatch()
     {
       ExtraGoopData.ClearLevelData();
+    }
+
+    /// <summary>Invalidate cached goop data bitfield.</summary>
+    [HarmonyPatch(typeof(DungeonData), nameof(DungeonData.ClearCachedCellData))]
+    [HarmonyPostfix]
+    private static void ClearCachedCellData(DungeonData __instance)
+    {
+      //NOTE: next two lines duplicate the patch in DungeonWidthAndHeightPatches, but it's harmless so oh well
+      __instance.m_width = __instance.cellData.Length;
+      __instance.m_height = __instance.cellData[0].Length;
+      ExtraGoopData.ResizeAllBitfields();
     }
 
     //NOTE: this doesn't seem to be significantly faster, so it's disabled

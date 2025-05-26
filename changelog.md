@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 (2025-05-26)
+
+- Fixed serious error with goop optimizations breaking when floors are resized (e.g., by using the Drill item or opening the trapdoor to the RR's Lair)
+
 ## 1.2.0 (2025-05-20)
 
 - Made Gungeon Go Vroom apply patches earlier in the load process so other mods can benefit from them
