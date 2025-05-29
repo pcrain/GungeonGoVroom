@@ -3,6 +3,7 @@
 ## 1.2.2 (2025-05-29)
 
 - Fixed player rendering over the elevator when Optimize Visibility Checks is enabled
+- Fixed not being able to use mouse on the title screen when Optimize GUI Mouse Events is enabled
 
 ## 1.2.1 (2025-05-26)
 

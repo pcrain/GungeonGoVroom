@@ -459,7 +459,7 @@ internal static partial class Patches
             //NOTE: alternate fix is to make controls that don't accept mouse events non-interactive (even though they're marked as interactive)
             //NOTE: DisplayingConversationBar doesn't seem to be a necessary check, the mouse works fine when it's open curiously
             __result = null;
-            if (GameManager.HasInstance && !GameManager.Instance.IsPaused && (!Minimap.m_instance || !Minimap.Instance.m_isFullscreen))
+            if (GameManager.HasInstance && !GameManager.Instance.IsPaused && (!Minimap.m_instance || !Minimap.Instance.m_isFullscreen) && !Foyer.DoIntroSequence && !Foyer.DoMainMenu)
               return false; // disable gui stuff completely while the game is not paused
             return true;
         }
