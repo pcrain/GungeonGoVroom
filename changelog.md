@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2 (2025-05-29)
+
+- Fixed player rendering over the elevator when Optimize Visibility Checks is enabled
+
 ## 1.2.1 (2025-05-26)
 
 - Fixed serious error with goop optimizations breaking when floors are resized (e.g., by using the Drill item or opening the trapdoor to the RR's Lair)

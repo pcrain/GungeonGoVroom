@@ -635,7 +635,10 @@ internal static partial class Patches
           Vector3 pos = animator.transform.position;
           float x     = pos.x - tk2dSpriteAnimator.CameraPositionThisFrame.x;
           float y     = pos.y - tk2dSpriteAnimator.CameraPositionThisFrame.y;
-          return (x * x + y * y * 2.89) < 420f + animator.AdditionalCameraVisibilityRadius * animator.AdditionalCameraVisibilityRadius;
+          bool vis    = (x * x + y * y * 2.89f) < 420f + animator.AdditionalCameraVisibilityRadius * animator.AdditionalCameraVisibilityRadius;
+          if (vis) //NOTE: fixes player rendering over the elevator when entering it. since this is originally checked in LateUpdate()
+            animator.Sprite.UpdateZDepth(); // and only called in SetSprite(), z depth isn't updated in OnBecameVisible() and we need to do it here
+          return vis;
         }
     }
 }
