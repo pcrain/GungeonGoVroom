@@ -517,7 +517,7 @@ internal static partial class Patches
           #if DEBUG
           tempWatch2.Stop();
           int numCells = (maxX - minX + 1) * (maxY - minY + 1);
-          System.Console.WriteLine($"    new: {tempWatch2.ElapsedTicks * 100,6:n0} ns clearances for {numCells} cells, {tempWatch.ElapsedTicks / (float)tempWatch2.ElapsedTicks}x speedup");
+          // System.Console.WriteLine($"    new: {tempWatch2.ElapsedTicks * 100,6:n0} ns clearances for {numCells} cells, {tempWatch.ElapsedTicks / (float)tempWatch2.ElapsedTicks}x speedup");
 
           if (ohash != HashClearances(__instance, newClearances))
           {
