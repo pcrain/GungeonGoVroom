@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0 (2025-05-31)
+
+- Added "Optimize Ammo Display" option, fixing major lag spikes when updating ammo displays with a large number of sprites
+
 ## 1.2.2 (2025-05-29)
 
 - Fixed player rendering over the elevator when Optimize Visibility Checks is enabled

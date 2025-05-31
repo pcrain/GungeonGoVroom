@@ -14,25 +14,116 @@ internal static class AmmoUICaching
     return true;
   }
 
+  /// <summary>Class for holding various cached metadata for rendering ammo ui sprites</summary>
   private class QuickInvalidateData
   {
+    private static readonly Dictionary<GameObject, List<QuickInvalidateData>> _CachedQIDs = new();
+    private static readonly Dictionary<dfTiledSprite, QuickInvalidateData> _QIDForSprite = new();
+
+    public bool inUse = false; // whether this particular sprite is actively in use by an ammo bar
+    public GameObject spritePrefab = null; // the ammo ui sprite prefab we've instantiated
+    public GameObject spriteObject = null; // the ammo ui sprite GameObject instance
+    public dfTiledSprite sprite = null; // the sprite for the GameObject instance
+    public dfRenderData preservedData = null; // the dfRenderData preserved during floor transitions
     public int maxNumTiles = 0;  // the maximum number of tiles this sprite has ever rendered
+
+    public static QuickInvalidateData ForSprite(dfTiledSprite sprite) => _QIDForSprite[sprite];
+
+    public static void PreserveRenderData()
+    {
+      foreach (var kvp in _QIDForSprite)
+      {
+        if (kvp.Key is not dfTiledSprite sprite || sprite.renderData == null)
+          continue;
+
+        // GGVDebug.Log($"    preserving render data for {sprite.name} == {sprite.spriteName} == {sprite.SpriteInfo.name}");
+        QuickInvalidateData qid = kvp.Value;
+        qid.preservedData = sprite.renderData;
+        qid.inUse = false;
+        sprite.renderData = null;
+      }
+    }
+
+    private static QuickInvalidateData RequestRaw(GameObject prefab)
+    {
+      if (!_CachedQIDs.TryGetValue(prefab, out List<QuickInvalidateData> qidList))
+        _CachedQIDs[prefab] = qidList = new();
+
+      for (int i = qidList.Count - 1; i >= 0; --i)
+      {
+        if (qidList[i].inUse)
+          continue;
+        qidList[i].inUse = true;
+        return qidList[i];
+      }
+
+      GameObject newSpriteInstance = UnityEngine.Object.Instantiate(prefab);
+      QuickInvalidateData newQid = new(){
+        inUse         = true,
+        spritePrefab  = prefab,
+        spriteObject  = newSpriteInstance,
+        sprite        = newSpriteInstance.GetComponent<dfTiledSprite>(),
+        preservedData = null,
+        maxNumTiles   = 0,
+      };
+      _QIDForSprite[newQid.sprite] = newQid;
+      qidList.Add(newQid);
+
+      // GGVDebug.Log($"getting new render data for {newQid.sprite.spriteName} with {qidList.Count} cached elements");
+      return newQid;
+    }
+
+    public static GameObject Request(GameObject prefab)
+    {
+      QuickInvalidateData qid = RequestRaw(prefab);
+      if (qid.spriteObject)
+      {
+        qid.inUse = true;
+        qid.spriteObject.SetActive(true);
+        return qid.spriteObject;
+      }
+
+      if (!_QIDForSprite.ContainsKey(qid.sprite))
+        throw new InvalidOperationException("something went horribly wrong caching ammo sprites, part 1 D:");
+      if (qid.preservedData == null)
+        throw new InvalidOperationException("something went horribly wrong caching ammo sprites, part 2 D:");
+
+      _QIDForSprite.Remove(qid.sprite); // remove the destroyed sprite instance from our lookup table
+      qid.inUse = true;
+      qid.maxNumTiles = qid.preservedData.Vertices.Count / 4;
+      qid.spriteObject = UnityEngine.Object.Instantiate(prefab);
+      qid.sprite = qid.spriteObject.GetComponent<dfTiledSprite>();
+      qid.sprite.renderData = qid.preservedData;
+      qid.preservedData = null;
+      _QIDForSprite[qid.sprite] = qid; // add the new sprite instance to our lookup table
+      // GGVDebug.Log($"restored ammo render data with size {qid.maxNumTiles}");
+      return qid.spriteObject;
+    }
+
+    public static void ReturnSprite(dfTiledSprite sprite)
+    {
+      if (sprite.controls != null)
+      {
+        //NOTE: need to destroy AmmoBurstVFX playing on the control
+        for (int ci = sprite.controls.Count - 1; ci >= 0; --ci)
+          if (sprite.controls[ci] is dfControl dfc)
+            UnityEngine.Object.Destroy(dfc.gameObject);
+        sprite.controls.Clear();
+      }
+
+      QuickInvalidateData qid = _QIDForSprite[sprite];
+      qid.inUse = false;
+      sprite.gameObject.SetActive(false);
+      sprite.parent.RemoveControl(sprite);
+    }
   }
 
-  private static readonly Dictionary<GameObject, GameObject>[] _CachedAmmoBars = [new(), new()];
-  private static readonly Dictionary<dfTiledSprite, QuickInvalidateData> _QuickInvalidateData = new();
-
-  private static GameObject GetCachedAmmoSprite(GameObject prefab, Dictionary<GameObject, GameObject> cachedAmmo)
+  /// <summary>Stashes away dfRenderData for ammo clip sprites so it can be reused next floor load.</summary>
+  [HarmonyPatch(typeof(GameUIAmmoController), nameof(GameUIAmmoController.OnDestroy))]
+  [HarmonyPrefix]
+  private static void GameUIAmmoControllerOnDestroyPatch(GameUIAmmoController __instance)
   {
-    //NOTE: DontDestroyOnLoad() doesn't seem to work for ammo sprites and I don't feel like debugging why, so we re-cache every floor
-    if (cachedAmmo.TryGetValue(prefab, out GameObject cachedInstance) && cachedInstance)
-    {
-      cachedInstance.SetActive(true);
-      return cachedInstance;
-    }
-    GameObject newG = cachedAmmo[prefab] = UnityEngine.Object.Instantiate(prefab);
-    _QuickInvalidateData[newG.GetComponent<dfTiledSprite>()] = new();
-    return newG;
+    QuickInvalidateData.PreserveRenderData();
   }
 
   [HarmonyPatch(typeof(GameUIAmmoController), nameof(GameUIAmmoController.UpdateAmmoUIForModule))]
@@ -59,6 +150,24 @@ internal static class AmmoUICaching
       cursor.Emit(OpCodes.Brfalse, afterUIAmmoChangeLabel);
   }
 
+  /// <summary>Prevent CleanupLists() from removing our ammo sprites</summary>
+  [HarmonyPatch(typeof(GameUIAmmoController), nameof(GameUIAmmoController.CleanupLists))]
+  [HarmonyILManipulator]
+  private static void GameUIAmmoControllerCleanupListsPatchIL(ILContext il)
+  {
+      ILCursor cursor = new ILCursor(il);
+      //NOTE: the first four calls to Destroy() are for the ammo sprites we're preserving, the last two are not
+      for (int i = 0; i < 4; ++i)
+      {
+        if (!cursor.TryGotoNext(MoveType.Before,
+            instr => instr.MatchCallvirt<UnityEngine.Component>("get_gameObject"),
+            instr => instr.MatchCall<UnityEngine.Object>(nameof(UnityEngine.Object.Destroy))))
+            return;
+        cursor.RemoveRange(2); // keep the dfTiledSprite on the stack and don't destroy its object
+        cursor.CallPublic(typeof(QuickInvalidateData), nameof(QuickInvalidateData.ReturnSprite));
+      }
+  }
+
   [HarmonyPatch(typeof(dfControl), nameof(dfControl.Render))]
   [HarmonyILManipulator]
   private static void dfControlRenderPatchIL(ILContext il)
@@ -78,7 +187,9 @@ internal static class AmmoUICaching
   /// <summary>Return false to skip original invalidation logic</summary>
   private static bool AttemptQuickInvalidate(dfControl control)
   {
-    if (control is not dfTiledSprite tile || tile.Atlas == null || tile.SpriteInfo == null || !_QuickInvalidateData.TryGetValue(tile, out QuickInvalidateData qid))
+    if (control is not dfTiledSprite tile || tile.Atlas == null || tile.SpriteInfo == null)
+      return true; // call original invalidation logic
+    if (QuickInvalidateData.ForSprite(tile) is not QuickInvalidateData qid)
       return true; // call original invalidation logic
 
     if (qid.maxNumTiles == 0) // clear out renderData only the very first time this is called, update it in place otherwise
@@ -161,7 +272,7 @@ internal static class AmmoUICaching
 
     #if DEBUG
     if (tilesNeeded > qid.maxNumTiles)
-      GGVDebug.Log($"updated {tileIndex} tiles (new: {(int)tileIndex - qid.maxNumTiles})");
+      GGVDebug.Log($"updated {tileIndex} ammo render tiles (new: {(int)tileIndex - qid.maxNumTiles})");
     #endif
 
     if (tilesNeeded > qid.maxNumTiles)
@@ -179,40 +290,22 @@ internal static class AmmoUICaching
     if (pid != 0 && pid != 1)
       return true; // call original code
 
-    Dictionary<GameObject, GameObject> cachedAmmo = _CachedAmmoBars[pid];
-
     self.m_additionalAmmoTypeDefinitions.Clear();
     if (currentAmmoFGSprite != null)
-    {
-      if (currentAmmoFGSprite.controls != null)
-      {
-        //NOTE: need to destroy AmmoBurstVFX playing on the control
-        for (int ci = currentAmmoFGSprite.controls.Count - 1; ci >= 0; --ci)
-          if (currentAmmoFGSprite.controls[ci] is dfControl dfc)
-            UnityEngine.Object.Destroy(dfc.gameObject);
-        currentAmmoFGSprite.controls.Clear();
-      }
-      currentAmmoFGSprite.gameObject.SetActive(false);
-      self.m_panel.RemoveControl(currentAmmoFGSprite);
-    }
+      QuickInvalidateData.ReturnSprite(currentAmmoFGSprite);
     if (currentAmmoBGSprite != null)
-    {
-      currentAmmoBGSprite.gameObject.SetActive(false);
-      self.m_panel.RemoveControl(currentAmmoBGSprite);
-    }
+      QuickInvalidateData.ReturnSprite(currentAmmoBGSprite);
     for (int i = 0; i < AddlModuleBGSprites.Count; i++)
     {
-      AddlModuleBGSprites[i].gameObject.SetActive(false);
-      self.m_panel.RemoveControl(AddlModuleBGSprites[i]);
-      AddlModuleFGSprites[i].gameObject.SetActive(false);
-      self.m_panel.RemoveControl(AddlModuleFGSprites[i]);
+      QuickInvalidateData.ReturnSprite(AddlModuleBGSprites[i]);
+      QuickInvalidateData.ReturnSprite(AddlModuleFGSprites[i]);
     }
 
     AddlModuleBGSprites.Clear();
     AddlModuleFGSprites.Clear();
     GameUIAmmoType uIAmmoType = self.GetUIAmmoType(module.ammoType, module.customAmmoType);
-    GameObject newFg = GetCachedAmmoSprite(uIAmmoType.ammoBarFG.gameObject, cachedAmmo);
-    GameObject newBg = GetCachedAmmoSprite(uIAmmoType.ammoBarBG.gameObject, cachedAmmo);
+    GameObject newFg = QuickInvalidateData.Request(uIAmmoType.ammoBarFG.gameObject);
+    GameObject newBg = QuickInvalidateData.Request(uIAmmoType.ammoBarBG.gameObject);
     newFg.transform.parent = self.GunBoxSprite.transform.parent;
     newBg.transform.parent = self.GunBoxSprite.transform.parent;
     newFg.name = uIAmmoType.ammoBarFG.name;
@@ -228,8 +321,8 @@ internal static class AmmoUICaching
     {
       GameUIAmmoType uIAmmoType2 = self.GetUIAmmoType(module.finalAmmoType, module.finalCustomAmmoType);
       self.m_additionalAmmoTypeDefinitions.Add(uIAmmoType2);
-      newFg = GetCachedAmmoSprite(uIAmmoType2.ammoBarFG.gameObject, cachedAmmo);
-      newBg = GetCachedAmmoSprite(uIAmmoType2.ammoBarBG.gameObject, cachedAmmo);
+      newFg = QuickInvalidateData.Request(uIAmmoType2.ammoBarFG.gameObject);
+      newBg = QuickInvalidateData.Request(uIAmmoType2.ammoBarBG.gameObject);
       newFg.transform.parent = self.GunBoxSprite.transform.parent;
       newBg.transform.parent = self.GunBoxSprite.transform.parent;
       newFg.name = uIAmmoType2.ammoBarFG.name;

@@ -8,6 +8,12 @@ internal static class Extensions
         cursor.Emit(OpCodes.Call, t.GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic));
     }
 
+    /// <summary>Convenience method for calling a public static function with an ILCursor</summary>
+    internal static void CallPublic(this ILCursor cursor, Type t, string name)
+    {
+        cursor.Emit(OpCodes.Call, t.GetMethod(name, BindingFlags.Static | BindingFlags.Public));
+    }
+
     private static MethodInfo _WriteLine = typeof(System.Console).GetMethod(nameof(System.Console.WriteLine), new Type[]{typeof(string)});
     /// <summary>Convenience method for debug print with an ILCursor</summary>
     [System.Diagnostics.Conditional("DEBUG")]
