@@ -311,4 +311,39 @@ internal static partial class Patches
         }
     }
 
+    /// <summary>Fixes Magazine Rack causing the ammo display to drift to the right every time it's used.</summary>
+    [HarmonyPatch]
+    private static class AmmoDriftPatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_AMMO_DRIFT)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(GameUIAmmoController), nameof(GameUIAmmoController.UpdateUIGun))]
+        [HarmonyILManipulator]
+        private static void BasicBeamControllerFrameUpdateIL(ILContext il)
+        {
+            ILCursor cursor = new ILCursor(il);
+            if (!cursor.TryGotoNext(MoveType.After,
+              instr => instr.MatchLdfld<GameUIAmmoController>("m_cachedGun"),
+              instr => instr.MatchCallvirt<Gun>("get_InfiniteAmmo")))
+                return;
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.CallPrivate(typeof(AmmoDriftPatch), nameof(WasReallyInfiniteAmmo));
+        }
+
+        private static bool WasReallyInfiniteAmmo(bool origVal, GameUIAmmoController self)
+        {
+            return origVal && self.m_cachedMaxAmmo == int.MaxValue;
+        }
+    }
+
 }

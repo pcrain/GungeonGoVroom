@@ -14,6 +14,7 @@ internal static class GGVConfig
   internal static bool FIX_BULLET_TRAILS = true;
   internal static bool FIX_DAMAGE_CAPS   = true;
   internal static bool FIX_EVOLVER       = true;
+  internal static bool FIX_AMMO_DRIFT    = true;
 
   // Safe Optimizations
   internal static bool OPT_PROJ_STATUS   = true;
@@ -54,6 +55,7 @@ internal static class GGVConfig
     FIX_BULLET_TRAILS = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BULLET_TRAILS);
     FIX_DAMAGE_CAPS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DAMAGE_CAPS);
     FIX_EVOLVER       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.EVOLVER);
+    FIX_AMMO_DRIFT    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_DRIFT);
 
     OPT_VIS_CHECKS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.VIS_CHECKS);
     OPT_OCCLUSION     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.OCCLUSION);
@@ -90,6 +92,7 @@ internal static class GGVConfig
     System.Console.WriteLine($"FIX_BULLET_TRAILS        = {FIX_BULLET_TRAILS}");
     System.Console.WriteLine($"FIX_DAMAGE_CAPS          = {FIX_DAMAGE_CAPS}");
     System.Console.WriteLine($"FIX_EVOLVER              = {FIX_EVOLVER}");
+    System.Console.WriteLine($"FIX_AMMO_DRIFT           = {FIX_AMMO_DRIFT}");
 
     System.Console.WriteLine($"OPT_OCCLUSION            = {OPT_OCCLUSION}");
     System.Console.WriteLine($"OPT_AMMO_DISPLAY         = {OPT_AMMO_DISPLAY}");
@@ -136,6 +139,7 @@ internal static class ConfigMenu
   internal const string BULLET_TRAILS = "Bullet Trail Fix";
   internal const string DAMAGE_CAPS   = "Beam Damage Cap Fix";
   internal const string EVOLVER       = "Evolver Devolve Fix";
+  internal const string AMMO_DRIFT    = "Ammo Drift Fix";
 
   internal const string SAFE_OPT      = "Safe Optimizations";
   internal const string OCCLUSION     = "Optimize Occlusion";
@@ -180,6 +184,7 @@ internal static class ConfigMenu
     sf.FancyToggle(BULLET_TRAILS, "Fixes the trails of projectiles\ndisappearing if they travel too slowly\n(e.g., during timeslow effects).");
     sf.FancyToggle(DAMAGE_CAPS, "Fixes beams not ignoring boss damage caps\neven when set to do so. (No such\nbeam exists in vanilla, mostly for modded use).");
     sf.FancyToggle(EVOLVER, "Fixes Evolver devolving to its 2nd form\nafter dropping it, picking it back up,\nand killing 5 enemies to level it up.");
+    sf.FancyToggle(AMMO_DRIFT, "Fixes ammo display drifting to the right when\na gun temporarily gets infinite ammo\n(e.g., from Magazine Rack).");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
     so.FancyToggle(OCCLUSION, "Speeds up occlusion calculations by\nusing optimized algorithms and caching.\nSaves a large amount of CPU.");

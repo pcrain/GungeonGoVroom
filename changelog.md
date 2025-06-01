@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.1 (2025-05-31)
+
+- Added "Ammo Drift Fix" option
+
 ## 1.3.0 (2025-05-31)
 
 - Added "Optimize Ammo Display" option, fixing major lag spikes when updating ammo displays with a large number of sprites

@@ -18,6 +18,7 @@ Currently included bugfixes are:
   - **Bullet Trail Fix**: Fixes the trails of projectiles disappearing if they travel too slowly (e.g., during timeslow effects).
   - **Beam Damage Cap Fix**: Fixes beams not ignoring boss damage caps even when set to do so. (No such beam exists in vanilla, mostly for modded use).
   - **Evolver Devolve Fix**: Fixes Evolver devolving to its 2nd form after dropping it, picking it back up, and killing 5 enemies to level it up.
+  - **Ammo Drift Fix**: Fixes ammo display drifting to the right when a gun temporarily gets infinite ammo (e.g., from Magazine Rack).
 
 ### Safe Optimizations
 
