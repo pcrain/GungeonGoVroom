@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.2 (2025-06-01)
+
+- Temporarily hard-disabled Ammo Drift Fix to investigate major bug
+
 ## 1.3.1 (2025-05-31)
 
 - Added "Ammo Drift Fix" option

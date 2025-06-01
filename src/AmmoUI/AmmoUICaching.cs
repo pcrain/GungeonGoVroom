@@ -5,6 +5,7 @@ internal static class AmmoUICaching
 {
   private static bool Prepare(MethodBase original)
   {
+    return false;
     if (!GGVConfig.OPT_AMMO_DISPLAY)
       return false;
     if (original == null)
