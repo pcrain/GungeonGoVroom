@@ -1,10 +1,5 @@
 namespace GGV;
 
-
-/* TODO:
-    - giving luxin cannon while robot's right arm is active doesn't show main ammo clip sprites
-*/
-
 [HarmonyPatch]
 internal static class AmmoUICaching
 {
@@ -83,6 +78,8 @@ internal static class AmmoUICaching
       QuickInvalidateData qid = RequestRaw(prefab);
       if (qid.spriteObject)
       {
+        qid.sprite.zindex = -1;
+        qid.sprite.IsVisible = true; //NOTE: fixes issue when scrolling up from Blasphemy to another gun with the "white" ammo type
         qid.spriteObject.SetActive(true);
         return qid.spriteObject;
       }

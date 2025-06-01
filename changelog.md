@@ -3,6 +3,8 @@
 ## 1.3.3 (2025-06-01)
 
 - Fixed major UI corruption when switching floors due to caching Blasphemy's non-existent ammo UI render data
+- Fixed several minor ammo UI rendering errors caused by Blasphemy's invisible ammo and switching between two games with the same ammo type
+- Re-enabled Optimize Ammo Display option
 
 ## 1.3.2 (2025-06-01)
 
