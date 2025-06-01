@@ -1,8 +1,12 @@
 # Changelog
 
+## 1.3.3 (2025-06-01)
+
+- Fixed major UI corruption when switching floors due to caching Blasphemy's non-existent ammo UI render data
+
 ## 1.3.2 (2025-06-01)
 
-- Temporarily hard-disabled Ammo Drift Fix to investigate major bug
+- Temporarily hard-disabled Optimize Ammo Display to investigate major bug
 
 ## 1.3.1 (2025-05-31)
 

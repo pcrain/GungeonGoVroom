@@ -1,11 +1,15 @@
 namespace GGV;
 
+
+/* TODO:
+    - giving luxin cannon while robot's right arm is active doesn't show main ammo clip sprites
+*/
+
 [HarmonyPatch]
 internal static class AmmoUICaching
 {
   private static bool Prepare(MethodBase original)
   {
-    return false;
     if (!GGVConfig.OPT_AMMO_DISPLAY)
       return false;
     if (original == null)
@@ -79,23 +83,26 @@ internal static class AmmoUICaching
       QuickInvalidateData qid = RequestRaw(prefab);
       if (qid.spriteObject)
       {
-        qid.inUse = true;
         qid.spriteObject.SetActive(true);
         return qid.spriteObject;
       }
 
-      if (!_QIDForSprite.ContainsKey(qid.sprite))
-        throw new InvalidOperationException("something went horribly wrong caching ammo sprites, part 1 D:");
-      if (qid.preservedData == null)
-        throw new InvalidOperationException("something went horribly wrong caching ammo sprites, part 2 D:");
+      if (_QIDForSprite.ContainsKey(qid.sprite))
+        _QIDForSprite.Remove(qid.sprite); // remove the destroyed sprite instance from our lookup table
+      else
+        GGVDebug.Log("something went wonky finding cached ammo sprites");
 
-      _QIDForSprite.Remove(qid.sprite); // remove the destroyed sprite instance from our lookup table
-      qid.inUse = true;
-      qid.maxNumTiles = qid.preservedData.Vertices.Count / 4;
       qid.spriteObject = UnityEngine.Object.Instantiate(prefab);
       qid.sprite = qid.spriteObject.GetComponent<dfTiledSprite>();
-      qid.sprite.renderData = qid.preservedData;
-      qid.preservedData = null;
+      if (qid.preservedData != null)
+      {
+        qid.maxNumTiles = qid.preservedData.Vertices.Count / 4;
+        qid.sprite.renderData = qid.preservedData;
+        qid.preservedData = null;
+      }
+      else //NOTE: qid.preservedData can be null when caching render data for Blasphemy and switching to another gun with the "white" ammo type
+        qid.maxNumTiles = 0;
+
       _QIDForSprite[qid.sprite] = qid; // add the new sprite instance to our lookup table
       // GGVDebug.Log($"restored ammo render data with size {qid.maxNumTiles}");
       return qid.spriteObject;
@@ -273,7 +280,7 @@ internal static class AmmoUICaching
 
     #if DEBUG
     if (tilesNeeded > qid.maxNumTiles)
-      GGVDebug.Log($"updated {tileIndex} ammo render tiles (new: {(int)tileIndex - qid.maxNumTiles})");
+      GGVDebug.Log($"updated {tileIndex} ammo render tiles for {tile.spriteName} (new: {(int)tileIndex - qid.maxNumTiles})");
     #endif
 
     if (tilesNeeded > qid.maxNumTiles)
