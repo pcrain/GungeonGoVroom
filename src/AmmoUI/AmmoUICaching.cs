@@ -235,9 +235,6 @@ internal static class AmmoUICaching
       startY = -startY;
     int tilesNeeded = (int)((tile.size.y - startY) / spriteSize.y);
     float pixelsToUnits = tile.PixelsToUnits();
-    Vector3 tilePos = tile.pivot.TransformToUpperLeft(tile.size) * pixelsToUnits;
-    float offX = tilePos.x;
-    float offY = tilePos.y;
 
     // pre-allocate space in our lists for any new tiles we need
     if (tilesNeeded > qid.maxNumTiles)
@@ -271,19 +268,20 @@ internal static class AmmoUICaching
     Color32[] rawColors = colors.items;
     Color32 baseColor = tile.ApplyOpacity(tile.isEnabled ? tile.color : tile.disabledColor);
     int tileIndex = qid.lastNumTiles;
+    float adjHeight = spriteSize.y - blackLineAdjustment;
     for (float y = startY + (tileIndex * spriteSize.y); y < tile.size.y; y += spriteSize.y)
     {
       int offset = 4 * tileIndex;
       ++tileIndex;
 
-      rawVertices[offset + 0].x = left * pixelsToUnits + offX;
-      rawVertices[offset + 1].x = right * pixelsToUnits + offX;
-      rawVertices[offset + 2].x = right * pixelsToUnits + offX;
-      rawVertices[offset + 3].x = left * pixelsToUnits + offX;
-      rawVertices[offset + 0].y = (-y) * pixelsToUnits + offY;
-      rawVertices[offset + 1].y = (-y) * pixelsToUnits + offY;
-      rawVertices[offset + 2].y = (-y - spriteSize.y + blackLineAdjustment) * pixelsToUnits + offY;
-      rawVertices[offset + 3].y = (-y - spriteSize.y + blackLineAdjustment) * pixelsToUnits + offY;
+      rawVertices[offset + 0].x = left * pixelsToUnits;
+      rawVertices[offset + 1].x = right * pixelsToUnits;
+      rawVertices[offset + 2].x = right * pixelsToUnits;
+      rawVertices[offset + 3].x = left * pixelsToUnits;
+      rawVertices[offset + 0].y = (-y) * pixelsToUnits;
+      rawVertices[offset + 1].y = (-y) * pixelsToUnits;
+      rawVertices[offset + 2].y = (-y - adjHeight) * pixelsToUnits;
+      rawVertices[offset + 3].y = (-y - adjHeight) * pixelsToUnits;
       rawColors  [offset + 0] = baseColor;
       rawColors  [offset + 1] = baseColor;
       rawColors  [offset + 2] = baseColor;
