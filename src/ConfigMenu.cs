@@ -82,43 +82,49 @@ internal static class GGVConfig
     OPT_TITLE_SCREEN  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TITLE_SCREEN);
     OPT_PATH_RECALC   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PATH_RECALC);
 
+    WriteLine($"FIX_DUCT_TAPE            = {FIX_DUCT_TAPE}");
+    WriteLine($"FIX_QUICK_RESTART        = {FIX_QUICK_RESTART}");
+    WriteLine($"FIX_ROOM_SHUFFLE         = {FIX_SHUFFLE}");
+    WriteLine($"FIX_AMMO_UI              = {FIX_AMMO_UI}");
+    WriteLine($"FIX_ORBITAL_GUN          = {FIX_ORBITAL_GUN}");
+    WriteLine($"FIX_COOP_TURBO           = {FIX_COOP_TURBO}");
+    WriteLine($"FIX_BULLET_TRAILS        = {FIX_BULLET_TRAILS}");
+    WriteLine($"FIX_DAMAGE_CAPS          = {FIX_DAMAGE_CAPS}");
+    WriteLine($"FIX_EVOLVER              = {FIX_EVOLVER}");
+    WriteLine($"FIX_AMMO_DRIFT           = {FIX_AMMO_DRIFT}");
+
+    WriteLine($"OPT_OCCLUSION            = {OPT_OCCLUSION}");
+    WriteLine($"OPT_AMMO_DISPLAY         = {OPT_AMMO_DISPLAY}");
+    WriteLine($"OPT_VIS_CHECKS           = {OPT_VIS_CHECKS}");
+    WriteLine($"OPT_LIGHT_CULL           = {OPT_LIGHT_CULL}");
+    WriteLine($"OPT_BEAMS                = {OPT_BEAMS}");
+    WriteLine($"OPT_GUI_EVENTS           = {OPT_GUI_EVENTS}");
+    WriteLine($"OPT_NUMBERS              = {OPT_NUMBERS}");
+    WriteLine($"OPT_FLOOD_FILL           = {OPT_FLOOD_FILL}");
+    WriteLine($"OPT_TRAILS               = {OPT_TRAILS}");
+    WriteLine($"OPT_PROJ_STATUS          = {OPT_PROJ_STATUS}");
+    WriteLine($"OPT_CHUNK_CHECKS         = {OPT_CHUNK_CHECKS}");
+
+    WriteLine($"OPT_MATH                 = {OPT_MATH}");
+    WriteLine($"OPT_CHUNKBUILD           = {OPT_CHUNKBUILD}");
+    WriteLine($"OPT_POINTCAST            = {OPT_POINTCAST}");
+    WriteLine($"OPT_PIT_VFX              = {OPT_PIT_VFX}");
+    WriteLine($"OPT_ITEM_LOOKUPS         = {OPT_ITEM_LOOKUPS}");
+    WriteLine($"OPT_DUNGEON_DIMS         = {OPT_DUNGEON_DIMS}");
+    WriteLine($"OPT_DEPTH_CHECKS         = {OPT_DEPTH_CHECKS}");
+    WriteLine($"OPT_GOOP                 = {OPT_GOOP}");
+
+    WriteLine($"OPT_MOUSE_EVENTS         = {OPT_MOUSE_EVENTS}");
+    WriteLine($"OPT_TITLE_SCREEN         = {OPT_TITLE_SCREEN}");
+    WriteLine($"OPT_PATH_RECALC          = {OPT_PATH_RECALC}");
+  }
+
+  private static void WriteLine(string s)
+  {
     #if DEBUG
-    System.Console.WriteLine($"FIX_DUCT_TAPE            = {FIX_DUCT_TAPE}");
-    System.Console.WriteLine($"FIX_QUICK_RESTART        = {FIX_QUICK_RESTART}");
-    System.Console.WriteLine($"FIX_ROOM_SHUFFLE         = {FIX_SHUFFLE}");
-    System.Console.WriteLine($"FIX_AMMO_UI              = {FIX_AMMO_UI}");
-    System.Console.WriteLine($"FIX_ORBITAL_GUN          = {FIX_ORBITAL_GUN}");
-    System.Console.WriteLine($"FIX_COOP_TURBO           = {FIX_COOP_TURBO}");
-    System.Console.WriteLine($"FIX_BULLET_TRAILS        = {FIX_BULLET_TRAILS}");
-    System.Console.WriteLine($"FIX_DAMAGE_CAPS          = {FIX_DAMAGE_CAPS}");
-    System.Console.WriteLine($"FIX_EVOLVER              = {FIX_EVOLVER}");
-    System.Console.WriteLine($"FIX_AMMO_DRIFT           = {FIX_AMMO_DRIFT}");
-
-    System.Console.WriteLine($"OPT_OCCLUSION            = {OPT_OCCLUSION}");
-    System.Console.WriteLine($"OPT_AMMO_DISPLAY         = {OPT_AMMO_DISPLAY}");
-    System.Console.WriteLine($"OPT_VIS_CHECKS           = {OPT_VIS_CHECKS}");
-    System.Console.WriteLine($"OPT_LIGHT_CULL           = {OPT_LIGHT_CULL}");
-    System.Console.WriteLine($"OPT_BEAMS                = {OPT_BEAMS}");
-    System.Console.WriteLine($"OPT_GUI_EVENTS           = {OPT_GUI_EVENTS}");
-    System.Console.WriteLine($"OPT_NUMBERS              = {OPT_NUMBERS}");
-    System.Console.WriteLine($"OPT_FLOOD_FILL           = {OPT_FLOOD_FILL}");
-    System.Console.WriteLine($"OPT_TRAILS               = {OPT_TRAILS}");
-    System.Console.WriteLine($"OPT_PROJ_STATUS          = {OPT_PROJ_STATUS}");
-    System.Console.WriteLine($"OPT_CHUNK_CHECKS         = {OPT_CHUNK_CHECKS}");
-
-    System.Console.WriteLine($"OPT_MATH                 = {OPT_MATH}");
-    System.Console.WriteLine($"OPT_CHUNKBUILD           = {OPT_CHUNKBUILD}");
-    System.Console.WriteLine($"OPT_POINTCAST            = {OPT_POINTCAST}");
-    System.Console.WriteLine($"OPT_PIT_VFX              = {OPT_PIT_VFX}");
-    System.Console.WriteLine($"OPT_ITEM_LOOKUPS         = {OPT_ITEM_LOOKUPS}");
-    System.Console.WriteLine($"OPT_DUNGEON_DIMS         = {OPT_DUNGEON_DIMS}");
-    System.Console.WriteLine($"OPT_DEPTH_CHECKS         = {OPT_DEPTH_CHECKS}");
-    System.Console.WriteLine($"OPT_GOOP                 = {OPT_GOOP}");
-
-    System.Console.WriteLine($"OPT_MOUSE_EVENTS         = {OPT_MOUSE_EVENTS}");
-    System.Console.WriteLine($"OPT_TITLE_SCREEN         = {OPT_TITLE_SCREEN}");
-    System.Console.WriteLine($"OPT_PATH_RECALC          = {OPT_PATH_RECALC}");
+    System.Console.WriteLine(s);
     #endif
+    UnityEngine.Debug.Log("[GGV] " + s);
   }
 
   // for callback purposes

@@ -39,7 +39,7 @@ namespace GGV;
 
 public static class C // constants
 {
-    public static readonly bool DEBUG_BUILD = false; // set to false for release builds (must be readonly instead of const to avoid build warnings)
+    public static readonly bool DEBUG_BUILD = true; // set to false for release builds (must be readonly instead of const to avoid build warnings)
 
     public const string MOD_NAME     = "Gungeon Go Vroom";
     public const string MOD_INT_NAME = "GungeonGoVroom";
@@ -70,7 +70,29 @@ public class Initialisation : BaseUnityPlugin
             ETGModConsole.Log(e.Message);
             ETGModConsole.Log(e.StackTrace);
         }
+
+        #if DEBUG
+        // DoStressTests();
+        #endif
     }
+
+    #if DEBUG
+    private static void DoStressTests()
+    {
+        //NOTE: trying to replicate weird shuffle indexoutofrange error, with no success so far
+        System.Console.WriteLine($"doing ggv stress tests");
+        BraveRandom.InitializeRandom();
+        List<Tuple<RuntimeRoomExitData, RuntimeRoomExitData>> testList = new();
+        List<PrototypeRoomExit> testList2 = new();
+        for (int i = 0; i < 1000; ++i)
+        {
+            testList.Add(default);
+            BraveUtility.GenerationShuffle(testList);
+            testList2.Add(default);
+            BraveUtility.GenerationShuffle(testList2);
+        }
+    }
+    #endif
 }
 
 // stub to make sure Harmony picks up all our patches

@@ -23,6 +23,8 @@ internal static partial class Patches
             MethodInfo genShuffle = typeof(BraveUtility).GetMethod("GenerationShuffle", BindingFlags.Static | BindingFlags.Public);
             yield return genShuffle.MakeGenericMethod(typeof(int));
             yield return genShuffle.MakeGenericMethod(typeof(IntVector2));
+            //WARN: the tuple genericizer below seems to call PrototypeRoomExit version of the function, causing an indexoutofrange exception
+            //      could also have just been an unlucky 1 in 4 billion RNG failure...see screenshot generationshuffle-error.png in _planning folder
             yield return genShuffle.MakeGenericMethod(typeof(Tuple<RuntimeRoomExitData, RuntimeRoomExitData>));
             yield return genShuffle.MakeGenericMethod(typeof(PrototypeRoomExit));
 
