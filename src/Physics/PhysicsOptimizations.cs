@@ -22,7 +22,7 @@ internal static class PhysicsOptimizations
       return false; // skip original method
     }
 
-    System.Diagnostics.Stopwatch castWatch = System.Diagnostics.Stopwatch.StartNew();
+    // System.Diagnostics.Stopwatch castWatch = System.Diagnostics.Stopwatch.StartNew();
 
     int xMoved                = 0;
     int yMoved                = 0;
@@ -69,7 +69,7 @@ internal static class PhysicsOptimizations
 
       int stepX = myX + xMoved + deltaX;
       int stepY = myY + yMoved + deltaY;
-      if (stepX + myW - 1 < theirX || stepX > theirX + theirW - 1 || stepY + myH - 1 < theirY || stepY > theirY + theirH - 1)
+      if (stepX + maxOffsetX < theirX || stepX > theirRight || stepY + maxOffsetY < theirY || stepY > theirTop)
       {
         xMoved += deltaX;
         yMoved += deltaY;
@@ -81,21 +81,23 @@ internal static class PhysicsOptimizations
       int right  = theirRight - stepX; if (right > maxOffsetX) right  = maxOffsetX;
       int top    = theirTop   - stepY; if (top > maxOffsetY)   top    = maxOffsetY;
 
-      for (int j = left; j <= right; j++)
+      int baseX = xMoved + deltaX - sepX;
+      int baseY = yMoved + deltaY - sepY;
+
+      if (left < -baseX)           left   = -baseX;
+      if (bottom < -baseY)         bottom = -baseY;
+      if (right >= theirW - baseX) right  = theirW - baseX - 1;
+      if (top >= theirH - baseY)   top    = theirH - baseY - 1;
+
+      for (int k = bottom; k <= top; k++)
       {
-        int posX = j + xMoved + deltaX - sepX;
-        if (posX < 0 || posX >= theirW)
-          continue;
-
-        for (int k = bottom; k <= top; k++)
+        int yPixSelf = k * myPixelW;
+        int yPixThem = (baseY + k) * otherPixelW + baseX;
+        for (int j = left; j <= right; j++)
         {
-          if (!myIsAABB && !myPixels[j + k * myPixelW])
+          if (!myIsAABB && !myPixels[yPixSelf + j])
             continue;
-
-          int posY = k + yMoved + deltaY - sepY;
-          if (posY < 0 || posY >= theirH)
-            continue;
-          if (!otherIsAABB && !otherPixels[posX + posY * otherPixelW])
+          if (!otherIsAABB && !otherPixels[yPixThem + j])
             continue;
 
           result.TimeUsed = timeUsed;
@@ -104,14 +106,12 @@ internal static class PhysicsOptimizations
           result.NewPixelsToMove = new IntVector2(xMoved, yMoved);
           result.MyPixelCollider = __instance;
           result.OtherPixelCollider = otherCollider;
-          result.Contact = new Vector2(
-            ((float)(j + xMoved + deltaX + myX) + 0.5f) / 16f,
-            ((float)(k + yMoved + deltaY + myY) + 0.5f) / 16f);
+          result.Contact = new Vector2(((float)(j + stepX) + 0.5f) / 16f, ((float)(k + stepY) + 0.5f) / 16f);
           result.Normal = new Vector2(-deltaX, -deltaY); //TODO: potential opportunity to fix vanilla bug with seams
           if (otherCollider.NormalModifier != null)
             result.Normal = otherCollider.NormalModifier(result.Normal);
           __result = true;
-          castWatch.Stop(); System.Console.WriteLine($"    {castWatch.ElapsedTicks,6} ticks cast ({((float)(totalTicks += castWatch.ElapsedTicks) / ++totalCasts)} avg)");
+          // castWatch.Stop(); System.Console.WriteLine($"    {castWatch.ElapsedTicks,6} ticks cast ({((float)(totalTicks += castWatch.ElapsedTicks) / ++totalCasts)} avg)");
           return false; // skip original method
         }
       }
@@ -120,7 +120,7 @@ internal static class PhysicsOptimizations
     }
     result.NewPixelsToMove = new IntVector2(xMoved, yMoved);
     __result = false;
-    castWatch.Stop(); System.Console.WriteLine($"    {castWatch.ElapsedTicks,6} ticks cast ({((float)(totalTicks += castWatch.ElapsedTicks) / ++totalCasts)} avg)");
+    // castWatch.Stop(); System.Console.WriteLine($"    {castWatch.ElapsedTicks,6} ticks cast ({((float)(totalTicks += castWatch.ElapsedTicks) / ++totalCasts)} avg)");
     return false; // skip original method
   }
 
