@@ -45,6 +45,7 @@ Currently included aggressive optimizations are:
   - **Optimize Goop Updates**: Speeds up goop updates by using faster iterators and lookup algorithms. Saves a large amount of CPU.
   - **Optimize Math**: Speeds up some geometry calculations by using optimized algorithms. Saves a significant amount of CPU.
   - **Optimize Chunk Building**: Reuses temporary storage structures when rebuilding chunk data during level gen. Saves a significant amount of RAM.
+  - **Optimize Linear Cast**: Speeds up linear cast physics calculations by using inline arithmetic wherever possible. Saves a significant amount of CPU.
   - **Optimize Pointcast**: Speeds up pointcast physics calculations by using statics instead of delegates. Saves a modest amount of CPU and RAM.
   - **Optimize Dungeon Size Checks**: Speeds up dungeon size lookups by using fields instead of properties. Saves a modest amount of CPU.
   - **Optimize Sprite Depth Checks**: Speeds up attached sprite depth checks by caching property accesses. Saves a modest amount of CPU.

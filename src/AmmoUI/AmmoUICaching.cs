@@ -26,6 +26,10 @@ internal static class AmmoUICaching
     public dfTiledSprite sprite = null; // the sprite for the GameObject instance
     public dfRenderData preservedData = null; // the dfRenderData preserved during floor transitions
     public int maxNumTiles = 0;  // the maximum number of tiles this sprite has ever rendered
+    public int lastNumTiles = 0;  // the previous number of tiles this sprite rendered
+    public Vector2 cachedTileScale = default;  // the previous tile scale for ammo displays
+    public bool cachedEnabled = false;  // the previous enabled status for ammo displays
+    public bool cachedBlackLineFix = false;  // the previous black line fix status for ammo displays
 
     public static QuickInvalidateData ForSprite(dfTiledSprite sprite) => _QIDForSprite[sprite];
 
@@ -197,91 +201,118 @@ internal static class AmmoUICaching
     if (QuickInvalidateData.ForSprite(tile) is not QuickInvalidateData qid)
       return true; // call original invalidation logic
 
-    if (qid.maxNumTiles == 0) // clear out renderData only the very first time this is called, update it in place otherwise
+    // clear out renderData only the very first time this is called, update it in place otherwise
+    if (qid.maxNumTiles == 0)
     {
       tile.renderData.Clear();
       tile.renderData.Material = tile.Atlas.Material;
+      tile.pivot = dfPivotPoint.TopLeft; // allows us to skip a lot more rebuilding if we can assume the pivot point is the TopLeft
     }
 
+    // force full rebuild if the tile scale , enable status, or black line fix status has changed
+    if (qid.cachedTileScale != tile.tileScale || qid.cachedEnabled != tile.isEnabled || qid.cachedBlackLineFix != tile.EnableBlackLineFix)
+    {
+      qid.lastNumTiles = 0;
+      qid.cachedTileScale = tile.tileScale;
+      qid.cachedEnabled = tile.isEnabled;
+      qid.cachedBlackLineFix = tile.EnableBlackLineFix;
+    }
+
+    // set up some useful variables
     dfList<Vector3> vertices = tile.renderData.Vertices;
-    dfList<Vector2> uV = tile.renderData.UV;
     dfList<Color32> colors = tile.renderData.Colors;
-    dfList<int> triangles = tile.renderData.Triangles;
-    Vector2[] spriteUV = tile.buildQuadUV();
     Vector2 spriteSize = Vector2.Scale(tile.SpriteInfo.sizeInPixels, tile.tileScale);
     Vector2 scrollFraction = new Vector2(tile.tileScroll.x % 1f, tile.tileScroll.y % 1f);
-    float blackLineAdjustment = ((!tile.EnableBlackLineFix) ? 0f : (-0.1f));
-    int tilesNeeded = (int)((tile.size.y + Mathf.Abs(scrollFraction.y * spriteSize.y)) / spriteSize.y);
-    if (tilesNeeded > qid.maxNumTiles) // pre-allocate space in our lists for all of the data we need
+    float blackLineAdjustment = (tile.EnableBlackLineFix ? (-0.1f) : 0f);
+
+    // data for adjusting vertices relative to current tile position / scale
+    float left = scrollFraction.x * spriteSize.x;
+    if (left > 0)
+      left = -left;
+    float right = left + spriteSize.x;
+    float startY = scrollFraction.y * spriteSize.y;
+    if (startY > 0)
+      startY = -startY;
+    int tilesNeeded = (int)((tile.size.y - startY) / spriteSize.y);
+    float pixelsToUnits = tile.PixelsToUnits();
+    Vector3 tilePos = tile.pivot.TransformToUpperLeft(tile.size) * pixelsToUnits;
+    float offX = tilePos.x;
+    float offY = tilePos.y;
+
+    // pre-allocate space in our lists for any new tiles we need
+    if (tilesNeeded > qid.maxNumTiles)
     {
+      dfList<Vector2> uV = tile.renderData.UV;
+      dfList<int> triangles = tile.renderData.Triangles;
+
       vertices.EnsureCapacity(4 * tilesNeeded);
       triangles.EnsureCapacity(6 * tilesNeeded);
       uV.EnsureCapacity(4 * tilesNeeded);
       colors.EnsureCapacity(4 * tilesNeeded);
-    }
 
-    Color32 baseColor = tile.ApplyOpacity(tile.isEnabled ? tile.color : tile.disabledColor);
-    int tileIndex = 0;
-    for (float y = 0f - Mathf.Abs(scrollFraction.y * spriteSize.y); y < tile.size.y; y += spriteSize.y)
-    {
-      for (float x = 0f - Mathf.Abs(scrollFraction.x * spriteSize.x); x < tile.size.x; x += spriteSize.x)
+      Vector2[] spriteUV = tile.buildQuadUV();
+      for (int n = tilesNeeded - qid.maxNumTiles; n > 0; --n) // add mesh data for new sprite tiles
       {
-        if (tileIndex >= qid.maxNumTiles)
-        {
-          int count = vertices.Count;
-          vertices.Add(new Vector3(x, 0f - y));
-          vertices.Add(new Vector3(x + spriteSize.x, 0f - y));
-          vertices.Add(new Vector3(x + spriteSize.x, 0f - y + (0f - spriteSize.y) + blackLineAdjustment));
-          vertices.Add(new Vector3(x, 0f - y + (0f - spriteSize.y) + blackLineAdjustment));
-          tile.addQuadTriangles(triangles, count);
-          tile.addQuadUV(uV, spriteUV);
-          tile.addQuadColors(colors);
-        }
-        else
-        {
-          int offset = 4 * tileIndex;
-          vertices.items[offset + 0].x = x;
-          vertices.items[offset + 0].y = -y;
-          vertices.items[offset + 1].x = x + spriteSize.x;
-          vertices.items[offset + 1].y = -y;
-          vertices.items[offset + 2].x = x + spriteSize.x;
-          vertices.items[offset + 2].y = -y - spriteSize.y + blackLineAdjustment;
-          vertices.items[offset + 3].x = x;
-          vertices.items[offset + 3].y = -y - spriteSize.y + blackLineAdjustment;
-          colors.items  [offset + 0] = baseColor;
-          colors.items  [offset + 1] = baseColor;
-          colors.items  [offset + 2] = baseColor;
-          colors.items  [offset + 3] = baseColor;
-        }
-        ++tileIndex;
+        tile.addQuadTriangles(triangles, vertices.Count);
+        tile.addQuadUV(uV, spriteUV);
+        colors.Add(default);
+        colors.Add(default);
+        colors.Add(default);
+        colors.Add(default);
+        vertices.Add(default);
+        vertices.Add(default);
+        vertices.Add(default);
+        vertices.Add(default);
       }
     }
 
-    // update colors only as needed
-    Color32 disabledColor = tile.ApplyOpacity(tile.disabledColor);
-    int lastColorIndex = 4 * qid.maxNumTiles;
-    for (int i = 4 * tileIndex; i < lastColorIndex; ++i)
-      colors.items[i] = disabledColor;
+    // rebuild any sprite vertices that have actually changed
+    Vector3[] rawVertices = vertices.items;
+    Color32[] rawColors = colors.items;
+    Color32 baseColor = tile.ApplyOpacity(tile.isEnabled ? tile.color : tile.disabledColor);
+    int tileIndex = qid.lastNumTiles;
+    for (float y = startY + (tileIndex * spriteSize.y); y < tile.size.y; y += spriteSize.y)
+    {
+      int offset = 4 * tileIndex;
+      ++tileIndex;
 
-    //NOTE: clipping is unnecessary for ammo clip sprites, so we can skip this step
-    // tile.clipQuads(vertices, uV);
+      rawVertices[offset + 0].x = left * pixelsToUnits + offX;
+      rawVertices[offset + 1].x = right * pixelsToUnits + offX;
+      rawVertices[offset + 2].x = right * pixelsToUnits + offX;
+      rawVertices[offset + 3].x = left * pixelsToUnits + offX;
+      rawVertices[offset + 0].y = (-y) * pixelsToUnits + offY;
+      rawVertices[offset + 1].y = (-y) * pixelsToUnits + offY;
+      rawVertices[offset + 2].y = (-y - spriteSize.y + blackLineAdjustment) * pixelsToUnits + offY;
+      rawVertices[offset + 3].y = (-y - spriteSize.y + blackLineAdjustment) * pixelsToUnits + offY;
+      rawColors  [offset + 0] = baseColor;
+      rawColors  [offset + 1] = baseColor;
+      rawColors  [offset + 2] = baseColor;
+      rawColors  [offset + 3] = baseColor;
+    }
 
-    // adjust vertices to sprite pivot
-    float pixelsToUnits = tile.PixelsToUnits();
-    Vector3 vector3 = tile.pivot.TransformToUpperLeft(tile.size);
-    for (int i = 0; i < vertices.Count; i++)
-      vertices[i] = (vertices[i] + vector3) * pixelsToUnits;
-
-    //NOTE: ammo sprites aren't interactive so we can skip this step as well
-    // tile.updateCollider();
+    // clear colors for unused vertices
+    int lastVertexIndex = 4 * qid.maxNumTiles;
+    for (int i = 4 * tilesNeeded; i < lastVertexIndex; ++i)
+    {
+      if (rawColors[i].a == 0)
+        break; // everything after here is already guaranteed to be clear after this point
+      rawColors[i].a = 0;
+    }
 
     #if DEBUG
+    //NOTE: clipping and interactivity are unnecessary for ammo clip sprites, so we can skip these steps
+    // tile.clipQuads(vertices, uV);
+    // tile.updateCollider();
     if (tilesNeeded > qid.maxNumTiles)
-      GGVDebug.Log($"updated {tileIndex} ammo render tiles for {tile.spriteName} (new: {(int)tileIndex - qid.maxNumTiles})");
+      GGVDebug.Log($"updated {tilesNeeded} ammo render tiles for {tile.spriteName} (new: {(int)tilesNeeded - qid.maxNumTiles})");
+    else
+      GGVDebug.Log($"rebuilt {tile.spriteName} from {startY} to {tile.size.y} ({qid.lastNumTiles} -> {tilesNeeded} tiles)");
     #endif
 
+    // update quick invalidation data
     if (tilesNeeded > qid.maxNumTiles)
       qid.maxNumTiles = tilesNeeded;
+    qid.lastNumTiles = tilesNeeded;
 
     return false; // skip the original invalidation logic
   }

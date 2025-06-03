@@ -3,9 +3,21 @@ namespace GGV;
 using static PhysicsEngine;
 using static PixelCollider;
 
+/// <summary>Speeds up LinearCast by avoiding function calls, vector math, and property accesses wherever possible.</summary>
 [HarmonyPatch]
-internal static class PhysicsOptimizations
+internal static class LinearCastOptimization
 {
+  private static bool Prepare(MethodBase original)
+  {
+    if (!GGVConfig.OPT_LINEAR_CAST)
+      return false;
+    if (original == null)
+      GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+    else
+      GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+    return true;
+  }
+
   private static MethodBase TargetMethod() {
     return typeof(PixelCollider).GetMethod(nameof(PixelCollider.LinearCast), new Type[] {
       typeof(PixelCollider), typeof(IntVector2), typeof(List<StepData>), typeof(LinearCastResult).MakeByRefType(), typeof(bool), typeof(float)
