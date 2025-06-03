@@ -202,11 +202,11 @@ internal static class AmmoUICaching
       return true; // call original invalidation logic
 
     // clear out renderData only the very first time this is called, update it in place otherwise
+    tile.pivot = dfPivotPoint.TopLeft; // allows us to skip a lot more rebuilding if we can assume the pivot point is the TopLeft
     if (qid.maxNumTiles == 0)
     {
       tile.renderData.Clear();
       tile.renderData.Material = tile.Atlas.Material;
-      tile.pivot = dfPivotPoint.TopLeft; // allows us to skip a lot more rebuilding if we can assume the pivot point is the TopLeft
     }
 
     // force full rebuild if the tile scale , enable status, or black line fix status has changed
@@ -301,10 +301,10 @@ internal static class AmmoUICaching
     //NOTE: clipping and interactivity are unnecessary for ammo clip sprites, so we can skip these steps
     // tile.clipQuads(vertices, uV);
     // tile.updateCollider();
-    if (tilesNeeded > qid.maxNumTiles)
-      GGVDebug.Log($"updated {tilesNeeded} ammo render tiles for {tile.spriteName} (new: {(int)tilesNeeded - qid.maxNumTiles})");
-    else
-      GGVDebug.Log($"rebuilt {tile.spriteName} from {startY} to {tile.size.y} ({qid.lastNumTiles} -> {tilesNeeded} tiles)");
+    // if (tilesNeeded > qid.maxNumTiles)
+    //   GGVDebug.Log($"updated {tilesNeeded} ammo render tiles for {tile.spriteName} (new: {(int)tilesNeeded - qid.maxNumTiles})");
+    // else
+    //   GGVDebug.Log($"rebuilt {tile.spriteName} from {startY} to {tile.size.y} ({qid.lastNumTiles} -> {tilesNeeded} tiles)");
     #endif
 
     // update quick invalidation data
