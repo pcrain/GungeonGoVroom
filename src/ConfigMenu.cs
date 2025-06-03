@@ -208,9 +208,9 @@ internal static class ConfigMenu
     so.FancyToggle(LIGHT_CULL, "Uses optimized inlined logic for\ndetermining whether lights should be culled.\nSaves a significant amount of CPU.");
     so.FancyToggle(BEAMS, "Pools beam bones to reduce memory usage.\n\nSaves a modest amount of RAM and CPU.");
     so.FancyToggle(GUI_EVENTS, "Caches results of expensive lookups\nfor finding GUI event handlers.\nSaves a modest amount of RAM.");
+    so.FancyToggle(TRAILS, "Pools bullet trail particles and vertex\ndata to reduce memory usage.\nSaves a modest amount of RAM.");
     so.FancyToggle(NUMBERS, "Caches strings for small numbers\nused frequently by SGUI's labels.\nSaves significant RAM while any console is open.");
     so.FancyToggle(FLOOD_FILL, "Uses an optimized flood fill algorithm\nfor floor post-processing.\nSaves a small amount of CPU and RAM.");
-    so.FancyToggle(TRAILS, "Pools bullet trail particles to\nreduce memory usage.\nSaves a small amount of RAM.");
     so.FancyToggle(PROJ_STATUS, "Removes prefab effect data (e.g., poison) from\nprojectiles that never apply those effects.\nSaves a small amount of RAM.");
     so.FancyToggle(CHUNK_CHECKS, "Optimize checks for whether sprite chunks\nare relevant to gameplay.\nSaves a small amount of CPU.");
 

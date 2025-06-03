@@ -3,9 +3,10 @@
 ## 1.3.4 (TBD)
 
 - Added logging showing which GGV configuration options are enabled on startup
-- Further improved "Optimize Ammo Display" option
+- Further improved "Optimize Ammo Display" option to save even more CPU and RAM
 - Added "Optimize Linear Cast" option, mitigating lag caused by having lots of very fast moving projectiles on the screen
 - Added "Unpause / Repause Fix"
+- Further improved "Optimize Bullet Trails" option to save even more RAM
 
 ## 1.3.3 (2025-06-01)
 
