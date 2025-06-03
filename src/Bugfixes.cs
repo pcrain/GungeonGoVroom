@@ -348,4 +348,50 @@ internal static partial class Patches
         }
     }
 
+    /// <summary>Fixes the game continuing to run in the background if you unpause and repause very quickly.</summary>
+    [HarmonyPatch]
+    private static class RepausePatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_REPAUSE)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.DepixelateCR), MethodType.Enumerator)]
+        [HarmonyILManipulator]
+        private static void GameManagerDepixelateCRIL(ILContext il, MethodBase original)
+        {
+            ILCursor cursor = new ILCursor(il);
+            Type ot = original.DeclaringType;
+
+            if (!cursor.TryGotoNext(MoveType.After,
+              instr => instr.MatchLdarg(0),
+              instr => instr.MatchLdfld(ot.GetEnumeratorField("$this")),
+              instr => instr.MatchCall<Component>("get_gameObject"),
+              instr => instr.MatchCall(typeof(BraveTime), nameof(BraveTime.ClearMultiplier))))
+              return;
+            ILLabel skipTimeReset = cursor.MarkLabel();
+
+            if (!cursor.TryGotoPrev(MoveType.Before,
+              instr => instr.MatchLdarg(0),
+              instr => instr.MatchLdfld(ot.GetEnumeratorField("$this")),
+              instr => instr.MatchCall<Component>("get_gameObject"),
+              instr => instr.MatchCall(typeof(BraveTime), nameof(BraveTime.ClearMultiplier))))
+              return;
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, ot.GetEnumeratorField("$this"));
+            cursor.CallPrivate(typeof(RepausePatch), nameof(IsActuallyStillPaused));
+            cursor.Emit(OpCodes.Brtrue, skipTimeReset);
+        }
+
+        private static bool IsActuallyStillPaused(GameManager instance) => instance.m_paused;
+    }
+
 }

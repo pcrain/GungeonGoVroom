@@ -14,6 +14,22 @@ internal static class Extensions
         cursor.Emit(OpCodes.Call, t.GetMethod(name, BindingFlags.Static | BindingFlags.Public));
     }
 
+    /// <summary>Retrieves a field from within an enumerator</summary>
+    private static Regex rx_enum_field = new Regex(@"^<?([^>]+)(>__[0-9]+)?$", RegexOptions.Compiled);
+    public static FieldInfo GetEnumeratorField(this Type t, string s)
+    {
+        return AccessTools.GetDeclaredFields(t).Find(f => {
+            // ETGModConsole.Log($"{f.Name}");
+            foreach (Match match in rx_enum_field.Matches(f.Name))
+            {
+              // ETGModConsole.Log($"  {match.Groups[1].Value}");
+              if (match.Groups[1].Value == s)
+                return true;
+            }
+            return false;
+        });
+    }
+
     private static MethodInfo _WriteLine = typeof(System.Console).GetMethod(nameof(System.Console.WriteLine), new Type[]{typeof(string)});
     /// <summary>Convenience method for debug print with an ILCursor</summary>
     [System.Diagnostics.Conditional("DEBUG")]

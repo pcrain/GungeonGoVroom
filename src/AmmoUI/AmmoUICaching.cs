@@ -318,7 +318,7 @@ internal static class AmmoUICaching
   /// <summary>Returns false to skip vanilla ammo rebuilding, or true to use our own</summary>
   private static bool FastUpdateAmmoUIForModule(GameUIAmmoController self, ref dfTiledSprite currentAmmoFGSprite, ref dfTiledSprite currentAmmoBGSprite, List<dfTiledSprite> AddlModuleFGSprites, List<dfTiledSprite> AddlModuleBGSprites, dfSprite ModuleTopCap, dfSprite ModuleBottomCap, ProjectileModule module, Gun currentGun, ref GameUIAmmoType.AmmoType cachedAmmoTypeForModule, ref string cachedCustomAmmoTypeForModule, ref int cachedShotsInClip, bool didChangeGun, int numberRemaining)
   {
-    if (currentGun.CurrentOwner is not PlayerController player)
+    if (currentGun.m_owner is not PlayerController player)
       return true; // call original code
     int pid = player.PlayerIDX;
     if (pid != 0 && pid != 1)
