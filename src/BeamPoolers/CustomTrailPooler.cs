@@ -183,9 +183,15 @@ internal static class CustomTrailPooler
         sb._colors    = new Color[bufferCap * 2];
       }
 
-      // set the alpha of unused points to 0
+      // set the alphas of unused points to 0 (to hide stray polygons in case the shader supports alpha values)
       for (int i = 2 * points; i < 2 * bufferCap; ++i)
         sb._colors[i].a = 0f;
+
+      // set unsued triangle vertices all to 0 (to avoid weird extraneous lines being rendered)
+      int numTriangles = (points - 1) * 6;
+      int maxTriangles = (bufferCap - 1) * 6;
+      for (int i = numTriangles; i < maxTriangles; ++i)
+        sb._triangles[i] = 0;
 
       // return the buffers
       vertices  = sb._vertices;
@@ -281,7 +287,7 @@ internal static class CustomTrailPooler
     {
       Point point2 = self.points[i];
       float num5 = point2.timeAlive * self.lifeTimeRatio;
-      Vector3 vector = ((i == 0 && self.numPoints > 1) ? (self.points[i + 1].position - self.points[i].position) : ((i == self.numPoints - 1 && self.numPoints > 1) ? (self.points[i].position - self.points[i - 1].position) : ((self.numPoints <= 2) ? Vector3.right : ((self.points[i + 1].position - self.points[i].position + (self.points[i].position - self.points[i - 1].position)) * 0.5f))));
+      Vector3 pointNormal = ((i == 0 && self.numPoints > 1) ? (self.points[i + 1].position - self.points[i].position) : ((i == self.numPoints - 1 && self.numPoints > 1) ? (self.points[i].position - self.points[i - 1].position) : ((self.numPoints <= 2) ? Vector3.right : ((self.points[i + 1].position - self.points[i].position + (self.points[i].position - self.points[i - 1].position)) * 0.5f))));
       Color color;
       if (self.colors.Length == 0)
         color = Color.Lerp(Color.white, Color.clear, num5);
@@ -302,11 +308,11 @@ internal static class CustomTrailPooler
       }
       colors[i * 2] = color;
       colors[i * 2 + 1] = color;
-      Vector3 vector2 = point2.position;
+      Vector3 pointPos = point2.position;
       if (i > 0 && i == self.numPoints - 1)
       {
         float t = Mathf.InverseLerp(self.points[i - 1].timeAlive, point2.timeAlive, self.lifeTime);
-        vector2 = Vector3.Lerp(self.points[i - 1].position, point2.position, t);
+        pointPos = Vector3.Lerp(self.points[i - 1].position, point2.position, t);
       }
       float width;
       if (self.widths.Length == 0)
@@ -326,9 +332,9 @@ internal static class CustomTrailPooler
         float t2 = Mathf.InverseLerp(num11, num11 + 1, num10);
         width = Mathf.Lerp(self.widths[num11], self.widths[num11 + 1], t2);
       }
-      vector = vector.normalized.RotateBy(Quaternion.Euler(0f, 0f, 90f)) * 0.5f * width;
-      vertices[i * 2] = vector2 - self.transform.position + vector;
-      vertices[i * 2 + 1] = vector2 - self.transform.position - vector;
+      pointNormal = pointNormal.normalized.RotateBy(Quaternion.Euler(0f, 0f, 90f)) * 0.5f * width;
+      vertices[i * 2] = pointPos - self.transform.position + pointNormal;
+      vertices[i * 2 + 1] = pointPos - self.transform.position - pointNormal;
       float x = (point2.timeAlive - self.points[0].timeAlive) * num4;
       uvs[i * 2] = new Vector2(x, 0f);
       uvs[i * 2 + 1] = new Vector2(x, 1f);
