@@ -139,3 +139,40 @@ internal static class LinearCastOptimization
   private static long totalTicks = 0;
   private static int totalCasts = 0;
 }
+
+/// <summary>Fixes a memory leak in PhysicsUpdate where a pooled LinearCastResult is never properly freed</summary>
+[HarmonyPatch]
+internal static class LinearCastMemoryLeakFix
+{
+  private static bool Prepare(MethodBase original)
+  {
+    if (!GGVConfig.OPT_PHYSICS_LEAK)
+      return false;
+    if (original == null)
+      GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+    else
+      GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+    return true;
+  }
+
+  [HarmonyPatch(typeof(PhysicsEngine), nameof(PhysicsEngine.SingleCollision))]
+  [HarmonyILManipulator]
+  private static void PhysicsEngineSingleCollisionPatchIL(ILContext il)
+  {
+      ILCursor cursor = new ILCursor(il);
+      if (!cursor.TryGotoNext(MoveType.After,
+        instr => instr.MatchCallvirt<PixelCollider>(nameof(PixelCollider.LinearCast)),
+        instr => instr.MatchBrtrue(out ILLabel _)
+        ))
+          return;
+
+      cursor.Emit(OpCodes.Ldloca, 0);
+      cursor.CallPrivate(typeof(LinearCastMemoryLeakFix), nameof(FreeLCR));
+  }
+
+  private static void FreeLCR(ref LinearCastResult lcr)
+  {
+    if (lcr != null)
+      LinearCastResult.Pool.Free(ref lcr);
+  }
+}

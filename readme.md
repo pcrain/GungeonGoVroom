@@ -37,6 +37,7 @@ Currently included safe optimizations are:
   - **Optimize Flood Filling**: Uses an optimized flood fill algorithm for floor post-processing. Saves a small amount of CPU and RAM.
   - **Optimize Projectile Prefabs**: Removes prefab effect data (e.g., poison) from projectiles that never apply those effects. Saves a small amount of RAM.
   - **Optimize Chunk Checks**: Optimize checks for whether sprite chunks are relevant to gameplay. Saves a small amount of CPU.
+  - **Optimize Linear Cast Pool**: Fixes a memory leak in Physics calculations for pixel-perfect collisions. Saves a small amount of RAM.
 
 ### Aggressive Optimizations
 
