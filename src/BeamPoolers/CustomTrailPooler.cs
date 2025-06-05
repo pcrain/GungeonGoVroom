@@ -9,6 +9,7 @@ internal static class CustomTrailPooler
   private static readonly LinkedList<Point> _ActiveNodes = new(); // contains empty nodes
   private static readonly LinkedList<Tuple<Transform,Point[]>> _ActiveTransforms = new();
   private static readonly LinkedList<Tuple<Transform,Point[]>> _InactiveTransforms = new();
+  private static readonly Dictionary<Transform,LinkedListNode<Tuple<Transform,Point[]>>> _ActiveTransformMap = new();
 
   private static bool Prepare(MethodBase original)
   {
@@ -29,43 +30,65 @@ internal static class CustomTrailPooler
   // }
   // private static int points = 0;
 
-  private static void RentElement(Point[] points, int index, Transform t)
+  private const float _CLEANUP_RATE = 1.0f;
+  private static float _NextCleanupTime = 0f;
+
+  private static void CleanupOldTransforms(Transform currentTransform)
   {
-      // we don't have an OnDestroy() method to hook, so scan existing transforms to see if we need to clean up any points
       int numTransforms = _ActiveTransforms.Count;
-      bool found = false;
-      for (int i = 0; i < numTransforms; ++i)
+      var nextNode = _ActiveTransforms.First;
+      while (nextNode != null)
       {
-        var outerNode = _ActiveTransforms.First;
-        _ActiveTransforms.RemoveFirst();
-        var pair = outerNode.Value;
-        if (pair.First)
-        {
-          if (pair.First == t)
-            found = true; // current transform is already known, don't add it later
-          _ActiveTransforms.AddLast(outerNode);
+        var curNode = nextNode;
+        nextNode = nextNode.Next;
+
+        var pair = curNode.Value;
+        Transform nextT = pair.First;
+        // transform still valid and either active or parented, continue on
+        if (nextT && ((nextT == currentTransform) || nextT.gameObject.activeSelf || nextT.parent))
           continue;
-        }
-        // parent transform has been destroyed, so return all of our points
+
+        // either we've been destroyed, or we've been deactivated and deparented, so return all of our points
         Point[] tpoints = pair.Second;
         int maxPoints = tpoints.Length;
-        for (int n = 0; i < maxPoints; ++n)
+        for (int n = 0; n < maxPoints; ++n)
         {
           if (tpoints[n] == null)
             break;
-          Return(tpoints[n]);
+          tpoints[n] = Return(tpoints[n]);
         }
-        outerNode.Value = null;
-        _InactiveTransforms.AddLast(outerNode);
+
+        //NOTE: if our transform is still valid but deactivated, reset numPoints to 0 so everything is re-rented as needed.
+        //      this makes sure pooled trails don't stay in _ActiveTransforms indefinitely
+        if (nextT && nextT.gameObject.GetComponent<CustomTrailRenderer>() is CustomTrailRenderer ctr)
+          ctr.numPoints = 0;
+        _ActiveTransformMap.Remove(nextT);
+        _ActiveTransforms.Remove(curNode);
+        curNode.Value = null;
+        _InactiveTransforms.AddLast(curNode);
       }
-      if (!found)
+  }
+
+  private static void RentElement(Point[] points, int index, Transform t)
+  {
+      // we don't have an OnDestroy() method to hook, so scan existing transforms once in a while to see if we need to clean up any points
+      float now = Time.realtimeSinceStartup;
+      if (now >= _NextCleanupTime)
+      {
+        CleanupOldTransforms(t);
+        _NextCleanupTime = now + _CLEANUP_RATE;
+      }
+
+      // see if we need to register ourselves
+      if (!_ActiveTransformMap.TryGetValue(t, out LinkedListNode<Tuple<Transform,Point[]>> myNode))
       {
         if (_InactiveTransforms.Count == 0)
           _InactiveTransforms.AddLast(new LinkedListNode<Tuple<Transform,Point[]>>(null));
-        var outerNode = _InactiveTransforms.Last;
+        myNode = _InactiveTransforms.Last;
         _InactiveTransforms.RemoveLast();
-        outerNode.Value = new Tuple<Transform,Point[]>(t, points);
-        _ActiveTransforms.AddLast(outerNode);
+        myNode.Value = new Tuple<Transform,Point[]>(t, points);
+        _ActiveTransforms.AddLast(myNode);
+        _ActiveTransformMap[t] = myNode;
       }
 
       // now actually handle renting logic
