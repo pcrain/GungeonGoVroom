@@ -314,7 +314,7 @@ internal static partial class Patches
         }
     }
 
-    /// <summary>Optimize ClosestPointOnRectangle() by avoiding function calls and taking advantage of the fact that rectangles are axis-aligned.</summary>
+    /// <summary>Optimize various calculation functions</summary>
     [HarmonyPatch]
     private static class MathOptimizations
     {
@@ -329,6 +329,7 @@ internal static partial class Patches
           return true;
         }
 
+        /// <summary>Optimize ClosestPointOnRectangle() by avoiding function calls and taking advantage of the fact that rectangles are axis-aligned.</summary>
         [HarmonyPatch(typeof(BraveMathCollege), nameof(BraveMathCollege.ClosestPointOnRectangle))]
         [HarmonyPrefix]
         private static bool FastClosestPointOnRectanglePatch(Vector2 point, Vector2 origin, Vector2 dimensions, ref Vector2 __result)
@@ -387,6 +388,20 @@ internal static partial class Patches
               }
             }
           }
+          return false;
+        }
+
+        /// <summary>Optimize TransformPixel() by avoiding redundant calls as much as possible</summary>
+        [HarmonyPatch(typeof(PixelCollider), nameof(PixelCollider.TransformPixel))]
+        [HarmonyPrefix]
+        private static bool FastTransformPixelPatch(PixelCollider __instance, Vector2 pixel, Vector2 pivot, float rotation, Vector2 scale, ref Vector2 __result)
+        {
+          float x = pixel.x - pivot.x;
+          float y = pixel.y - pivot.y;
+          float rot = rotation * ((float)Math.PI / 180f);
+          float cos = Mathf.Cos(rot);
+          float sin = Mathf.Sin(rot);
+          __result = new Vector2((x * cos - y * sin) * scale.x + pivot.x, (x * sin + y * cos) * scale.y + pivot.y);
           return false;
         }
     }
