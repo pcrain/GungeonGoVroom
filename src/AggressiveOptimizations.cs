@@ -1,5 +1,7 @@
 namespace GGV;
 
+using BraveDynamicTree;
+
 internal static partial class Patches
 {
     /// <summary>Optimized version of PhysicsEngine.Pointcast(IntVector2, ...) without unnecessary delegate creation</summary>
@@ -402,6 +404,30 @@ internal static partial class Patches
           float cos = Mathf.Cos(rot);
           float sin = Mathf.Sin(rot);
           __result = new Vector2((x * cos - y * sin) * scale.x + pivot.x, (x * sin + y * cos) * scale.y + pivot.y);
+          return false;
+        }
+
+        /// <summary>Optimize Combine() by avoiding vector math</summary>
+        [HarmonyPatch(typeof(b2AABB), nameof(b2AABB.Combine), typeof(b2AABB))]
+        [HarmonyPrefix]
+        private static bool Fastb2AABBCombine(ref b2AABB __instance, b2AABB aabb)
+        {
+          __instance.lowerBound.x = (__instance.lowerBound.x < aabb.lowerBound.x) ? __instance.lowerBound.x : aabb.lowerBound.x;
+          __instance.lowerBound.y = (__instance.lowerBound.y < aabb.lowerBound.y) ? __instance.lowerBound.y : aabb.lowerBound.y;
+          __instance.upperBound.x = (__instance.upperBound.x > aabb.upperBound.x) ? __instance.upperBound.x : aabb.upperBound.x;
+          __instance.upperBound.y = (__instance.upperBound.y > aabb.upperBound.y) ? __instance.upperBound.y : aabb.upperBound.y;
+          return false;
+        }
+
+        /// <summary>Optimize Combine() by avoiding vector math</summary>
+        [HarmonyPatch(typeof(b2AABB), nameof(b2AABB.Combine), typeof(b2AABB), typeof(b2AABB))]
+        [HarmonyPrefix]
+        private static bool Fastb2AABBCombine(ref b2AABB __instance, b2AABB aabb1, b2AABB aabb2)
+        {
+          __instance.lowerBound.x = (aabb1.lowerBound.x < aabb2.lowerBound.x) ? aabb1.lowerBound.x : aabb2.lowerBound.x;
+          __instance.lowerBound.y = (aabb1.lowerBound.y < aabb2.lowerBound.y) ? aabb1.lowerBound.y : aabb2.lowerBound.y;
+          __instance.upperBound.x = (aabb1.upperBound.x > aabb2.upperBound.x) ? aabb1.upperBound.x : aabb2.upperBound.x;
+          __instance.upperBound.y = (aabb1.upperBound.y > aabb2.upperBound.y) ? aabb1.upperBound.y : aabb2.upperBound.y;
           return false;
         }
     }

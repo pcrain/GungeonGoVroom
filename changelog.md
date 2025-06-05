@@ -8,6 +8,7 @@
 - Added "Unpause / Repause Fix"
 - Further improved "Optimize Bullet Trails" option to save even more RAM
 - Added "Optimize Linear Cast Pool" to fix a memory leak in physics calculations
+- Optimize more various math functions
 
 ## 1.3.3 (2025-06-01)
 
