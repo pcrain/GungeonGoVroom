@@ -54,4 +54,20 @@ internal static class Extensions
         il.Body.Variables.Add(v);
         return v;
     }
+
+    // from https://medium.com/@veyseler.cs.ist/performance-test-for-setting-a-field-in-c-with-reflection-3e2e41d8a2ab
+    /// <summary>Create a high-performance accessor for a private field.</summary>
+    internal static Func<S, T> CreateGetter<S,T>(this string fieldName)
+    {
+          FieldInfo field = typeof(S).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+          string methodName = field.ReflectedType.FullName + ".get_" + field.Name;
+          var getterMethod = new System.Reflection.Emit.DynamicMethod(methodName, typeof(T), [typeof(S)], true);
+          var gen = getterMethod.GetILGenerator();
+
+          gen.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+          gen.Emit(System.Reflection.Emit.OpCodes.Ldfld, field);
+          gen.Emit(System.Reflection.Emit.OpCodes.Ret);
+
+          return (Func<S, T>)getterMethod.CreateDelegate(typeof(Func<S, T>));
+    }
 }

@@ -24,6 +24,11 @@ internal static class LinearCastOptimization
     });
   }
 
+  //NOTE: this wasn't any faster, but keeping it around for future reference because it's cool
+  // /// <summary>Access a List(StepData)'s underlying array directly</summary>
+  // private static Func<List<StepData>, StepData[]> _GetStepArray = "_items".CreateGetter<List<StepData>, StepData[]>();
+  // StepData[] stepsInternal = _GetStepArray(stepList); //NOTE: access the underlying array directly
+
   [HarmonyPrefix]
   private static bool PixelColliderLinearCastPatch(PixelCollider __instance, PixelCollider otherCollider, IntVector2 pixelsToMove, List<StepData> stepList, out LinearCastResult result, bool traverseSlopes, float currentSlope, ref bool __result)
   {
@@ -33,8 +38,6 @@ internal static class LinearCastOptimization
       __result = false;
       return false; // skip original method
     }
-
-    // System.Diagnostics.Stopwatch castWatch = System.Diagnostics.Stopwatch.StartNew();
 
     int xMoved                = 0;
     int yMoved                = 0;
@@ -52,6 +55,8 @@ internal static class LinearCastOptimization
     int sepY                  = theirY - myY;
     int maxOffsetX            = myW - 1;
     int maxOffsetY            = myH - 1;
+    int minStepX              = theirX - maxOffsetX; // point at which the right of our hitbox would overlap the left of theirs
+    int minStepY              = theirY - maxOffsetY; // point at which the top of our hitbox would overlap the bottom of theirs
     float timeUsed            = 0f;
 
     bool[] myPixels           = __instance.m_bestPixels.m_bits;
@@ -64,27 +69,22 @@ internal static class LinearCastOptimization
 
     result                    = LinearCastResult.Pool.Allocate();
     result.MyPixelCollider    = __instance;
-    result.OtherPixelCollider = null;
-    result.TimeUsed           = 0f;
-    result.CollidedX          = false;
-    result.CollidedY          = false;
-    result.NewPixelsToMove.x  = 0;
-    result.NewPixelsToMove.y  = 0;
-    result.Overlap            = false;
 
-    for (int i = 0; i < stepList.Count; i++)
+    int numSteps = stepList.Count;
+    for (int i = 0; i < numSteps; i++)
     {
       StepData step = stepList[i];
       int deltaX = step.deltaPos.x;
       int deltaY = step.deltaPos.y;
+      int nextX = xMoved + deltaX;
+      int nextY = yMoved + deltaY;
+      int stepX = myX + nextX;
+      int stepY = myY + nextY;
       timeUsed += step.deltaTime;
-
-      int stepX = myX + xMoved + deltaX;
-      int stepY = myY + yMoved + deltaY;
-      if (stepX + maxOffsetX < theirX || stepX > theirRight || stepY + maxOffsetY < theirY || stepY > theirTop)
+      if (stepX < minStepX || stepX > theirRight || stepY < minStepY || stepY > theirTop)
       {
-        xMoved += deltaX;
-        yMoved += deltaY;
+        xMoved = nextX;
+        yMoved = nextY;
         continue;
       }
 
@@ -93,8 +93,8 @@ internal static class LinearCastOptimization
       int right  = theirRight - stepX; if (right > maxOffsetX) right  = maxOffsetX;
       int top    = theirTop   - stepY; if (top > maxOffsetY)   top    = maxOffsetY;
 
-      int baseX = xMoved + deltaX - sepX;
-      int baseY = yMoved + deltaY - sepY;
+      int baseX = nextX - sepX;
+      int baseY = nextY - sepY;
 
       if (left < -baseX)           left   = -baseX;
       if (bottom < -baseY)         bottom = -baseY;
@@ -116,28 +116,22 @@ internal static class LinearCastOptimization
           result.CollidedX = deltaX != 0;
           result.CollidedY = deltaY != 0;
           result.NewPixelsToMove = new IntVector2(xMoved, yMoved);
-          result.MyPixelCollider = __instance;
           result.OtherPixelCollider = otherCollider;
           result.Contact = new Vector2(((float)(j + stepX) + 0.5f) / 16f, ((float)(k + stepY) + 0.5f) / 16f);
-          result.Normal = new Vector2(-deltaX, -deltaY); //TODO: potential opportunity to fix vanilla bug with seams
+          result.Normal = new Vector2(-deltaX, -deltaY);
           if (otherCollider.NormalModifier != null)
             result.Normal = otherCollider.NormalModifier(result.Normal);
           __result = true;
-          // castWatch.Stop(); System.Console.WriteLine($"    {castWatch.ElapsedTicks,6} ticks cast ({((float)(totalTicks += castWatch.ElapsedTicks) / ++totalCasts)} avg)");
           return false; // skip original method
         }
       }
-      xMoved += deltaX;
-      yMoved += deltaY;
+      xMoved = nextX;
+      yMoved = nextY;
     }
     result.NewPixelsToMove = new IntVector2(xMoved, yMoved);
     __result = false;
-    // castWatch.Stop(); System.Console.WriteLine($"    {castWatch.ElapsedTicks,6} ticks cast ({((float)(totalTicks += castWatch.ElapsedTicks) / ++totalCasts)} avg)");
     return false; // skip original method
   }
-
-  private static long totalTicks = 0;
-  private static int totalCasts = 0;
 }
 
 /// <summary>Fixes a memory leak in PhysicsUpdate where a pooled LinearCastResult is never properly freed</summary>
@@ -174,5 +168,72 @@ internal static class LinearCastMemoryLeakFix
   {
     if (lcr != null)
       LinearCastResult.Pool.Free(ref lcr);
+  }
+}
+
+/// <summary>Speeds up PixelMovementGenerator by avoiding function calls and optimizing a lot of math.</summary>
+[HarmonyPatch]
+internal static class PixelMovementGeneratorOptimization
+{
+  private static bool Prepare(MethodBase original)
+  {
+    if (!GGVConfig.OPT_PIXEL_MOVE)
+      return false;
+    if (original == null)
+      GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+    else
+      GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+    return true;
+  }
+
+  [HarmonyPatch(typeof(PhysicsEngine), nameof(PhysicsEngine.PixelMovementGenerator), typeof(Vector2), typeof(Vector2), typeof(IntVector2), typeof(List<PixelCollider.StepData>))]
+  [HarmonyPrefix]
+  private static bool FastPixelMovementGenerator(Vector2 remainder, Vector2 velocity, IntVector2 pixelsToMove, List<PixelCollider.StepData> stepList)
+  {
+    const float STEP_SIZE = 1f / 32f;
+
+    int movedX        = 0;
+    int movedY        = 0;
+    int xpixelsToMove = pixelsToMove.x;
+    int ypixelsToMove = pixelsToMove.y;
+    int xSign         = xpixelsToMove > 0 ? 1 : xpixelsToMove < 0 ? -1 : 0;
+    int ySign         = ypixelsToMove > 0 ? 1 : ypixelsToMove < 0 ? -1 : 0;
+    float xStep       = STEP_SIZE * xSign;
+    float yStep       = STEP_SIZE * ySign;
+    float rx          = remainder.x;
+    float ry          = remainder.y;
+    float vx          = velocity.x;
+    float vy          = velocity.y;
+    float ivx         = 1f / vx;
+    float ivy         = 1f / vy;
+    IntVector2 xvec   = new IntVector2(xSign, 0);
+    IntVector2 yvec   = new IntVector2(0, ySign);
+
+    stepList.Clear();
+    while (movedX != xpixelsToMove || movedY != ypixelsToMove)
+    {
+      float xdtime = (xStep - rx) * ivx;
+      if (xdtime < 0f)
+        xdtime = 0f;
+      float ydtime = (yStep - ry) * ivy;
+      if (ydtime < 0f)
+        ydtime = 0f;
+      if (movedX != xpixelsToMove && (movedY == ypixelsToMove || xdtime < ydtime))
+      {
+        movedX += xSign;
+        rx = -xStep;
+        ry += xdtime * vy;
+        stepList.Add(new PixelCollider.StepData(xvec, xdtime));
+      }
+      else
+      {
+        movedY += ySign;
+        rx += ydtime * vx;
+        ry = -yStep;
+        stepList.Add(new PixelCollider.StepData(yvec, ydtime));
+      }
+    }
+
+    return false;
   }
 }
