@@ -10,6 +10,7 @@
 - Added "Optimize Linear Cast Pool" to fix a memory leak in physics calculations
 - Optimize more various math functions
 - Added "Optimize Pixel Movement Gen"
+- Added "Optimize Pixel Rotation"
 
 ## 1.3.3 (2025-06-01)
 

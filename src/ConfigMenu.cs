@@ -31,6 +31,7 @@ internal static class GGVConfig
   internal static bool OPT_AMMO_DISPLAY  = true;
   internal static bool OPT_PHYSICS_LEAK  = true;
   internal static bool OPT_PIXEL_MOVE    = true;
+  internal static bool OPT_PIXEL_ROTATE  = true;
 
   // Aggressive Optimizations
   internal static bool OPT_MATH          = true;
@@ -75,6 +76,7 @@ internal static class GGVConfig
     OPT_CHUNK_CHECKS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNK_CHECKS);
     OPT_PHYSICS_LEAK  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PHYSICS_LEAK);
     OPT_PIXEL_MOVE    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIXEL_MOVE);
+    OPT_PIXEL_ROTATE  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIXEL_ROTATE);
 
     OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
     OPT_CHUNKBUILD    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
@@ -115,6 +117,7 @@ internal static class GGVConfig
     WriteLine($"OPT_CHUNK_CHECKS         = {OPT_CHUNK_CHECKS}");
     WriteLine($"OPT_PHYSICS_LEAK         = {OPT_PHYSICS_LEAK}");
     WriteLine($"OPT_PIXEL_MOVE           = {OPT_PIXEL_MOVE}");
+    WriteLine($"OPT_PIXEL_ROTATE         = {OPT_PIXEL_ROTATE}");
 
     WriteLine($"OPT_MATH                 = {OPT_MATH}");
     WriteLine($"OPT_CHUNKBUILD           = {OPT_CHUNKBUILD}");
@@ -170,6 +173,7 @@ internal static class ConfigMenu
   internal const string NUMBERS       = "Optimize Numerical Strings";
   internal const string FLOOD_FILL    = "Optimize Flood Filling";
   internal const string TRAILS        = "Optimize Bullet Trails";
+  internal const string PIXEL_ROTATE  = "Optimize Pixel Rotation";
   internal const string PROJ_STATUS   = "Optimize Projectile Prefabs";
   internal const string CHUNK_CHECKS  = "Optimize Chunk Checks";
   internal const string PHYSICS_LEAK  = "Optimize Linear Cast Pool";
@@ -217,6 +221,7 @@ internal static class ConfigMenu
     so.FancyToggle(BEAMS, "Pools beam bones to reduce memory usage.\n\nSaves a modest amount of RAM and CPU.");
     so.FancyToggle(GUI_EVENTS, "Caches results of expensive lookups\nfor finding GUI event handlers.\nSaves a modest amount of RAM.");
     so.FancyToggle(TRAILS, "Pools bullet trail particles and vertex\ndata to reduce memory usage.\nSaves a modest amount of RAM.");
+    so.FancyToggle(PIXEL_ROTATE, "Optimizes pixel movement rotation\nused for pixel-perfect collisions.\nSaves a modest amount of RAM.");
     so.FancyToggle(NUMBERS, "Caches strings for small numbers\nused frequently by SGUI's labels.\nSaves significant RAM while any console is open.");
     so.FancyToggle(FLOOD_FILL, "Uses an optimized flood fill algorithm\nfor floor post-processing.\nSaves a small amount of CPU and RAM.");
     so.FancyToggle(PROJ_STATUS, "Removes prefab effect data (e.g., poison) from\nprojectiles that never apply those effects.\nSaves a small amount of RAM.");

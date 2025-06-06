@@ -237,3 +237,212 @@ internal static class PixelMovementGeneratorOptimization
     return false;
   }
 }
+
+/// <summary>Speeds up SetRotationAndScale by avoiding function calls and reusing scratch buffers instead of allocating memory.</summary>
+[HarmonyPatch]
+internal static class SetRotationAndScaleOptimization
+{
+  private static bool Prepare(MethodBase original)
+  {
+    if (!GGVConfig.OPT_PIXEL_ROTATE)
+      return false;
+    if (original == null)
+      GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+    else
+      GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+    return true;
+  }
+
+  private static readonly Vector2[] _Scratch = new Vector2[4];
+  private static readonly int[] _Scratch2 = new int[4];
+  private static readonly Vector2[] _ScratchVertices = new Vector2[4];
+
+  [HarmonyPatch(typeof(PixelCollider), nameof(PixelCollider.SetRotationAndScale))]
+  [HarmonyPrefix]
+  private static bool FastSetRotationAndScale(PixelCollider __instance, float rotation, Vector2 scale)
+  {
+    BitArray2D bitArray2D = ((rotation != 0f || scale.x != 1f || scale.y != 1f) ? __instance.m_modifiedPixels : __instance.m_basePixels);
+    if (__instance.m_rotation == rotation && __instance.m_scale.x == scale.x && __instance.m_scale.y == scale.y && __instance.m_bestPixels == bitArray2D && __instance.m_bestPixels != null && __instance.m_bestPixels.IsValid)
+      return false;
+
+    __instance.m_rotation = rotation;
+    __instance.m_scale.x = scale.x;
+    __instance.m_scale.y = scale.y;
+    int width = __instance.m_basePixels.m_width;
+    int height = __instance.m_basePixels.m_height;
+    if (rotation == 0f && scale.x == 1f && scale.y == 1f)
+    {
+      __instance.m_bestPixels = __instance.m_basePixels;
+      __instance.m_dimensions.x = width;
+      __instance.m_dimensions.y = height;
+      __instance.m_transformOffset.x = 0;
+      __instance.m_transformOffset.y = 0;
+      return false;
+    }
+
+    if (__instance.m_modifiedPixels == null)
+      __instance.m_modifiedPixels = new BitArray2D();
+
+    Vector2 basePivot = new Vector2(-__instance.m_offset.x, -__instance.m_offset.y);
+
+    // populate scratch buffer with base corners of sprite BL -> BR -> TR -> TL
+    _Scratch[0].x = 0.5f;
+    _Scratch[1].x = (float)width - 0.5f; //NOTE: intentionally TR -> TL because that's how the original code is
+    _Scratch[2].x = (float)width - 0.5f; //      even though it seems like it should be TL -> TR
+    _Scratch[3].x = 0.5f;
+    _Scratch[0].y = 0.5f;
+    _Scratch[1].y = 0.5f;
+    _Scratch[2].y = (float)height - 0.5f;
+    _Scratch[3].y = (float)height - 0.5f;
+
+    // apply inlined TransformPixel() logic to get the world coordinates of the collider's corners
+    float rotationInRadians = rotation * ((float)Math.PI / 180f);
+    float baseCos = Mathf.Cos(rotationInRadians);
+    float baseSin = Mathf.Sin(rotationInRadians);
+    for (int i = 0; i < 4; ++i)
+    {
+      float x = _Scratch[i].x - basePivot.x;
+      float y = _Scratch[i].y - basePivot.y;
+      _Scratch[i].x = (x * baseCos - y * baseSin) * scale.x + basePivot.x;
+      _Scratch[i].y = (x * baseSin - y * baseCos) * scale.y + basePivot.y;
+    }
+
+    // determine the absolute world bounds of the collider
+    float boundLeftF   = _Scratch[0].x;
+    float boundRightF  = _Scratch[0].x;
+    float boundBottomF = _Scratch[0].y;
+    float boundTopF    = _Scratch[0].y;
+    for (int i = 1; i < 4; ++i)
+    {
+      if (_Scratch[i].x < boundLeftF)
+        boundLeftF = _Scratch[i].x;
+      if (_Scratch[i].x > boundRightF)
+        boundRightF = _Scratch[i].x;
+      if (_Scratch[i].y < boundBottomF)
+        boundBottomF = _Scratch[i].y;
+      if (_Scratch[i].y > boundTopF)
+        boundTopF = _Scratch[i].y;
+    }
+    int boundLeft   = (int)Math.Floor(boundLeftF);
+    int boundRight  = (int)Math.Ceiling(boundRightF);
+    int boundBottom = (int)Math.Floor(boundBottomF);
+    int boundTop    = (int)Math.Ceiling(boundTopF);
+    int boundsWidth = boundRight - boundLeft;
+    int boundHeight = boundTop - boundBottom;
+
+    // reinitialize the collider's pixels (inlined ReinitializeWithDefault())
+    BitArray2D mpArray = __instance.m_modifiedPixels;
+    mpArray.m_width = boundsWidth;
+    mpArray.m_height = boundHeight;
+    int numBits = boundsWidth * boundHeight;
+    if (mpArray.m_bits == null || numBits > mpArray.m_bits.Length)
+      mpArray.m_bits = new bool[(int)((float)numBits * mpArray.c_sizeScalar)];
+    else
+      Array.Clear(mpArray.m_bits, 0, numBits);
+    mpArray.IsValid = true;
+    bool[] mpBits = mpArray.m_bits;
+
+    if (__instance.m_basePixels.IsAabb)
+    {
+      const int NUM_VERTICES = 4;
+      _Scratch[0].x -= boundLeft;
+      _Scratch[1].x -= boundLeft;
+      _Scratch[2].x -= boundLeft;
+      _Scratch[3].x -= boundLeft;
+      _Scratch[0].y -= boundBottom;
+      _Scratch[1].y -= boundBottom;
+      _Scratch[2].y -= boundBottom;
+      _Scratch[3].y -= boundBottom;
+      _Scratch2[0] = _Scratch2[1] = _Scratch2[2] = _Scratch2[3] = 0;
+      for (int i = 0; i < boundHeight; i++)
+      {
+        int num8 = 0;
+        int num9 = NUM_VERTICES - 1;
+        int j;
+        for (j = 0; j < NUM_VERTICES; j++)
+        {
+          if (((double)_Scratch[j].y < (double)i && (double)_Scratch[num9].y >= (double)i) || ((double)_Scratch[num9].y < (double)i && (double)_Scratch[j].y >= (double)i))
+            _Scratch2[num8++] = (int)(_Scratch[j].x + ((float)i - _Scratch[j].y) / (_Scratch[num9].y - _Scratch[j].y) * (_Scratch[num9].x - _Scratch[j].x));
+          num9 = j;
+        }
+        j = 0;
+        // sorting
+        while (j < num8 - 1)
+        {
+          if (_Scratch2[j] > _Scratch2[j + 1])
+          {
+            int tmp = _Scratch2[j];
+            _Scratch2[j] = _Scratch2[j + 1];
+            _Scratch2[j + 1] = tmp;
+            if (j != 0)
+              j--;
+          }
+          else
+            j++;
+        }
+        for (j = 0; j < num8 && _Scratch2[j] < boundsWidth - 1; j += 2)
+        {
+          if (_Scratch2[j + 1] <= 0)
+            continue;
+          if (_Scratch2[j] < 0)
+            _Scratch2[j] = 0;
+          if (_Scratch2[j + 1] > boundsWidth - 1)
+            _Scratch2[j + 1] = boundsWidth - 1;
+          for (int k = _Scratch2[j]; k < _Scratch2[j + 1]; k++)
+            mpBits[k + i * boundsWidth] = true;
+        }
+      }
+    }
+    else
+    {
+      //NOTE: inlining most of the logic from TransformPixel()
+      float relPivotX = basePivot.x - boundLeft;
+      float relPivotY = basePivot.y - boundBottom;
+      float negRotation = -rotation;
+      float negRotationInRadians = negRotation * ((float)Math.PI / 180f);
+      float cos = Mathf.Cos(negRotationInRadians);
+      float sin = Mathf.Sin(negRotationInRadians);
+      float invScaleX = 1f / scale.x;
+      float invScaleY = 1f / scale.y;
+      bool[] basePixels = __instance.m_basePixels.m_bits;
+      int bpWidth = __instance.m_basePixels.m_width;
+      for (int l = 0; l < boundsWidth; l++)
+      {
+        float relX = ((float)l + 0.5f) - relPivotX;
+        for (int m = 0; m < boundHeight; m++)
+        {
+          float relY = ((float)m + 0.5f) - relPivotY;
+          float tx = (relX * cos - relY * sin) * invScaleX + relPivotX + boundLeft;
+          float ty = (relX * sin + relY * cos) * invScaleY + relPivotY + boundBottom;
+          if (tx < 0f || (int)tx >= width || ty < 0f || (int)ty >= height)
+            mpBits[l + m * boundsWidth] = false;
+          else
+            mpBits[l + m * boundsWidth] = basePixels[(int)tx + (int)ty * bpWidth];
+        }
+      }
+    }
+    __instance.m_transformOffset.x = boundLeft;
+    __instance.m_transformOffset.y = boundBottom;
+    __instance.m_dimensions.x = boundsWidth;
+    __instance.m_dimensions.y = boundHeight;
+    __instance.m_bestPixels = __instance.m_modifiedPixels;
+
+    return false;
+  }
+
+  /// <summary>Use a static vertex buffer to avoid memory allocations.</summary>
+  [HarmonyPatch(typeof(PixelCollider), nameof(PixelCollider.RegenerateFrom3dCollider))]
+  [HarmonyILManipulator]
+  private static void PixelColliderRegenerateFrom3dColliderPatchIL(ILContext il)
+  {
+      ILCursor cursor = new ILCursor(il);
+      if (!cursor.TryGotoNext(MoveType.Before,
+        instr => instr.MatchLdcI4(4),
+        instr => instr.MatchNewarr<Vector2>()
+        ))
+          return;
+      cursor.RemoveRange(2);
+      cursor.Emit(OpCodes.Ldsfld, typeof(SetRotationAndScaleOptimization)
+        .GetField("_ScratchVertices", BindingFlags.Static | BindingFlags.NonPublic));
+  }
+}
