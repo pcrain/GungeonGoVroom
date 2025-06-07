@@ -7,6 +7,17 @@ internal static partial class Patches
 {
     private static UInt64[] _Bitfield = new UInt64[10000]; // bitfield used by several patches
 
+    [HarmonyPatch(typeof(BraveMemory), nameof(BraveMemory.EnsureHeapSize))]
+    [HarmonyPrefix]
+    private static void BraveMemoryEnsureHeapSizePatch(ref int kilobytes)
+    {
+      if (GGVConfig.PREALLOCATE_HEAP > 0)
+      {
+        kilobytes = GGVConfig.PREALLOCATE_HEAP * 1048576;
+        GGVDebug.Log($"preallocating {GGVConfig.PREALLOCATE_HEAP} gigabytes");
+      }
+    }
+
     /// <summary>Optimizations for preventing player projectile prefabs from constructing unnecessary objects</summary>
     [HarmonyPatch]
     private static class ProjectileSpawnOptimizations

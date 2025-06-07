@@ -18,6 +18,7 @@ internal static class GGVConfig
   internal static bool FIX_REPAUSE       = true;
 
   // Safe Optimizations
+  internal static int  PREALLOCATE_HEAP  = 0;
   internal static bool OPT_PROJ_STATUS   = true;
   internal static bool OPT_GUI_EVENTS    = true;
   internal static bool OPT_NUMBERS       = true;
@@ -51,6 +52,14 @@ internal static class GGVConfig
 
   internal static void Update()
   {
+    PREALLOCATE_HEAP = 0;
+    string heapConfig = ConfigMenu._Gunfig.Value(ConfigMenu.PREALLOCATE);
+    if (heapConfig != "Default")
+    {
+      System.Console.WriteLine($"parsing heapConfig={heapConfig}");
+      PREALLOCATE_HEAP = Int32.Parse(heapConfig.Split('G')[0]);
+    }
+
     FIX_DUCT_TAPE     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUCT_TAPE);
     FIX_QUICK_RESTART = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.QUICK_RESTART);
     FIX_SHUFFLE       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.SHUFFLE);
@@ -92,6 +101,7 @@ internal static class GGVConfig
     OPT_TITLE_SCREEN  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TITLE_SCREEN);
     OPT_PATH_RECALC   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PATH_RECALC);
 
+    WriteLine($"PREALLOCATE_HEAP         = {PREALLOCATE_HEAP} GB");
     WriteLine($"FIX_DUCT_TAPE            = {FIX_DUCT_TAPE}");
     WriteLine($"FIX_QUICK_RESTART        = {FIX_QUICK_RESTART}");
     WriteLine($"FIX_ROOM_SHUFFLE         = {FIX_SHUFFLE}");
@@ -164,6 +174,7 @@ internal static class ConfigMenu
   internal const string REPAUSE       = "Unpause / Repause Fix";
 
   internal const string SAFE_OPT      = "Safe Optimizations";
+  internal const string PREALLOCATE   = "Preallocate Heap Memory";
   internal const string OCCLUSION     = "Optimize Occlusion";
   internal const string AMMO_DISPLAY  = "Optimize Ammo Display";
   internal const string VIS_CHECKS    = "Optimize Visibility Checks";
@@ -214,6 +225,7 @@ internal static class ConfigMenu
     sf.FancyToggle(REPAUSE, "Fixes game continuing to run if you\nunpause and quickly repause during menu\nfading animation.");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
+    so.FancyMemList(PREALLOCATE, "Preallocates RAM to avoid OS requests later.\nDefault uses Gungeon's default of about 200MB.\nHigher values result in fewer lag spikes.");
     so.FancyToggle(OCCLUSION, "Speeds up occlusion calculations by\nusing optimized algorithms and caching.\nSaves a large amount of CPU.");
     so.FancyToggle(AMMO_DISPLAY, "Speeds up ammo display updates by\ncaching render data.\nSaves a large amount of RAM.");
     so.FancyToggle(VIS_CHECKS, "Skips redundant sprite visibility checks\nwhen the results aren't actually used.\nSaves a significant amount of CPU.");
@@ -254,12 +266,19 @@ internal static class ConfigMenu
   private static void FancyToggle(this Gunfig gunfig, string toggleName, string toggleDesc)
   {
     string info = toggleDesc.Green();
-    gunfig.AddScrollBox(key: toggleName, options: DefaultEnabled, info: [info, info], callback: GGVConfig.Update, updateType: Gunfig.Update.OnRestart);
+    gunfig.AddScrollBox(key: toggleName, options: DefaultEnabled, info: [info, info], updateType: Gunfig.Update.OnRestart);
   }
   private static void FancyToggleOff(this Gunfig gunfig, string toggleName, string toggleDesc)
   {
     string info = toggleDesc.Green();
-    gunfig.AddScrollBox(key: toggleName, options: DefaultDisabled, info: [info, info], callback: GGVConfig.Update, updateType: Gunfig.Update.OnRestart);
+    gunfig.AddScrollBox(key: toggleName, options: DefaultDisabled, info: [info, info], updateType: Gunfig.Update.OnRestart);
+  }
+  private static void FancyMemList(this Gunfig gunfig, string toggleName, string toggleDesc)
+  {
+    string info = toggleDesc.Green();
+    List<string> options = ["Default", "1GB", "2GB", "3GB", "4GB", "5GB", "6GB", "7GB", "8GB", "9GB", "10GB"];
+    gunfig.AddScrollBox(key: toggleName, options: options, info: Enumerable.Repeat<string>(info, options.Count).ToList(),
+      updateType: Gunfig.Update.OnRestart);
   }
 
   private static void LateInit()
