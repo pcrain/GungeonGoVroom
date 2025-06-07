@@ -228,13 +228,13 @@ internal static class ConfigMenu
     so.FancyMemList(PREALLOCATE, "Preallocates RAM to avoid OS requests later.\nDefault uses Gungeon's default of about 200MB.\nHigher values result in fewer lag spikes.");
     so.FancyToggle(OCCLUSION, "Speeds up occlusion calculations by\nusing optimized algorithms and caching.\nSaves a large amount of CPU.");
     so.FancyToggle(AMMO_DISPLAY, "Speeds up ammo display updates by\ncaching render data.\nSaves a large amount of RAM.");
-    so.FancyToggle(VIS_CHECKS, "Skips redundant sprite visibility checks\nwhen the results aren't actually used.\nSaves a significant amount of CPU.");
     so.FancyToggle(LIGHT_CULL, "Uses optimized inlined logic for\ndetermining whether lights should be culled.\nSaves a significant amount of CPU.");
     so.FancyToggle(BEAMS, "Pools beam bones to reduce memory usage.\n\nSaves a modest amount of RAM and CPU.");
     so.FancyToggle(GUI_EVENTS, "Caches results of expensive lookups\nfor finding GUI event handlers.\nSaves a modest amount of RAM.");
     so.FancyToggle(TRAILS, "Pools bullet trail particles and vertex\ndata to reduce memory usage.\nSaves a modest amount of RAM.");
     so.FancyToggle(PIXEL_ROTATE, "Optimizes pixel movement rotation\nused for pixel-perfect collisions.\nSaves a modest amount of RAM.");
     so.FancyToggle(NUMBERS, "Caches strings for small numbers\nused frequently by SGUI's labels.\nSaves significant RAM while any console is open.");
+    so.FancyToggle(VIS_CHECKS, "Skips redundant sprite visibility checks\nwhen the results aren't actually used.\nSaves a small amount of CPU.");
     so.FancyToggle(FLOOD_FILL, "Uses an optimized flood fill algorithm\nfor floor post-processing.\nSaves a small amount of CPU and RAM.");
     so.FancyToggle(PROJ_STATUS, "Removes prefab effect data (e.g., poison) from\nprojectiles that never apply those effects.\nSaves a small amount of RAM.");
     so.FancyToggle(CHUNK_CHECKS, "Optimize checks for whether sprite chunks\nare relevant to gameplay.\nSaves a small amount of CPU.");

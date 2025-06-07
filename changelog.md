@@ -4,6 +4,7 @@
 
 - Fixed issue where switching to The Judge on a new floor from a weapon with the same base ammo type would break The Judge's ammo UI rendering
 - Added "Preallocate Heap Memory" option
+- Fixed Elevator rendering issue caused by "Optimize Visibility Checks" option
 
 ## 1.4.0 (2025-06-06)
 

@@ -615,7 +615,7 @@ internal static partial class Patches
           return true;
         }
 
-        /// <summary>Remove call to HandleVisibilityCheck() in LateUpate() since its value is only used when the sprite is changed</summary>
+        /// <summary>Replace call to HandleVisibilityCheck() in LateUpate() with our own FastVisibilityCheck()</summary>
         [HarmonyPatch(typeof(tk2dSpriteAnimator), nameof(tk2dSpriteAnimator.LateUpdate))]
         [HarmonyILManipulator]
         private static void tk2dSpriteAnimatorLateUpdatePatchIL(ILContext il)
@@ -624,33 +624,58 @@ internal static partial class Patches
             if (!cursor.TryGotoNext(MoveType.Before, instr => instr.MatchCall<tk2dSpriteAnimator>(nameof(tk2dSpriteAnimator.HandleVisibilityCheck))))
               return;
             cursor.Remove();
-            cursor.Emit(OpCodes.Pop);
+            cursor.CallPrivate(typeof(SpriteVisiblityOptimizations), nameof(FastHandleVisibilityCheck));
         }
 
-        /// <summary>Add call to our own FastVisibilityCheck() in SetSprite() with an optimized algorithm</summary>
-        [HarmonyPatch(typeof(tk2dSpriteAnimator), nameof(tk2dSpriteAnimator.SetSprite))]
-        [HarmonyILManipulator]
-        private static void tk2dSpriteAnimatorSetSpritePatchIL(ILContext il)
+        private static void FastHandleVisibilityCheck(tk2dSpriteAnimator animator)
         {
-            ILCursor cursor = new ILCursor(il);
-            if (!cursor.TryGotoNext(MoveType.Before, instr => instr.MatchLdfld<tk2dSpriteAnimator>(nameof(tk2dSpriteAnimator.m_isCurrentlyVisible))))
-              return;
-            cursor.Remove();
-            cursor.CallPrivate(typeof(SpriteVisiblityOptimizations), nameof(FastVisibilityCheck));
-        }
-
-        private static bool FastVisibilityCheck(tk2dSpriteAnimator animator)
-        {
-          if (!tk2dSpriteAnimator.InDungeonScene)
-            return true;
+          if (animator.alwaysUpdateOffscreen || !tk2dSpriteAnimator.InDungeonScene)
+          {
+            animator.m_isCurrentlyVisible = true;
+            return;
+          }
           Vector3 pos = animator.transform.position;
-          float x     = pos.x - tk2dSpriteAnimator.CameraPositionThisFrame.x;
-          float y     = pos.y - tk2dSpriteAnimator.CameraPositionThisFrame.y;
-          bool vis    = (x * x + y * y * 2.89f) < 420f + animator.AdditionalCameraVisibilityRadius * animator.AdditionalCameraVisibilityRadius;
-          if (vis) //NOTE: fixes player rendering over the elevator when entering it. since this is originally checked in LateUpdate()
-            animator.Sprite.UpdateZDepth(); // and only called in SetSprite(), z depth isn't updated in OnBecameVisible() and we need to do it here
-          return vis;
+          float x = pos.x - tk2dSpriteAnimator.CameraPositionThisFrame.x;
+          float y = pos.y - tk2dSpriteAnimator.CameraPositionThisFrame.y;
+          animator.m_isCurrentlyVisible = (x * x + y * y * 2.89f) < 420f + animator.AdditionalCameraVisibilityRadius * animator.AdditionalCameraVisibilityRadius;
         }
+
+        //WARNING: it's absolutely essential the visibility checks are done in LateUpdate(), otherwise rendering issues can occur when setting the sprite
+        //         even though this looks like it should work...it doesn't. e.g., the floor exit elevator renders above the player when it shouldn't.
+        //         that's why this has all been replaced by the smaller optimization above
+        // /// <summary>Remove call to HandleVisibilityCheck() in LateUpate() since its value is only used when the sprite is changed</summary>
+        // [HarmonyPatch(typeof(tk2dSpriteAnimator), nameof(tk2dSpriteAnimator.LateUpdate))]
+        // [HarmonyILManipulator]
+        // private static void tk2dSpriteAnimatorLateUpdatePatchIL(ILContext il)
+        // {
+        //     ILCursor cursor = new ILCursor(il);
+        //     if (!cursor.TryGotoNext(MoveType.Before, instr => instr.MatchCall<tk2dSpriteAnimator>(nameof(tk2dSpriteAnimator.HandleVisibilityCheck))))
+        //       return;
+        //     cursor.Remove();
+        //     cursor.Emit(OpCodes.Pop);
+        // }
+
+        // /// <summary>Add call to our own FastVisibilityCheck() in SetSprite() with an optimized algorithm</summary>
+        // [HarmonyPatch(typeof(tk2dSpriteAnimator), nameof(tk2dSpriteAnimator.SetSprite))]
+        // [HarmonyILManipulator]
+        // private static void tk2dSpriteAnimatorSetSpritePatchIL(ILContext il)
+        // {
+        //     ILCursor cursor = new ILCursor(il);
+        //     if (!cursor.TryGotoNext(MoveType.Before, instr => instr.MatchLdfld<tk2dSpriteAnimator>(nameof(tk2dSpriteAnimator.m_isCurrentlyVisible))))
+        //       return;
+        //     cursor.Remove();
+        //     cursor.CallPrivate(typeof(SpriteVisiblityOptimizations), nameof(FastVisibilityCheck));
+        // }
+
+        // private static bool FastVisibilityCheck(tk2dSpriteAnimator animator)
+        // {
+        //   if (!tk2dSpriteAnimator.InDungeonScene)
+        //     return true;
+        //   Vector3 pos = animator.transform.position;
+        //   float x = pos.x - tk2dSpriteAnimator.CameraPositionThisFrame.x;
+        //   float y = pos.y - tk2dSpriteAnimator.CameraPositionThisFrame.y;
+        //   return (x * x + y * y * 2.89f) < 420f + animator.AdditionalCameraVisibilityRadius * animator.AdditionalCameraVisibilityRadius;
+        // }
     }
 }
 
