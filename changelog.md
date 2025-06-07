@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.1 (TBD)
+
+- Fixed issue where switching to The Judge on a new floor from a weapon with the same base ammo type would break The Judge's ammo UI rendering
+
 ## 1.4.0 (2025-06-06)
 
 - Added "Unpause / Repause Fix", fixing an issue where the game continues to run in the background when unpausing and quickly repausing 

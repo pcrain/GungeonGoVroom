@@ -99,6 +99,9 @@ internal static class AmmoUICaching
       {
         qid.maxNumTiles = qid.preservedData.Vertices.Count / 4;
         qid.sprite.renderData = qid.preservedData;
+        //NOTE: fixes an issue when exiting a floor and switching to a gun with a matching the previous gun's base ammo type (e..g, Robot's Right Hand -> The Judge)
+        qid.sprite.zindex = -1;
+        qid.sprite.IsVisible = true;
         qid.preservedData = null;
       }
       else //NOTE: qid.preservedData can be null when caching render data for Blasphemy and switching to another gun with the "white" ammo type
