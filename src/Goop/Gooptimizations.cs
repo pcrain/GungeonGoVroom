@@ -84,31 +84,37 @@ internal static class Gooptimizations
 
       internal static bool TestGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
       {
-        int chunkSize     = (int)(manager.CHUNK_SIZE / GOOP_GRID_SIZE);
+        int chunkSize     = (int)(manager.CHUNK_SIZE / GOOP_GRID_SIZE); //NOTE: always 5 / 0.25 == 20 in base game
         int chunkX        = (int)(pos.x / (float)chunkSize);
         int chunkY        = (int)(pos.y / (float)chunkSize);
         int bitOffset     = (pos.x % chunkSize) * chunkSize + (pos.y % chunkSize);
         ExtraGoopData egd = ExtraGoopData.Get(manager);
+        if (chunkX < 0 || chunkY < 0 || chunkX >= egd._xChunks || chunkY >= egd._yChunks)
+          return false;
         return (egd.goopedCellBitfield[chunkX, chunkY, bitOffset / 64] & (1ul << (bitOffset % 64))) > 0;
       }
 
       internal static void SetGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
       {
-        int chunkSize     = (int)(manager.CHUNK_SIZE / GOOP_GRID_SIZE);
+        int chunkSize     = (int)(manager.CHUNK_SIZE / GOOP_GRID_SIZE); //NOTE: always 5 / 0.25 == 20 in base game
         int chunkX        = (int)(pos.x / (float)chunkSize);
         int chunkY        = (int)(pos.y / (float)chunkSize);
         int bitOffset     = (pos.x % chunkSize) * chunkSize + (pos.y % chunkSize);
         ExtraGoopData egd = ExtraGoopData.Get(manager);
+        if (chunkX < 0 || chunkY < 0 || chunkX >= egd._xChunks || chunkY >= egd._yChunks)
+          return;
         egd.goopedCellBitfield[chunkX, chunkY, bitOffset / 64] |= (1ul << (bitOffset % 64));
       }
 
       internal static void ClearGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
       {
-        int chunkSize     = (int)(manager.CHUNK_SIZE / GOOP_GRID_SIZE);
+        int chunkSize     = (int)(manager.CHUNK_SIZE / GOOP_GRID_SIZE); //NOTE: always 5 / 0.25 == 20 in base game
         int chunkX        = (int)(pos.x / (float)chunkSize);
         int chunkY        = (int)(pos.y / (float)chunkSize);
         int bitOffset     = (pos.x % chunkSize) * chunkSize + (pos.y % chunkSize);
         ExtraGoopData egd = ExtraGoopData.Get(manager);
+        if (chunkX < 0 || chunkY < 0 || chunkX >= egd._xChunks || chunkY >= egd._yChunks)
+          return;
         egd.goopedCellBitfield[chunkX, chunkY, bitOffset / 64] &= ~(1ul << (bitOffset % 64));
       }
     }

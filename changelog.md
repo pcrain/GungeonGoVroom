@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.2 (TBD)
+
+- Fixed IndexOutOfRange exception caused by trying to add / remove goop circles outside the bounds of the current map
+
 ## 1.4.1 (2025-06-07)
 
 - Added "Preallocate Heap Memory" option
