@@ -1,16 +1,15 @@
 # Changelog
 
-## 1.3.4 (TBD)
+## 1.4.0 (2025-06-06)
 
-- Added logging showing which GGV configuration options are enabled on startup
-- Further improved "Optimize Ammo Display" option to save even more CPU and RAM
+- Added "Unpause / Repause Fix", fixing an issue where the game continues to run in the background when unpausing and quickly repausing 
 - Added "Optimize Linear Cast" option, mitigating lag caused by having lots of very fast moving projectiles on the screen
-- Added "Unpause / Repause Fix"
-- Further improved "Optimize Bullet Trails" option to save even more RAM
 - Added "Optimize Linear Cast Pool" to fix a memory leak in physics calculations
-- Optimize more various math functions
-- Added "Optimize Pixel Movement Gen"
-- Added "Optimize Pixel Rotation"
+- Added "Optimize Pixel Movement Gen" and "Optimize Pixel Rotation" options to speed up some physics calculations
+- Further improved "Optimize Ammo Display" option to save even more CPU and RAM
+- Further improved "Optimize Bullet Trails" option to save even more RAM
+- Optimized more various math functions
+- Added logging showing which GGV configuration options are enabled on startup
 
 ## 1.3.3 (2025-06-01)
 
