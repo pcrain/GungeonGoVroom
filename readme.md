@@ -28,13 +28,13 @@ These are changes that improve Gungeon's performance without altering vanilla be
 Currently included safe optimizations are:
   - **Optimize Occlusion**: Speeds up occlusion calculations by using optimized algorithms and caching. Saves a large amount of CPU.
   - **Optimize Ammo Display**: Speeds up ammo display updates by caching render data. Saves a large amount of RAM.
-  - **Optimize Visibility Checks**: Skips redundant sprite visibility checks when the results aren't actually used. Saves a significant amount of CPU.
   - **Optimize Light Culling**: Uses optimized inlined logic for determining whether lights should be culled. Saves a significant amount of CPU.
   - **Optimize Beams**: Pools beam bones to reduce memory usage.  Saves a modest amount of RAM and CPU.
   - **Optimize GUI Events**: Caches results of expensive lookups for finding GUI event handlers. Saves a modest amount of RAM.
   - **Optimize Bullet Trails**: Pools bullet trail particles and vertex data to reduce memory usage. Saves a modest amount of RAM.
   - **Optimize Pixel Rotation**: Optimizes pixel movement rotation used for pixel-perfect collisions. Saves a modest amount of RAM.
   - **Optimize Numerical Strings**: Caches strings for small numbers used frequently by SGUI's labels. Saves significant RAM while any console is open.
+  - **Optimize Visibility Checks**: Skips redundant sprite visibility checks when the results aren't actually used. Saves a small amount of CPU.
   - **Optimize Flood Filling**: Uses an optimized flood fill algorithm for floor post-processing. Saves a small amount of CPU and RAM.
   - **Optimize Projectile Prefabs**: Removes prefab effect data (e.g., poison) from projectiles that never apply those effects. Saves a small amount of RAM.
   - **Optimize Chunk Checks**: Optimize checks for whether sprite chunks are relevant to gameplay. Saves a small amount of CPU.
