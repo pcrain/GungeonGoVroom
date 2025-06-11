@@ -677,5 +677,90 @@ internal static partial class Patches
         //   return (x * x + y * y * 2.89f) < 420f + animator.AdditionalCameraVisibilityRadius * animator.AdditionalCameraVisibilityRadius;
         // }
     }
+
+    [HarmonyPatch]
+    private static class FastPauseMenu
+    {
+      private static bool Prepare(MethodBase original)
+      {
+        if (!GGVConfig.OPT_PAUSE)
+          return false;
+        if (original == null)
+          GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+        else
+          GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+        return true;
+      }
+
+      /// <summary>Skip most camera rendering while game is paused.</summary>
+      [HarmonyPatch(typeof(Pixelator), nameof(Pixelator.OnRenderImage))]
+      [HarmonyPrefix]
+      private static bool PixelatorOnRenderImagePatch(Pixelator __instance, RenderTexture source, RenderTexture target)
+      {
+        if (!GameManager.HasInstance || !GameManager.Instance.IsPaused)
+          return true; // call the original method
+
+        if (__instance.m_bloomer && __instance.m_bloomer.enabled)
+          __instance.m_bloomer.enabled = false;
+        float tileScale = Mathf.Max(1f, Mathf.Min(20f, (float)Screen.height * __instance.m_camera.rect.height / 270f));
+        if (tileScale != __instance.ScaleTileScale)
+        {
+          GGVDebug.Log($"changing tile scale from {__instance.ScaleTileScale} to {tileScale}");
+          __instance.CheckSize();
+        }
+        BraveCameraUtility.MaintainCameraAspect(__instance.m_camera);
+        Graphics.Blit(Pixelator.m_smallBlackTexture, target);
+        return false;
+      }
+
+      /// <summary>Exit completely out of various Update() / LateUpdate() methods while game is paused.</summary>
+      [HarmonyPatch(typeof(tk2dSpriteAnimator), nameof(tk2dSpriteAnimator.LateUpdate))]
+      [HarmonyPatch(typeof(AIAnimator), nameof(AIAnimator.Update))]
+      [HarmonyPatch(typeof(EmbersController), nameof(EmbersController.Update))]
+      [HarmonyPatch(typeof(PlayerHandController), nameof(PlayerHandController.LateUpdate))]
+      [HarmonyPatch(typeof(ShadowSystem), nameof(ShadowSystem.LateUpdate))]
+      [HarmonyPatch(typeof(KnockbackDoer), nameof(KnockbackDoer.Update))]
+      [HarmonyPatch(typeof(GameUIBossHealthController), nameof(GameUIBossHealthController.LateUpdate))]
+      [HarmonyPatch(typeof(CameraController), nameof(CameraController.LateUpdate))]
+      [HarmonyILManipulator]
+      private static void DontUpdateWhilePausedPatchIL(ILContext il)
+      {
+          ILCursor cursor = new ILCursor(il);
+          ILLabel doAnythingLabel = cursor.DefineLabel();
+          FieldInfo gm = typeof(GameManager).GetField("mr_manager", BindingFlags.Static | BindingFlags.NonPublic);
+
+          cursor.Emit(OpCodes.Ldsfld, gm);
+          cursor.Emit(OpCodes.Call, typeof(UnityEngine.Object).GetMethod("op_Implicit"));
+          cursor.Emit(OpCodes.Brfalse, doAnythingLabel);
+          cursor.Emit(OpCodes.Ldsfld, gm);
+          cursor.Emit(OpCodes.Ldfld, typeof(GameManager).GetField("m_paused", BindingFlags.Instance | BindingFlags.NonPublic));
+          cursor.Emit(OpCodes.Brfalse, doAnythingLabel);
+          cursor.Emit(OpCodes.Ret);
+          cursor.MarkLabel(doAnythingLabel);
+      }
+
+      private static bool CheckIfPaused()
+      {
+        return GameManager.HasInstance && GameManager.Instance.IsPaused;
+      }
+
+      /// <summary>Prevent ClusteredTimeInvariantMonoBehaviour.Update() while paused</summary>
+      [HarmonyPatch(typeof(GameManager), nameof(GameManager.Update))]
+      [HarmonyILManipulator]
+      private static void GameManagerUpdatePatchIL(ILContext il)
+      {
+          ILCursor cursor = new ILCursor(il);
+          if (!cursor.TryGotoNext(MoveType.Before,
+            instr => instr.MatchLdcI4(0),
+            instr => instr.MatchStloc(1)
+            ))
+            return;
+
+          ++cursor.Index;
+          cursor.CallPrivate(typeof(FastPauseMenu), nameof(IntMaxIfPaused));
+      }
+
+      private static int IntMaxIfPaused(int orig) => (GameManager.HasInstance && GameManager.Instance.IsPaused) ? int.MaxValue : orig;
+    }
 }
 

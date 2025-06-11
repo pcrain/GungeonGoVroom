@@ -33,6 +33,7 @@ internal static class GGVConfig
   internal static bool OPT_PHYSICS_LEAK  = true;
   internal static bool OPT_PIXEL_MOVE    = true;
   internal static bool OPT_PIXEL_ROTATE  = true;
+  internal static bool OPT_PAUSE         = true;
 
   // Aggressive Optimizations
   internal static bool OPT_MATH          = true;
@@ -75,6 +76,7 @@ internal static class GGVConfig
     OPT_VIS_CHECKS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.VIS_CHECKS);
     OPT_OCCLUSION     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.OCCLUSION);
     OPT_AMMO_DISPLAY  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_DISPLAY);
+    OPT_PAUSE         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PAUSE);
     OPT_LIGHT_CULL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
     OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
     OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
@@ -116,6 +118,7 @@ internal static class GGVConfig
 
     WriteLine($"OPT_OCCLUSION            = {OPT_OCCLUSION}");
     WriteLine($"OPT_AMMO_DISPLAY         = {OPT_AMMO_DISPLAY}");
+    WriteLine($"OPT_PAUSE                = {OPT_PAUSE}");
     WriteLine($"OPT_VIS_CHECKS           = {OPT_VIS_CHECKS}");
     WriteLine($"OPT_LIGHT_CULL           = {OPT_LIGHT_CULL}");
     WriteLine($"OPT_BEAMS                = {OPT_BEAMS}");
@@ -177,6 +180,7 @@ internal static class ConfigMenu
   internal const string PREALLOCATE   = "Preallocate Heap Memory";
   internal const string OCCLUSION     = "Optimize Occlusion";
   internal const string AMMO_DISPLAY  = "Optimize Ammo Display";
+  internal const string PAUSE         = "Optimize Pause Menu";
   internal const string VIS_CHECKS    = "Optimize Visibility Checks";
   internal const string LIGHT_CULL    = "Optimize Light Culling";
   internal const string BEAMS         = "Optimize Beams";
@@ -228,6 +232,7 @@ internal static class ConfigMenu
     so.FancyMemList(PREALLOCATE, "Preallocates RAM to avoid OS requests later.\nDefault uses Gungeon's default of about 200MB.\nHigher values result in fewer lag spikes.");
     so.FancyToggle(OCCLUSION, "Speeds up occlusion calculations by\nusing optimized algorithms and caching.\nSaves a large amount of CPU.");
     so.FancyToggle(AMMO_DISPLAY, "Speeds up ammo display updates by\ncaching render data.\nSaves a large amount of RAM.");
+    so.FancyToggle(PAUSE, "Prevents a lot of unnecessary rendering\nwhile the game is paused.\nSaves a large amount of CPU while paused.");
     so.FancyToggle(LIGHT_CULL, "Uses optimized inlined logic for\ndetermining whether lights should be culled.\nSaves a significant amount of CPU.");
     so.FancyToggle(BEAMS, "Pools beam bones to reduce memory usage.\n\nSaves a modest amount of RAM and CPU.");
     so.FancyToggle(GUI_EVENTS, "Caches results of expensive lookups\nfor finding GUI event handlers.\nSaves a modest amount of RAM.");
