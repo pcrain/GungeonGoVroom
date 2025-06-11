@@ -4,6 +4,8 @@
 
 - Fixed IndexOutOfRange exception caused by trying to add / remove goop circles outside the bounds of the current map
 - Added "Optimize Pause Menu" option, dramatically reducing CPU usage while the game is paused
+- Moved "Optimize Path Recalculations" to Safe Optimizations
+- Slightly improved goop optimizations
 
 ## 1.4.1 (2025-06-07)
 

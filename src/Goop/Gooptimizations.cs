@@ -797,15 +797,20 @@ internal static class Gooptimizations
       return false;
     }
 
+    private static float _InvSqrRadius = 1f;
+
     //                   original: 153,000ns avg
     // with FastGetRadiusFraction:  93,000ns avg
     //         with FastSetCircle:  81,000ns avg
     //         with inline floats:  74,000ns avg
+    //           with no division:  62,000ns avg
     [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.AddGoopPoints))]
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerAddGoopPointsPatch(DeadlyDeadlyGoopManager __instance, List<Vector2> points, float radius, Vector2 excludeCenter, float excludeRadius)
     {
       // System.Diagnostics.Stopwatch gooppointsWatch = System.Diagnostics.Stopwatch.StartNew();
+      if (radius == 0f)
+        return false;
 
       float minPointX = points[0].x;
       float maxPointX = points[0].x;
@@ -831,6 +836,7 @@ internal static class Gooptimizations
       int goopRadius          = Mathf.RoundToInt(radius / GOOP_GRID_SIZE);
       s_goopPointRadius       = radius / GOOP_GRID_SIZE;
       s_goopPointRadiusSquare = s_goopPointRadius * s_goopPointRadius;
+      _InvSqrRadius = 1f / s_goopPointRadiusSquare;
       m_pointsArray.ReinitializeWithDefault(width, height, false, 1f);
 
       bool usesLifespan = __instance.goopDefinition.usesLifespan; // the floats don't even get used unless the goop uses lifespan
@@ -915,8 +921,8 @@ internal static class Gooptimizations
                 continue;
               }
 
-              float t = Mathf.Sqrt(sqrMag) / s_goopPointRadius;
-              float f = t * t * (2 * t * t - 5 * t + 4); // equivalent to BraveMathCollege.SmoothStepToLinearStepInterpolate(0f, 1f, t);
+              float tt = sqrMag * _InvSqrRadius;
+              float f = tt * (2 * tt - 5 * Mathf.Sqrt(tt) + 4); // equivalent to BraveMathCollege.SmoothStepToLinearStepInterpolate(0f, 1f, t);
               if (f < floats[bit])
                 floats[bit] = f;
             }

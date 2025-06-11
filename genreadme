@@ -24,7 +24,7 @@ def main():
   keys         = {}
 
   key_rx = re.compile(r'''^\s*internal const string ([^\s]*)\s*= \"(.*)\";.*$''')
-  desc_rx = re.compile(r'''^\s*(sf|so|ao|eo)\.FancyToggle(?:Off)?\((.*), \"(.*)\"\);.*$''')
+  desc_rx = re.compile(r'''^\s*(sf|so|ao|eo)\.Fancy(?:Toggle|MemList)(?:Off)?\((.*), \"(.*)\"\);.*$''')
   with open(CHANGES, 'r') as fin:
     for line in fin.read().split("\n"):
       if m := key_rx.match(line):

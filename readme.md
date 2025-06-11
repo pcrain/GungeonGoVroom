@@ -26,11 +26,13 @@ Currently included bugfixes are:
 These are changes that improve Gungeon's performance without altering vanilla behavior, and which have a negligible chance of interfering with other mods. Safe optimizations should be suitable for all players, and are all enabled by default.
 
 Currently included safe optimizations are:
+  - **Preallocate Heap Memory**: Preallocates RAM to avoid OS requests later. Default uses Gungeon's default of about 200MB. Higher values result in fewer lag spikes.
   - **Optimize Occlusion**: Speeds up occlusion calculations by using optimized algorithms and caching. Saves a large amount of CPU.
   - **Optimize Ammo Display**: Speeds up ammo display updates by caching render data. Saves a large amount of RAM.
   - **Optimize Pause Menu**: Prevents a lot of unnecessary rendering while the game is paused. Saves a large amount of CPU while paused.
   - **Optimize Light Culling**: Uses optimized inlined logic for determining whether lights should be culled. Saves a significant amount of CPU.
   - **Optimize Beams**: Pools beam bones to reduce memory usage.  Saves a modest amount of RAM and CPU.
+  - **Optimize Path Recalculations**: Optimizes clearance computations used for enemy pathing logic. Saves modest amount of CPU.
   - **Optimize GUI Events**: Caches results of expensive lookups for finding GUI event handlers. Saves a modest amount of RAM.
   - **Optimize Bullet Trails**: Pools bullet trail particles and vertex data to reduce memory usage. Saves a modest amount of RAM.
   - **Optimize Pixel Rotation**: Optimizes pixel movement rotation used for pixel-perfect collisions. Saves a modest amount of RAM.
@@ -63,7 +65,6 @@ These are experimental changes that improve Gungeon's performance in ways that m
 
 Currently included experimental optimizations are:
   - **Optimize GUI Mouse Events**: Prevents checks for whether the mouse is over a menu item when no menus are open. Saves significant CPU, but may break custom UIs.
-  - **Optimize Path Recalculations**: Optimizes clearance computations used for enemy pathing logic. Saves modest CPU, but may freeze enemies in place.
   - **Optimize Title Screen**: Prevents scanning for the player on the title screen when no player exists. Saves small CPU, but may break floor loads.
 
 ## Issues? Suggestions?

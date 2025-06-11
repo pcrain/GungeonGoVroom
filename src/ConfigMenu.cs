@@ -26,6 +26,7 @@ internal static class GGVConfig
   internal static bool OPT_TRAILS        = true;
   internal static bool OPT_LIGHT_CULL    = true;
   internal static bool OPT_BEAMS         = true;
+  internal static bool OPT_PATH_RECALC   = true;
   internal static bool OPT_CHUNK_CHECKS  = true;
   internal static bool OPT_VIS_CHECKS    = true;
   internal static bool OPT_OCCLUSION     = true;
@@ -49,7 +50,6 @@ internal static class GGVConfig
   // Experimental Optimizations
   internal static bool OPT_MOUSE_EVENTS  = true;
   internal static bool OPT_TITLE_SCREEN  = true;
-  internal static bool OPT_PATH_RECALC   = true;
 
   internal static void Update()
   {
@@ -79,6 +79,7 @@ internal static class GGVConfig
     OPT_PAUSE         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PAUSE);
     OPT_LIGHT_CULL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
     OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
+    OPT_PATH_RECALC   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PATH_RECALC);
     OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
     OPT_NUMBERS       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.NUMBERS);
     OPT_FLOOD_FILL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.FLOOD_FILL);
@@ -101,7 +102,6 @@ internal static class GGVConfig
 
     OPT_MOUSE_EVENTS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MOUSE_EVENTS);
     OPT_TITLE_SCREEN  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TITLE_SCREEN);
-    OPT_PATH_RECALC   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PATH_RECALC);
 
     WriteLine($"PREALLOCATE_HEAP         = {PREALLOCATE_HEAP} GB");
     WriteLine($"FIX_DUCT_TAPE            = {FIX_DUCT_TAPE}");
@@ -122,6 +122,7 @@ internal static class GGVConfig
     WriteLine($"OPT_VIS_CHECKS           = {OPT_VIS_CHECKS}");
     WriteLine($"OPT_LIGHT_CULL           = {OPT_LIGHT_CULL}");
     WriteLine($"OPT_BEAMS                = {OPT_BEAMS}");
+    WriteLine($"OPT_PATH_RECALC          = {OPT_PATH_RECALC}");
     WriteLine($"OPT_GUI_EVENTS           = {OPT_GUI_EVENTS}");
     WriteLine($"OPT_NUMBERS              = {OPT_NUMBERS}");
     WriteLine($"OPT_FLOOD_FILL           = {OPT_FLOOD_FILL}");
@@ -144,7 +145,6 @@ internal static class GGVConfig
 
     WriteLine($"OPT_MOUSE_EVENTS         = {OPT_MOUSE_EVENTS}");
     WriteLine($"OPT_TITLE_SCREEN         = {OPT_TITLE_SCREEN}");
-    WriteLine($"OPT_PATH_RECALC          = {OPT_PATH_RECALC}");
   }
 
   private static void WriteLine(string s)
@@ -184,6 +184,7 @@ internal static class ConfigMenu
   internal const string VIS_CHECKS    = "Optimize Visibility Checks";
   internal const string LIGHT_CULL    = "Optimize Light Culling";
   internal const string BEAMS         = "Optimize Beams";
+  internal const string PATH_RECALC   = "Optimize Path Recalculations";
   internal const string GUI_EVENTS    = "Optimize GUI Events";
   internal const string NUMBERS       = "Optimize Numerical Strings";
   internal const string FLOOD_FILL    = "Optimize Flood Filling";
@@ -208,7 +209,6 @@ internal static class ConfigMenu
   internal const string EXPR_OPT      = "Experimental Optimizations";
   internal const string MOUSE_EVENTS  = "Optimize GUI Mouse Events";
   internal const string TITLE_SCREEN  = "Optimize Title Screen";
-  internal const string PATH_RECALC   = "Optimize Path Recalculations";
 
   internal static void Init()
   {
@@ -235,11 +235,12 @@ internal static class ConfigMenu
     so.FancyToggle(PAUSE, "Prevents a lot of unnecessary rendering\nwhile the game is paused.\nSaves a large amount of CPU while paused.");
     so.FancyToggle(LIGHT_CULL, "Uses optimized inlined logic for\ndetermining whether lights should be culled.\nSaves a significant amount of CPU.");
     so.FancyToggle(BEAMS, "Pools beam bones to reduce memory usage.\n\nSaves a modest amount of RAM and CPU.");
+    so.FancyToggle(PATH_RECALC, "Optimizes clearance computations used\nfor enemy pathing logic.\nSaves modest amount of CPU.");
     so.FancyToggle(GUI_EVENTS, "Caches results of expensive lookups\nfor finding GUI event handlers.\nSaves a modest amount of RAM.");
     so.FancyToggle(TRAILS, "Pools bullet trail particles and vertex\ndata to reduce memory usage.\nSaves a modest amount of RAM.");
     so.FancyToggle(PIXEL_ROTATE, "Optimizes pixel movement rotation\nused for pixel-perfect collisions.\nSaves a modest amount of RAM.");
     so.FancyToggle(NUMBERS, "Caches strings for small numbers\nused frequently by SGUI's labels.\nSaves significant RAM while any console is open.");
-    so.FancyToggle(VIS_CHECKS, "Skips redundant sprite visibility checks\nwhen the results aren't actually used.\nSaves a small amount of CPU.");
+    so.FancyToggle(VIS_CHECKS, "Speeds up sprite visibility checks\nby using inline arithmetic where possible.\nSaves a small amount of CPU.");
     so.FancyToggle(FLOOD_FILL, "Uses an optimized flood fill algorithm\nfor floor post-processing.\nSaves a small amount of CPU and RAM.");
     so.FancyToggle(PROJ_STATUS, "Removes prefab effect data (e.g., poison) from\nprojectiles that never apply those effects.\nSaves a small amount of RAM.");
     so.FancyToggle(CHUNK_CHECKS, "Optimize checks for whether sprite chunks\nare relevant to gameplay.\nSaves a small amount of CPU.");
@@ -259,7 +260,6 @@ internal static class ConfigMenu
 
     Gunfig eo = _Gunfig.AddSubMenu(EXPR_OPT);
     eo.FancyToggleOff(MOUSE_EVENTS, "Prevents checks for whether the mouse is\nover a menu item when no menus are open.\nSaves significant CPU, but may break custom UIs.");
-    eo.FancyToggleOff(PATH_RECALC, "Optimizes clearance computations used\nfor enemy pathing logic.\nSaves modest CPU, but may freeze enemies in place.");
     eo.FancyToggleOff(TITLE_SCREEN, "Prevents scanning for the player on\nthe title screen when no player exists.\nSaves small CPU, but may break floor loads.");
 
     GGVConfig.Update();
