@@ -446,3 +446,94 @@ internal static class SetRotationAndScaleOptimization
         .GetField("_ScratchVertices", BindingFlags.Static | BindingFlags.NonPublic));
   }
 }
+
+/// <summary>Various optimizations speeding up Physics calculations that particularly benefit flowing beams (e.g., Fossilized Gun)</summary>
+[HarmonyPatch]
+internal static class PointcastOptimizations
+{
+  private static bool Prepare(MethodBase original)
+  {
+    if (!GGVConfig.OPT_POINTCAST) //NOTE: shared with OptimiseIntVectorPointcastPatch
+      return false;
+    if (original == null)
+      GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+    else
+      GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+    return true;
+  }
+
+  /// <summary>Inline pixel contains logic.</summary>
+  [HarmonyPatch(typeof(PixelCollider), nameof(PixelCollider.AABBContainsPixel))]
+  [HarmonyPrefix]
+  private static bool PixelColliderAABBContainsPixelPatch(PixelCollider __instance, IntVector2 pixel, ref bool __result)
+  {
+      __result =
+        pixel.x >= __instance.m_position.x &&
+        pixel.x <  (__instance.m_position.x + __instance.m_dimensions.x) &&
+        pixel.y >= __instance.m_position.y &&
+        pixel.y <  (__instance.m_position.y + __instance.m_dimensions.y);
+      return false;    // skip the original method
+  }
+
+  /// <summary>Inline coarse pass logic.</summary>
+  [HarmonyPatch(typeof(PhysicsEngine), nameof(PhysicsEngine.Pointcast_CoarsePass))]
+  [HarmonyPrefix]
+  private static bool PhysicsEnginePointcast_CoarsePassPatch(PhysicsEngine __instance, ICollidableObject collidable, IntVector2 point, bool collideWithTriggers, int rayMask, CollisionLayer? sourceLayer, ref bool __result)
+  {
+    List<PixelCollider> colliders = collidable.GetPixelColliders();
+    int numColliders = colliders.Count;
+    int px = point.x;
+    int py = point.y;
+    for (int i = 0; i < numColliders; i++)
+    {
+      PixelCollider pc = colliders[i];
+      if (pc.IsTrigger && !collideWithTriggers)
+        continue;
+      if (px <   pc.m_position.x ||
+          px >=  (pc.m_position.x + pc.m_dimensions.x) ||
+          py <   pc.m_position.y ||
+          py >=  (pc.m_position.y + pc.m_dimensions.y))
+        continue;
+      if (!pc.CanCollideWith(rayMask, sourceLayer))
+        continue;
+      if (!pc.m_bestPixels.IsAabb && !pc.m_bestPixels.m_bits[(px - pc.m_position.x) + (py - pc.m_position.y) * pc.m_bestPixels.m_width])
+        continue;
+      __result = true;
+      return false;
+    }
+    __result = false;
+    return false;
+  }
+
+  /// <summary>Optimize GetTileFracAtPosition() knowing we only use rectangular tilemaps, the worldToLocalMatrix is always the identity matrix, tileorigin is at 0,0,0, and tilesize is 1,1,0</summary>
+  [HarmonyPatch(typeof(tk2dTileMap), nameof(tk2dTileMap.GetTileFracAtPosition))]
+  [HarmonyPrefix]
+  private static bool tk2dTileMapGetTileFracAtPositionPatch(tk2dTileMap __instance, Vector3 position, out float x, out float y, ref bool __result)
+  {
+      x = position.x;
+      y = position.y;
+      __result = x >= 0f && x <= (float)__instance.width && y >= 0f && y <= (float)__instance.height;
+      return false;
+  }
+
+  /// <summary>Optimize GetTileAtPosition() knowing we only use rectangular tilemaps, the worldToLocalMatrix is always the identity matrix, tileorigin is at 0,0,0, and tilesize is 1,1,0</summary>
+  [HarmonyPatch(typeof(tk2dTileMap), nameof(tk2dTileMap.GetTileAtPosition))]
+  [HarmonyPrefix]
+  private static bool tk2dTileMapGetTileAtPositionPatch(tk2dTileMap __instance, Vector3 position, out int x, out int y, ref bool __result)
+  {
+      x = (int)position.x;
+      y = (int)position.y;
+      //NOTE: using position.x because negative values round towards 0, so, e.g., -0.75f >= 0 is false, but (int)(-0.75f) >= 0 is true
+      __result = position.x >= 0 && position.x <= __instance.width && y >= 0 && y <= __instance.height;
+      return false;
+  }
+
+  /// <summary>Inline logic in PixelToUnit to avoid implict function calls</summary>
+  [HarmonyPatch(typeof(PhysicsEngine), nameof(PhysicsEngine.PixelToUnit), typeof(IntVector2))]
+  [HarmonyPrefix]
+  private static bool PhysicsEnginePixelToUnitPatch(IntVector2 pixel, ref Vector2 __result)
+  {
+    __result = new Vector2(0.0625f * pixel.x, 0.0625f * pixel.y);
+    return false;
+  }
+}

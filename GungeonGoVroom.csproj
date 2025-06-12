@@ -58,6 +58,7 @@
     <Compile Include="src\BeamPoolers\RaidenBeamPooler.cs"/>
     <Compile Include="src\BeamPoolers\ReverseBeamPooler.cs"/>
     <Compile Include="src\BeamPoolers\BasicBeamPooler.cs"/>
+    <Compile Include="src\BeamSprites\BeamSpriteOptimizations.cs"/>
     <Compile Include="src\AmmoUI\AmmoUICaching.cs"/>
     <Reference Include="UnityEngine.ClothModule"/>
     <Reference Include="UnityEngine.UnityConnectModule"/>

@@ -10,7 +10,7 @@ internal static partial class Patches
     {
         private static bool Prepare(MethodBase original)
         {
-          if (!GGVConfig.OPT_POINTCAST)
+          if (!GGVConfig.OPT_POINTCAST) //NOTE: shared with PointcastOptimizations
             return false;
           if (original == null)
             GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");

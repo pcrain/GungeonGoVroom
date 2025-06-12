@@ -30,8 +30,8 @@ Currently included safe optimizations are:
   - **Optimize Occlusion**: Speeds up occlusion calculations by using optimized algorithms and caching. Saves a large amount of CPU.
   - **Optimize Ammo Display**: Speeds up ammo display updates by caching render data. Saves a large amount of RAM.
   - **Optimize Pause Menu**: Prevents a lot of unnecessary rendering while the game is paused. Saves a large amount of CPU while paused.
+  - **Optimize Beams**: Pools beam bones to reduce memory usage and optimizes beam mesh rebuilding logic. Saves a significant amount of RAM and CPU.
   - **Optimize Light Culling**: Uses optimized inlined logic for determining whether lights should be culled. Saves a significant amount of CPU.
-  - **Optimize Beams**: Pools beam bones to reduce memory usage.  Saves a modest amount of RAM and CPU.
   - **Optimize Path Recalculations**: Optimizes clearance computations used for enemy pathing logic. Saves modest amount of CPU.
   - **Optimize GUI Events**: Caches results of expensive lookups for finding GUI event handlers. Saves a modest amount of RAM.
   - **Optimize Bullet Trails**: Pools bullet trail particles and vertex data to reduce memory usage. Saves a modest amount of RAM.
@@ -53,7 +53,7 @@ Currently included aggressive optimizations are:
   - **Optimize Math**: Speeds up some geometry calculations by using optimized algorithms. Saves a significant amount of CPU.
   - **Optimize Chunk Building**: Reuses temporary storage structures when rebuilding chunk data during level gen. Saves a significant amount of RAM.
   - **Optimize Linear Cast**: Speeds up linear cast physics calculations by using inline arithmetic wherever possible. Saves a significant amount of CPU.
-  - **Optimize Pointcast**: Speeds up pointcast physics calculations by using statics instead of delegates. Saves a modest amount of CPU and RAM.
+  - **Optimize Pointcast**: Speeds up pointcast physics calculations by using inlined logic where possible. Saves a modest amount of CPU and RAM.
   - **Optimize Dungeon Size Checks**: Speeds up dungeon size lookups by using fields instead of properties. Saves a modest amount of CPU.
   - **Optimize Sprite Depth Checks**: Speeds up attached sprite depth checks by caching property accesses. Saves a modest amount of CPU.
   - **Optimize Pit VFX**: Speeds up pit VFX calculations by skipping several redundant tile checks. Saves a small amount of CPU.

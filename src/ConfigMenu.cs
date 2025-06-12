@@ -233,8 +233,8 @@ internal static class ConfigMenu
     so.FancyToggle(OCCLUSION, "Speeds up occlusion calculations by\nusing optimized algorithms and caching.\nSaves a large amount of CPU.");
     so.FancyToggle(AMMO_DISPLAY, "Speeds up ammo display updates by\ncaching render data.\nSaves a large amount of RAM.");
     so.FancyToggle(PAUSE, "Prevents a lot of unnecessary rendering\nwhile the game is paused.\nSaves a large amount of CPU while paused.");
+    so.FancyToggle(BEAMS, "Pools beam bones to reduce memory usage and\noptimizes beam mesh rebuilding logic.\nSaves a significant amount of RAM and CPU.");
     so.FancyToggle(LIGHT_CULL, "Uses optimized inlined logic for\ndetermining whether lights should be culled.\nSaves a significant amount of CPU.");
-    so.FancyToggle(BEAMS, "Pools beam bones to reduce memory usage.\n\nSaves a modest amount of RAM and CPU.");
     so.FancyToggle(PATH_RECALC, "Optimizes clearance computations used\nfor enemy pathing logic.\nSaves modest amount of CPU.");
     so.FancyToggle(GUI_EVENTS, "Caches results of expensive lookups\nfor finding GUI event handlers.\nSaves a modest amount of RAM.");
     so.FancyToggle(TRAILS, "Pools bullet trail particles and vertex\ndata to reduce memory usage.\nSaves a modest amount of RAM.");
@@ -252,7 +252,7 @@ internal static class ConfigMenu
     ao.FancyToggleOff(MATH, "Speeds up some geometry calculations\nby using optimized algorithms.\nSaves a significant amount of CPU.");
     ao.FancyToggleOff(CHUNKBUILD, "Reuses temporary storage structures when\nrebuilding chunk data during level gen.\nSaves a significant amount of RAM.");
     ao.FancyToggleOff(LINEAR_CAST, "Speeds up linear cast physics calculations by\nusing inline arithmetic wherever possible.\nSaves a significant amount of CPU.");
-    ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing statics instead of delegates.\nSaves a modest amount of CPU and RAM.");
+    ao.FancyToggleOff(POINTCAST, "Speeds up pointcast physics calculations by\nusing inlined logic where possible.\nSaves a modest amount of CPU and RAM.");
     ao.FancyToggleOff(DUNGEON_DIMS, "Speeds up dungeon size lookups by\nusing fields instead of properties.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(DEPTH_CHECKS, "Speeds up attached sprite depth checks\nby caching property accesses.\nSaves a modest amount of CPU.");
     ao.FancyToggleOff(PIT_VFX, "Speeds up pit VFX calculations by skipping\nseveral redundant tile checks.\nSaves a small amount of CPU.");

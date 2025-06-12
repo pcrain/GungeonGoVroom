@@ -1,11 +1,13 @@
 # Changelog
 
-## 1.4.2 (TBD)
+## 1.5.0 (TBD)
 
-- Fixed IndexOutOfRange exception caused by trying to add / remove goop circles outside the bounds of the current map
 - Added "Optimize Pause Menu" option, dramatically reducing CPU usage while the game is paused
-- Moved "Optimize Path Recalculations" to Safe Optimizations
+- Added optimizations for beam sprite rebuilding to "Optimize Beams"
 - Substantially improved goop optimizations, particularly when lots of fire is on screen
+- Substantially improved pointcast optimizations
+- Fixed IndexOutOfRange exception caused by trying to add / remove goop circles outside the bounds of the current map
+- Moved "Optimize Path Recalculations" to Safe Optimizations
 
 ## 1.4.1 (2025-06-07)
 
