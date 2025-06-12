@@ -462,12 +462,14 @@ internal static partial class Patches
             return false;
 
           bool isPerpendicular = __instance.IsPerpendicular;
-          for (int i = __instance.attachedRenderers.Count - 1; i >= 0; --i)
+          //NOTE: iterating backwards through this list has caused ArgumentOutOfRangeExceptions, presumably due to nested UpdateZDepthAttached
+          //      calls affecting the list being iterated over
+          for (int i = 0; i < __instance.attachedRenderers.Count; ++i)
           {
             tk2dBaseSprite attachedSprite = __instance.attachedRenderers[i];
             if (!attachedSprite || attachedSprite.attachParent != __instance)
             {
-              __instance.attachedRenderers.RemoveAt(i);
+              __instance.attachedRenderers.RemoveAt(i--);
               continue;
             }
             attachedSprite.UpdateZDepthAttached(targetZValue, currentYValue, isPerpendicular);

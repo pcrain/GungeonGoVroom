@@ -8,6 +8,7 @@
 - Substantially improved pointcast optimizations
 - Fixed IndexOutOfRange exception caused by trying to add / remove goop circles outside the bounds of the current map
 - Moved "Optimize Path Recalculations" to Safe Optimizations
+- Fixed ArgumentOutOfRangeException caused by logic for sprite z-depth update
 
 ## 1.4.1 (2025-06-07)
 
