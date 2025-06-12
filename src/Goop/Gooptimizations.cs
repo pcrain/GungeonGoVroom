@@ -1,5 +1,11 @@
 namespace GGV;
 
+/* TODO:
+    - replace Dictionary iterator in lateupdate with array iterator
+    - keep track of gooped chunks directly when adding / removing goop positions and use the gooped chunks in RebuildMeshColors()
+    - optimize SetColorDirty()
+*/
+
 using static DeadlyDeadlyGoopManager;
 
 [HarmonyPatch]
@@ -13,12 +19,15 @@ internal static class Gooptimizations
 
       public DeadlyDeadlyGoopManager manager;
       public UInt64[,,] goopedCellBitfield;
+      public GoopPositionData[,] goopedCellGrid; // goop data for the entire level grid
+      public List<GoopPositionData> allGoopedCells; // list of all cells gooped by this ddgm
 
       private int _xChunks;
       private int _yChunks;
       private int _cachedWidth;
-      private float _cachedHeight;
+      private int _cachedHeight;
       private DungeonData _cachedDungeon;
+      private Dictionary<GoopPositionData, int> _allGoopedCellsIndices;
 
       // private since it should never be constructed outside of Get() and static fields
       private ExtraGoopData(DeadlyDeadlyGoopManager manager)
@@ -33,6 +42,9 @@ internal static class Gooptimizations
         this._xChunks = Mathf.CeilToInt((float)this._cachedWidth / (float)manager.CHUNK_SIZE);
         this._yChunks = Mathf.CeilToInt((float)this._cachedHeight / (float)manager.CHUNK_SIZE);
         this.goopedCellBitfield = new UInt64[this._xChunks,this._yChunks,7];
+        this.goopedCellGrid = new GoopPositionData[(int)(this._cachedWidth / GOOP_GRID_SIZE), (int)(this._cachedHeight / GOOP_GRID_SIZE)];
+        this.allGoopedCells = new();
+        this._allGoopedCellsIndices = new();
         _AllEGDs.Add(this);
       }
 
@@ -54,6 +66,10 @@ internal static class Gooptimizations
         this._xChunks           = newxChunks;
         this._yChunks           = newyChunks;
         this.goopedCellBitfield = newBitfield;
+
+        this.goopedCellGrid = new GoopPositionData[(int)(this._cachedWidth / GOOP_GRID_SIZE), (int)(this._cachedHeight / GOOP_GRID_SIZE)];
+        foreach (GoopPositionData gpd in allGoopedCells)
+          this.goopedCellGrid[gpd.goopPosition.x, gpd.goopPosition.y] = gpd;
       }
 
       internal static void ResizeAllBitfields()
@@ -94,28 +110,53 @@ internal static class Gooptimizations
         return (egd.goopedCellBitfield[chunkX, chunkY, bitOffset / 64] & (1ul << (bitOffset % 64))) > 0;
       }
 
-      internal static void SetGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
+      private void SetGoopedBit(IntVector2 pos)
       {
-        int chunkSize     = (int)(manager.CHUNK_SIZE / GOOP_GRID_SIZE); //NOTE: always 5 / 0.25 == 20 in base game
+        int chunkSize     = (int)(this.manager.CHUNK_SIZE / GOOP_GRID_SIZE); //NOTE: always 5 / 0.25 == 20 in base game
         int chunkX        = (int)(pos.x / (float)chunkSize);
         int chunkY        = (int)(pos.y / (float)chunkSize);
         int bitOffset     = (pos.x % chunkSize) * chunkSize + (pos.y % chunkSize);
-        ExtraGoopData egd = ExtraGoopData.Get(manager);
-        if (chunkX < 0 || chunkY < 0 || chunkX >= egd._xChunks || chunkY >= egd._yChunks)
+        if (chunkX < 0 || chunkY < 0 || chunkX >= this._xChunks || chunkY >= this._yChunks)
           return;
-        egd.goopedCellBitfield[chunkX, chunkY, bitOffset / 64] |= (1ul << (bitOffset % 64));
+        this.goopedCellBitfield[chunkX, chunkY, bitOffset / 64] |= (1ul << (bitOffset % 64));
       }
 
-      internal static void ClearGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
+      private void ClearGoopedBit(IntVector2 pos)
       {
-        int chunkSize     = (int)(manager.CHUNK_SIZE / GOOP_GRID_SIZE); //NOTE: always 5 / 0.25 == 20 in base game
+        int chunkSize     = (int)(this.manager.CHUNK_SIZE / GOOP_GRID_SIZE); //NOTE: always 5 / 0.25 == 20 in base game
         int chunkX        = (int)(pos.x / (float)chunkSize);
         int chunkY        = (int)(pos.y / (float)chunkSize);
         int bitOffset     = (pos.x % chunkSize) * chunkSize + (pos.y % chunkSize);
-        ExtraGoopData egd = ExtraGoopData.Get(manager);
-        if (chunkX < 0 || chunkY < 0 || chunkX >= egd._xChunks || chunkY >= egd._yChunks)
+        if (chunkX < 0 || chunkY < 0 || chunkX >= this._xChunks || chunkY >= this._yChunks)
           return;
-        egd.goopedCellBitfield[chunkX, chunkY, bitOffset / 64] &= ~(1ul << (bitOffset % 64));
+        this.goopedCellBitfield[chunkX, chunkY, bitOffset / 64] &= ~(1ul << (bitOffset % 64));
+      }
+
+      internal void AddGoop(GoopPositionData goop)
+      {
+        IntVector2 pos = goop.goopPosition;
+        this.SetGoopedBit(pos);
+        this.goopedCellGrid[pos.x, pos.y] = goop;
+        int numGoops = this.allGoopedCells.Count;
+        this.allGoopedCells.Add(goop);
+        this._allGoopedCellsIndices[goop] = numGoops;
+      }
+
+      internal void RemoveGoop(GoopPositionData goop)
+      {
+        if (!this._allGoopedCellsIndices.TryGetValue(goop, out int idx))
+        {
+          GGVDebug.Log($"goop bookkeeping failure! tried to remove nonexistent goop");
+          return;
+        }
+        IntVector2 pos = goop.goopPosition;
+        this.ClearGoopedBit(pos);
+        this.goopedCellGrid[pos.x, pos.y] = null;
+        this._allGoopedCellsIndices.Remove(goop);
+        int lastGoopIdx = this.allGoopedCells.Count - 1;
+        this.allGoopedCells[idx] = this.allGoopedCells[lastGoopIdx]; // move last listed goop to position we're removing since we don't care about order
+        this._allGoopedCellsIndices[this.allGoopedCells[idx]] = idx;
+        this.allGoopedCells.RemoveAt(lastGoopIdx); // remove the last element of the list to avoid duplicates
       }
     }
 
@@ -148,7 +189,6 @@ internal static class Gooptimizations
       ExtraGoopData.ResizeAllBitfields();
     }
 
-    //NOTE: this doesn't seem to be significantly faster, so it's disabled
     [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.RebuildMeshUvsAndColors))]
     [HarmonyPrefix]
     private static bool DeadlyDeadlyGoopManagerRebuildMeshUvsAndColorsPatch(DeadlyDeadlyGoopManager __instance, int chunkX, int chunkY)
@@ -170,7 +210,8 @@ internal static class Gooptimizations
         int numUvOptions                                  = __instance.m_centerUVOptions.Count;
         Vector2 uvVec                                     = default;
 
-        UInt64[,,] goopBitfield = ExtraGoopData.Get(__instance).goopedCellBitfield;
+        ExtraGoopData egd = ExtraGoopData.Get(__instance);
+        UInt64[,,] goopBitfield = egd.goopedCellBitfield;
         int bitOffset = -1;
         for (int j = xmin; j < xmax; j++)
         {
@@ -179,10 +220,11 @@ internal static class Gooptimizations
           {
             ++bitOffset;
             if ((goopBitfield[chunkX, chunkY, bitOffset / 64] & (1ul << (bitOffset % 64))) == 0)
-              continue; // skip dictionary lookup if the cell definitely isn't gooped
+              continue; // skip grid lookup if the cell definitely isn't gooped
 
             goopPos.y = k;
-            if (!goopedCells.TryGetValue(goopPos, out goopData) || goopData.remainingLifespan <= 0f)
+            goopData = egd.goopedCellGrid[j, k];
+            if (goopData == null || goopData.remainingLifespan <= 0f)
               continue;
 
             int bi = goopData.baseIndex;
@@ -216,110 +258,418 @@ internal static class Gooptimizations
         return false;    // skip the original method
     }
 
-    private const BindingFlags _ANY_FLAGS
-      = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-    private static readonly Type _IntVecHashSetType
-      = typeof(HashSet<>).MakeGenericType(typeof(IntVector2));
-    private static readonly Type _IntVecHashSetEnumeratorType
-      = typeof(HashSet<>).GetNestedType("Enumerator", _ANY_FLAGS).MakeGenericType(typeof(IntVector2));
-    private static readonly MethodInfo _IntVecHashSetEnumeratorCurrent
-      = _IntVecHashSetEnumeratorType.GetMethod("get_Current", _ANY_FLAGS);
-    private static readonly MethodInfo _IntVecHashSetEnumeratorMoveNext
-      = _IntVecHashSetEnumeratorType.GetMethod("MoveNext", _ANY_FLAGS);
-    private static readonly Type _IntVecDictType
-      = typeof(Dictionary<,>).MakeGenericType(typeof(IntVector2), typeof(GoopPositionData));
-    private static readonly Type _IntVecKVPType
-      = typeof(KeyValuePair<,>).MakeGenericType(typeof(IntVector2), typeof(GoopPositionData));
-    private static readonly Type _IntVecDictEnumeratorType
-      = typeof(Dictionary<,>).GetNestedType("Enumerator", _ANY_FLAGS).MakeGenericType(typeof(IntVector2), typeof(GoopPositionData));
-    private static readonly MethodInfo _IntVecDictEnumeratorCurrent
-      = _IntVecDictEnumeratorType.GetMethod("get_Current", _ANY_FLAGS);
-    private static readonly MethodInfo _IntVecDictEnumeratorMoveNext
-      = _IntVecDictEnumeratorType.GetMethod("MoveNext", _ANY_FLAGS);
-    private static readonly MethodInfo _Dispose
-      = typeof(IDisposable).GetMethod(nameof(IDisposable.Dispose));
+    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.LateUpdate))]
+    [HarmonyPrefix]
+    private static bool DeadlyDeadlyGoopManagerLateUpdatePatch(DeadlyDeadlyGoopManager __instance)
+    {
+
+      if (Time.timeScale <= 0f || GameManager.Instance.IsPaused)
+        return false;
+
+      __instance.m_removalPositions.Clear();
+      bool flag = false;
+      bool flag2 = false;
+      __instance.m_currentUpdateBin = (__instance.m_currentUpdateBin + 1) % 4;
+      __instance.m_deltaTimes.Enqueue(BraveTime.DeltaTime);
+      float num = 0f;
+      for (int i = 0; i < __instance.m_deltaTimes.Count; i++)
+        num += __instance.m_deltaTimes[i];
+
+      ExtraGoopData egd = ExtraGoopData.Get(__instance);
+      int numGoopedCells = egd.allGoopedCells.Count;
+      for (int g = 0; g < numGoopedCells; ++g)
+      {
+        GoopPositionData goopPositionData = egd.allGoopedCells[g];
+        if (goopPositionData.GoopUpdateBin != __instance.m_currentUpdateBin)
+          continue;
+
+        IntVector2 goopedPosition = goopPositionData.goopPosition;
+        goopPositionData.unfrozeLastFrame = false;
+        if (__instance.goopDefinition.usesAmbientGoopFX && goopPositionData.remainingLifespan > 0f && UnityEngine.Random.value < __instance.goopDefinition.ambientGoopFXChance && goopPositionData.SupportsAmbientVFX)
+        {
+          Vector3 position = goopedPosition.ToVector3(goopedPosition.y) * GOOP_GRID_SIZE;
+          __instance.goopDefinition.ambientGoopFX.SpawnAtPosition(position);
+        }
+        if (!goopPositionData.IsOnFire && !goopPositionData.IsElectrified && !__instance.goopDefinition.usesLifespan && !goopPositionData.lifespanOverridden && !goopPositionData.selfIgnites)
+        {
+          continue;
+        }
+        if (goopPositionData.selfIgnites)
+        {
+          if (goopPositionData.remainingTimeTilSelfIgnition <= 0f)
+          {
+            goopPositionData.selfIgnites = false;
+            __instance.IgniteCell(goopedPosition);
+          }
+          else
+          {
+            goopPositionData.remainingTimeTilSelfIgnition -= num;
+          }
+        }
+        if (goopPositionData.remainingLifespan > 0f)
+        {
+          if (!goopPositionData.IsFrozen)
+          {
+            goopPositionData.remainingLifespan -= num;
+          }
+          else
+          {
+            goopPositionData.remainingFreezeTimer -= num;
+            if (goopPositionData.remainingFreezeTimer <= 0f)
+            {
+              goopPositionData.hasBeenFrozen = 1;
+              goopPositionData.remainingLifespan = Mathf.Min(goopPositionData.remainingLifespan, __instance.goopDefinition.fadePeriod);
+              goopPositionData.remainingLifespan -= num;
+            }
+          }
+          if (__instance.goopDefinition.usesAcidAudio)
+          {
+            flag2 = true;
+          }
+          if (goopPositionData.remainingLifespan < __instance.goopDefinition.fadePeriod && goopPositionData.IsElectrified)
+          {
+            goopPositionData.remainingLifespan = __instance.goopDefinition.fadePeriod;
+          }
+          if (goopPositionData.remainingLifespan < __instance.goopDefinition.fadePeriod || goopPositionData.remainingLifespan <= 0f)
+          {
+            __instance.SetDirty(goopedPosition);
+            goopPositionData.IsOnFire = false;
+            goopPositionData.IsElectrified = false;
+            goopPositionData.HasPlayedFireIntro = false;
+            goopPositionData.HasPlayedFireOutro = false;
+            if (goopPositionData.remainingLifespan <= 0f)
+            {
+              __instance.m_removalPositions.Add(goopedPosition);
+              continue;
+            }
+          }
+          if (goopPositionData.IsElectrified)
+          {
+            goopPositionData.remainingElectrifiedTime -= num;
+            goopPositionData.remainingElecTimer -= num;
+            if (goopPositionData.remainingElectrifiedTime <= 0f)
+            {
+              goopPositionData.IsElectrified = false;
+              goopPositionData.remainingElectrifiedTime = 0f;
+            }
+            if (goopPositionData.IsElectrified && __instance.m_elecSystem != null && goopPositionData.remainingElecTimer <= 0f && goopedPosition.x % 2 == 0 && goopedPosition.y % 2 == 0)
+            {
+              Vector3 vector = goopedPosition.ToVector3(goopedPosition.y) * GOOP_GRID_SIZE + new Vector3(UnityEngine.Random.Range(0.125f, 0.375f), UnityEngine.Random.Range(0.125f, 0.375f), 0.125f).Quantize(0.0625f);
+              float num2 = UnityEngine.Random.Range(0.75f, 1.5f);
+              if (UnityEngine.Random.value < 0.1f)
+              {
+                #pragma warning disable CS0618
+                ParticleSystem.EmitParams emitParams = default(ParticleSystem.EmitParams);
+                emitParams.position = vector;
+                emitParams.velocity = Vector3.zero;
+                emitParams.startSize = __instance.m_fireSystem.startSize;
+                emitParams.startLifetime = num2;
+                emitParams.startColor = __instance.m_fireSystem.startColor;
+                emitParams.randomSeed = (uint)(UnityEngine.Random.value * 4.2949673E+09f);
+                #pragma warning restore CS0618
+                ParticleSystem.EmitParams emitParams2 = emitParams;
+                __instance.m_elecSystem.Emit(emitParams2, 1);
+                if (GameManager.Options.ShaderQuality != 0 && GameManager.Options.ShaderQuality != GameOptions.GenericHighMedLowOption.VERY_LOW)
+                {
+                  int num3 = ((GameManager.Options.ShaderQuality != GameOptions.GenericHighMedLowOption.MEDIUM) ? 10 : 4);
+                  GlobalSparksDoer.DoRandomParticleBurst(num3, vector + new Vector3(-0.625f, -0.625f, 0f), vector + new Vector3(0.625f, 0.625f, 0f), Vector3.up, 120f, 0.5f);
+                }
+              }
+              goopPositionData.remainingElecTimer = num2 - 0.1f;
+            }
+          }
+          if (goopPositionData.IsFrozen)
+          {
+            if (goopPositionData.totalOnFireTime < 0.5f || goopPositionData.remainingLifespan < __instance.goopDefinition.fadePeriod)
+            {
+              __instance.SetColorDirty(goopedPosition);
+            }
+            goopPositionData.totalOnFireTime += num;
+            if (goopPositionData.totalOnFireTime >= __instance.goopDefinition.freezeSpreadTime)
+            {
+              for (int j = 0; j < goopPositionData.neighborGoopData.Length; j++)
+              {
+                if (goopPositionData.neighborGoopData[j] != null && !goopPositionData.neighborGoopData[j].IsFrozen && goopPositionData.neighborGoopData[j].hasBeenFrozen == 0)
+                {
+                  if (UnityEngine.Random.value < 0.2f)
+                  {
+                    __instance.FreezeCell(goopPositionData.neighborGoopData[j].goopPosition);
+                  }
+                  else
+                  {
+                    goopPositionData.totalFrozenTime = 0f;
+                  }
+                }
+              }
+            }
+          }
+          if (goopPositionData.IsOnFire)
+          {
+            flag = true;
+            __instance.SetColorDirty(goopedPosition);
+            goopPositionData.remainingFireTimer -= num;
+            goopPositionData.totalOnFireTime += num;
+            if (goopPositionData.totalOnFireTime >= __instance.goopDefinition.igniteSpreadTime)
+            {
+              for (int k = 0; k < goopPositionData.neighborGoopData.Length; k++)
+              {
+                if (goopPositionData.neighborGoopData[k] != null && !goopPositionData.neighborGoopData[k].IsOnFire)
+                {
+                  if (UnityEngine.Random.value < 0.2f)
+                  {
+                    __instance.IgniteCell(goopPositionData.neighborGoopData[k].goopPosition);
+                  }
+                  else
+                  {
+                    goopPositionData.totalOnFireTime = 0f;
+                  }
+                }
+              }
+            }
+          }
+          if (!(__instance.m_fireSystem != null) || !goopPositionData.IsOnFire || !(goopPositionData.remainingFireTimer <= 0f) || goopedPosition.x % 2 != 0 || goopedPosition.y % 2 != 0)
+          {
+            continue;
+          }
+          Vector3 vector2 = goopedPosition.ToVector3(goopedPosition.y) * GOOP_GRID_SIZE + new Vector3(UnityEngine.Random.Range(0.125f, 0.375f), UnityEngine.Random.Range(0.125f, 0.375f), 0.125f).Quantize(0.0625f);
+          float num4 = UnityEngine.Random.Range(1f, 1.5f);
+          float num5 = UnityEngine.Random.Range(0.75f, 1f);
+          if (!goopPositionData.HasPlayedFireOutro)
+          {
+            #pragma warning disable CS0618
+            if (!goopPositionData.HasPlayedFireOutro && goopPositionData.remainingLifespan <= num5 + __instance.goopDefinition.fadePeriod && __instance.m_fireOutroSystem != null)
+            {
+              num4 = num5;
+              ParticleSystem.EmitParams emitParams = default(ParticleSystem.EmitParams);
+              emitParams.position = vector2;
+              emitParams.velocity = Vector3.zero;
+              emitParams.startSize = __instance.m_fireSystem.startSize;
+              emitParams.startLifetime = num5;
+              emitParams.startColor = __instance.m_fireSystem.startColor;
+              emitParams.randomSeed = (uint)(UnityEngine.Random.value * 4.2949673E+09f);
+              ParticleSystem.EmitParams emitParams3 = emitParams;
+              __instance.m_fireOutroSystem.Emit(emitParams3, 1);
+              goopPositionData.HasPlayedFireOutro = true;
+            }
+            else if (!goopPositionData.HasPlayedFireIntro && __instance.m_fireIntroSystem != null)
+            {
+              num4 = UnityEngine.Random.Range(0.75f, 1f);
+              ParticleSystem.EmitParams emitParams = default(ParticleSystem.EmitParams);
+              emitParams.position = vector2;
+              emitParams.velocity = Vector3.zero;
+              emitParams.startSize = __instance.m_fireSystem.startSize;
+              emitParams.startLifetime = num4;
+              emitParams.startColor = __instance.m_fireSystem.startColor;
+              emitParams.randomSeed = (uint)(UnityEngine.Random.value * 4.2949673E+09f);
+              ParticleSystem.EmitParams emitParams4 = emitParams;
+              __instance.m_fireIntroSystem.Emit(emitParams4, 1);
+              goopPositionData.HasPlayedFireIntro = true;
+            }
+            else
+            {
+              if (UnityEngine.Random.value < 0.5f)
+              {
+                ParticleSystem.EmitParams emitParams = default(ParticleSystem.EmitParams);
+                emitParams.position = vector2;
+                emitParams.velocity = Vector3.zero;
+                emitParams.startSize = __instance.m_fireSystem.startSize;
+                emitParams.startLifetime = num4;
+                emitParams.startColor = __instance.m_fireSystem.startColor;
+                emitParams.randomSeed = (uint)(UnityEngine.Random.value * 4.2949673E+09f);
+                ParticleSystem.EmitParams emitParams5 = emitParams;
+                __instance.m_fireSystem.Emit(emitParams5, 1);
+              }
+              GlobalSparksDoer.DoRandomParticleBurst(UnityEngine.Random.Range(3, 6), vector2, vector2, Vector3.up * 2f, 30f, 1f, null, UnityEngine.Random.Range(0.5f, 1f), (!__instance.goopDefinition.UsesGreenFire) ? Color.red : Color.green);
+            }
+            #pragma warning restore CS0618
+          }
+          goopPositionData.remainingFireTimer = num4 - 0.125f;
+        }
+        else
+        {
+          __instance.m_removalPositions.Add(goopedPosition);
+        }
+      }
+      if (flag && !__instance.m_isPlayingFireAudio)
+      {
+        __instance.m_isPlayingFireAudio = true;
+        AkSoundEngine.PostEvent("Play_ENV_oilfire_ignite_01", GameManager.Instance.PrimaryPlayer.gameObject);
+      }
+      else if (!flag && __instance.m_isPlayingFireAudio)
+      {
+        __instance.m_isPlayingFireAudio = false;
+        AkSoundEngine.PostEvent("Stop_ENV_oilfire_loop_01", GameManager.Instance.PrimaryPlayer.gameObject);
+      }
+      if (flag2 && !__instance.m_isPlayingAcidAudio)
+      {
+        __instance.m_isPlayingAcidAudio = true;
+        AkSoundEngine.PostEvent("Play_ENV_acidsizzle_loop_01", GameManager.Instance.PrimaryPlayer.gameObject);
+      }
+      else if (!flag2 && __instance.m_isPlayingAcidAudio)
+      {
+        __instance.m_isPlayingAcidAudio = false;
+        AkSoundEngine.PostEvent("Stop_ENV_acidsizzle_loop_01", GameManager.Instance.PrimaryPlayer.gameObject);
+      }
+      __instance.RemoveGoopedPosition(__instance.m_removalPositions);
+      for (int l = 0; l < __instance.m_dirtyFlags.GetLength(0); l++)
+      {
+        for (int m = 0; m < __instance.m_dirtyFlags.GetLength(1); m++)
+        {
+          if (__instance.m_dirtyFlags[l, m])
+          {
+            int num6 = (m * __instance.m_dirtyFlags.GetLength(0) + l) % 3;
+            if (num6 == Time.frameCount % 3)
+            {
+              bool flag3 = __instance.HasGoopedPositionCountForChunk(l, m);
+              if (flag3)
+              {
+                __instance.RebuildMeshUvsAndColors(l, m);
+              }
+              __instance.m_dirtyFlags[l, m] = false;
+              __instance.m_colorDirtyFlags[l, m] = false;
+              if (__instance.m_meshes[l, m] != null && !flag3)
+              {
+                UnityEngine.Object.Destroy(__instance.m_mrs[l, m].gameObject);
+                UnityEngine.Object.Destroy(__instance.m_meshes[l, m]);
+                __instance.m_mrs[l, m] = null;
+                __instance.m_meshes[l, m] = null;
+              }
+            }
+          }
+          else
+          {
+            if (!__instance.m_colorDirtyFlags[l, m])
+            {
+              continue;
+            }
+            int num7 = (m * __instance.m_dirtyFlags.GetLength(0) + l) % 3;
+            if (num7 == Time.frameCount % 3)
+            {
+              bool flag4 = __instance.HasGoopedPositionCountForChunk(l, m);
+              if (flag4)
+              {
+                __instance.RebuildMeshColors(l, m);
+              }
+              __instance.m_colorDirtyFlags[l, m] = false;
+              if (__instance.m_meshes[l, m] != null && !flag4)
+              {
+                UnityEngine.Object.Destroy(__instance.m_mrs[l, m].gameObject);
+                UnityEngine.Object.Destroy(__instance.m_meshes[l, m]);
+                __instance.m_mrs[l, m] = null;
+                __instance.m_meshes[l, m] = null;
+              }
+            }
+          }
+        }
+      }
+
+      return false;
+    }
+
+    // private const BindingFlags _ANY_FLAGS
+    //   = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+    // private static readonly Type _IntVecHashSetType
+    //   = typeof(HashSet<>).MakeGenericType(typeof(IntVector2));
+    // private static readonly Type _IntVecHashSetEnumeratorType
+    //   = typeof(HashSet<>).GetNestedType("Enumerator", _ANY_FLAGS).MakeGenericType(typeof(IntVector2));
+    // private static readonly MethodInfo _IntVecHashSetEnumeratorCurrent
+    //   = _IntVecHashSetEnumeratorType.GetMethod("get_Current", _ANY_FLAGS);
+    // private static readonly MethodInfo _IntVecHashSetEnumeratorMoveNext
+    //   = _IntVecHashSetEnumeratorType.GetMethod("MoveNext", _ANY_FLAGS);
+    // private static readonly Type _IntVecDictType
+    //   = typeof(Dictionary<,>).MakeGenericType(typeof(IntVector2), typeof(GoopPositionData));
+    // private static readonly Type _IntVecKVPType
+    //   = typeof(KeyValuePair<,>).MakeGenericType(typeof(IntVector2), typeof(GoopPositionData));
+    // private static readonly Type _IntVecDictEnumeratorType
+    //   = typeof(Dictionary<,>).GetNestedType("Enumerator", _ANY_FLAGS).MakeGenericType(typeof(IntVector2), typeof(GoopPositionData));
+    // private static readonly MethodInfo _IntVecDictEnumeratorCurrent
+    //   = _IntVecDictEnumeratorType.GetMethod("get_Current", _ANY_FLAGS);
+    // private static readonly MethodInfo _IntVecDictEnumeratorMoveNext
+    //   = _IntVecDictEnumeratorType.GetMethod("MoveNext", _ANY_FLAGS);
+    // private static readonly MethodInfo _Dispose
+    //   = typeof(IDisposable).GetMethod(nameof(IDisposable.Dispose));
 
     /// <summary>Replace expensiv hashset iteration -> dictionary lookups with dictionary iteration</summary>
-    [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.LateUpdate))]
-    [HarmonyILManipulator]
-    private static void DeadlyDeadlyGoopManagerLateUpdatePatchIL(ILContext il)
-    {
-        ILCursor cursor = new ILCursor(il);
+    // [HarmonyPatch(typeof(DeadlyDeadlyGoopManager), nameof(DeadlyDeadlyGoopManager.LateUpdate))]
+    // [HarmonyILManipulator]
+    // private static void DeadlyDeadlyGoopManagerLateUpdatePatchIL(ILContext il)
+    // {
+    //     ILCursor cursor = new ILCursor(il);
 
-        if (!cursor.TryGotoNext(MoveType.AfterLabel,
-          instr => instr.MatchLdarg(0), // the DeadlyDeadlyGoopManager instance
-          instr => instr.MatchLdfld<DeadlyDeadlyGoopManager>("m_goopedPositions"),
-          instr => instr.MatchCallvirt(_IntVecHashSetType.GetMethod("GetEnumerator")),
-          instr => instr.MatchStloc(5) // m_goopedPositions foreach enumerator
-          ))
-        {
-          GGVDebug.Log($"  ddgm patch failed at point 1");
-          return;
-        }
+    //     if (!cursor.TryGotoNext(MoveType.AfterLabel,
+    //       instr => instr.MatchLdarg(0), // the DeadlyDeadlyGoopManager instance
+    //       instr => instr.MatchLdfld<DeadlyDeadlyGoopManager>("m_goopedPositions"),
+    //       instr => instr.MatchCallvirt(_IntVecHashSetType.GetMethod("GetEnumerator")),
+    //       instr => instr.MatchStloc(5) // m_goopedPositions foreach enumerator
+    //       ))
+    //     {
+    //       GGVDebug.Log($"  ddgm patch failed at point 1");
+    //       return;
+    //     }
 
-        VariableDefinition intVecDictEnumerator = il.DeclareLocal(_IntVecDictEnumeratorType);
-        cursor.Emit(OpCodes.Ldarg_0);
-        cursor.Emit(OpCodes.Ldfld, typeof(DeadlyDeadlyGoopManager).GetField("m_goopedCells", _ANY_FLAGS));
-        cursor.Emit(OpCodes.Callvirt, _IntVecDictType.GetMethod("GetEnumerator"));
-        cursor.Emit(OpCodes.Stloc, intVecDictEnumerator);
-        cursor.RemoveRange(4);
+    //     VariableDefinition intVecDictEnumerator = il.DeclareLocal(_IntVecDictEnumeratorType);
+    //     cursor.Emit(OpCodes.Ldarg_0);
+    //     cursor.Emit(OpCodes.Ldfld, typeof(DeadlyDeadlyGoopManager).GetField("m_goopedCells", _ANY_FLAGS));
+    //     cursor.Emit(OpCodes.Callvirt, _IntVecDictType.GetMethod("GetEnumerator"));
+    //     cursor.Emit(OpCodes.Stloc, intVecDictEnumerator);
+    //     cursor.RemoveRange(4); //NOTE: important to RemoveRange AFTER emitting new instructions...removing the old instructions first causes issues
 
-        if (!cursor.TryGotoNext(MoveType.AfterLabel,
-          instr => instr.MatchLdloca(5), // m_goopedPositions foreach enumerator
-          instr => instr.MatchCall(_IntVecHashSetEnumeratorCurrent),
-          instr => instr.MatchStloc(4), // IntVector2 value of enumerator == goopedPosition
-          instr => instr.MatchLdarg(0), // the DeadlyDeadlyGoopManager instance
-          instr => instr.MatchLdfld<DeadlyDeadlyGoopManager>("m_goopedCells"),
-          instr => instr.MatchLdloc(4), // IntVector2 value of enumerator
-          instr => instr.MatchCallvirt(_IntVecDictType.GetMethod("get_Item")),
-          instr => instr.MatchStloc(6) // GoopPositionData for the IntVector2
-          ))
-        {
-          GGVDebug.Log($"  ddgm patch failed at point 2");
-          return;
-        }
-        VariableDefinition intVecDictKVP = il.DeclareLocal(_IntVecKVPType);
-        cursor.Emit(OpCodes.Ldloca, intVecDictEnumerator); // m_goopedCells foreach enumerator
-        cursor.Emit(OpCodes.Call, _IntVecDictEnumeratorCurrent);
-        cursor.Emit(OpCodes.Stloc, intVecDictKVP); // store the kvp
+    //     if (!cursor.TryGotoNext(MoveType.AfterLabel,
+    //       instr => instr.MatchLdloca(5), // m_goopedPositions foreach enumerator
+    //       instr => instr.MatchCall(_IntVecHashSetEnumeratorCurrent),
+    //       instr => instr.MatchStloc(4), // IntVector2 value of enumerator == goopedPosition
+    //       instr => instr.MatchLdarg(0), // the DeadlyDeadlyGoopManager instance
+    //       instr => instr.MatchLdfld<DeadlyDeadlyGoopManager>("m_goopedCells"),
+    //       instr => instr.MatchLdloc(4), // IntVector2 value of enumerator
+    //       instr => instr.MatchCallvirt(_IntVecDictType.GetMethod("get_Item")),
+    //       instr => instr.MatchStloc(6) // GoopPositionData for the IntVector2
+    //       ))
+    //     {
+    //       GGVDebug.Log($"  ddgm patch failed at point 2");
+    //       return;
+    //     }
+    //     VariableDefinition intVecDictKVP = il.DeclareLocal(_IntVecKVPType);
+    //     cursor.Emit(OpCodes.Ldloca, intVecDictEnumerator); // m_goopedCells foreach enumerator
+    //     cursor.Emit(OpCodes.Call, _IntVecDictEnumeratorCurrent);
+    //     cursor.Emit(OpCodes.Stloc, intVecDictKVP); // store the kvp
 
-        cursor.Emit(OpCodes.Ldloca, intVecDictKVP); // load the kvp
-        cursor.Emit(OpCodes.Call, _IntVecKVPType.GetMethod("get_Key", _ANY_FLAGS));
-        cursor.Emit(OpCodes.Stloc, 4); // store the key in goopedPosition
+    //     cursor.Emit(OpCodes.Ldloca, intVecDictKVP); // load the kvp
+    //     cursor.Emit(OpCodes.Call, _IntVecKVPType.GetMethod("get_Key", _ANY_FLAGS));
+    //     cursor.Emit(OpCodes.Stloc, 4); // store the key in goopedPosition
 
-        cursor.Emit(OpCodes.Ldloca, intVecDictKVP); // load the kvp
-        cursor.Emit(OpCodes.Call, _IntVecKVPType.GetMethod("get_Value", _ANY_FLAGS));
-        cursor.Emit(OpCodes.Stloc, 6); // store the value in goopPositionData
+    //     cursor.Emit(OpCodes.Ldloca, intVecDictKVP); // load the kvp
+    //     cursor.Emit(OpCodes.Call, _IntVecKVPType.GetMethod("get_Value", _ANY_FLAGS));
+    //     cursor.Emit(OpCodes.Stloc, 6); // store the value in goopPositionData
 
-        cursor.RemoveRange(8);
+    //     cursor.RemoveRange(8);
 
-        if (!cursor.TryGotoNext(MoveType.AfterLabel,
-          instr => instr.MatchLdloca(5), // m_goopedPositions foreach enumerator
-          instr => instr.MatchCall(_IntVecHashSetEnumeratorMoveNext)
-          ))
-        {
-          GGVDebug.Log($"  ddgm patch failed at point 3");
-          return;
-        }
-        cursor.Emit(OpCodes.Ldloca, intVecDictEnumerator); // m_goopedCells foreach enumerator
-        cursor.Emit(OpCodes.Call, _IntVecDictEnumeratorMoveNext);
-        cursor.RemoveRange(2); // don't remove old instructions until AFTER the loop iteration is over or jump labels get messed up
+    //     if (!cursor.TryGotoNext(MoveType.AfterLabel,
+    //       instr => instr.MatchLdloca(5), // m_goopedPositions foreach enumerator
+    //       instr => instr.MatchCall(_IntVecHashSetEnumeratorMoveNext)
+    //       ))
+    //     {
+    //       GGVDebug.Log($"  ddgm patch failed at point 3");
+    //       return;
+    //     }
+    //     cursor.Emit(OpCodes.Ldloca, intVecDictEnumerator); // m_goopedCells foreach enumerator
+    //     cursor.Emit(OpCodes.Call, _IntVecDictEnumeratorMoveNext);
+    //     cursor.RemoveRange(2); // don't remove old instructions until AFTER the loop iteration is over or jump labels get messed up
 
-        if (!cursor.TryGotoNext(MoveType.AfterLabel,
-          // instr => instr.MatchLdloca(5), // m_goopedPositions foreach enumerator
-          // instr => instr.MatchConstrained(_IntVecHashSetEnumeratorType),
-          instr => instr.MatchCallvirt(_Dispose) // no othe Dispose() method, so this is safe (tm)
-          ))
-        {
-          GGVDebug.Log($"  ddgm patch failed at point 4");
-          return;
-        }
-        //WARNING: we get into deep trouble toying with finalizers...just pop the address of the old enumerator and replace it with our own
-        cursor.Emit(OpCodes.Pop); // pop the HashSet Ienumerator
-        cursor.Emit(OpCodes.Ldloca, intVecDictEnumerator); // load our own m_goopedCells foreach enumerator
-        cursor.Emit(OpCodes.Constrained, _IntVecDictEnumeratorType); // load our own constrained type
-        // we reuse the old dispose method, so we're done
-    }
+    //     if (!cursor.TryGotoNext(MoveType.AfterLabel,
+    //       // instr => instr.MatchLdloca(5), // m_goopedPositions foreach enumerator
+    //       // instr => instr.MatchConstrained(_IntVecHashSetEnumeratorType),
+    //       instr => instr.MatchCallvirt(_Dispose) // no othe Dispose() method, so this is safe (tm)
+    //       ))
+    //     {
+    //       GGVDebug.Log($"  ddgm patch failed at point 4");
+    //       return;
+    //     }
+    //     //WARNING: we get into deep trouble toying with finalizers...just pop the address of the old enumerator and replace it with our own
+    //     cursor.Emit(OpCodes.Pop); // pop the HashSet Ienumerator
+    //     cursor.Emit(OpCodes.Ldloca, intVecDictEnumerator); // load our own m_goopedCells foreach enumerator
+    //     cursor.Emit(OpCodes.Constrained, _IntVecDictEnumeratorType); // load our own constrained type
+    //     // we reuse the old dispose method, so we're done
+    // }
 
     private static readonly Color32 _Transparent = new Color32(0, 0, 0, 0);
     //NOTE: I could possibly reuse a tweaked version of the LateUpdate() ILManipulator, but...it's really not worth it
@@ -331,33 +681,43 @@ internal static class Gooptimizations
           __instance.m_colorArray[i] = _Transparent;
 
         int chunkSize = Mathf.RoundToInt(__instance.CHUNK_SIZE / GOOP_GRID_SIZE);
-        int minX      = chunkX * chunkSize;
-        int maxX      = minX   + chunkSize;
-        int minY      = chunkY * chunkSize;
-        int maxY      = minY   + chunkSize;
+        int xmin      = chunkX * chunkSize;
+        int xmax      = xmin   + chunkSize;
+        int ymin      = chunkY * chunkSize;
+        int ymax      = ymin   + chunkSize;
         VertexColorRebuildResult b = VertexColorRebuildResult.ALL_OK;
-        foreach (var kvp in __instance.m_goopedCells)
+
+        ExtraGoopData egd = ExtraGoopData.Get(__instance);
+        UInt64[,,] goopBitfield = egd.goopedCellBitfield;
+        int bitOffset = -1;
+        for (int j = xmin; j < xmax; j++)
         {
-          IntVector2 goopedPosition = kvp.Key;
-          GoopPositionData goopPositionData = kvp.Value;
-          if (goopPositionData.remainingLifespan < 0f || goopedPosition.x < minX || goopedPosition.x >= maxX || goopedPosition.y < minY || goopedPosition.y >= maxY)
-            continue;
-
-          int bi = goopPositionData.baseIndex;
-          if (bi < 0)
-            bi = goopPositionData.baseIndex = __instance.GetGoopBaseIndex(goopedPosition, chunkX, chunkY);
-
-          if (__instance.goopDefinition.CanBeFrozen)
+          for (int k = ymin; k < ymax; k++)
           {
-            Vector2 v = new Vector2((goopPositionData.IsFrozen ? 1 : 0), 0f);
-            __instance.m_uv2Array[bi    ] = v;
-            __instance.m_uv2Array[bi + 1] = v;
-            __instance.m_uv2Array[bi + 2] = v;
-            __instance.m_uv2Array[bi + 3] = v;
+            ++bitOffset;
+            if ((goopBitfield[chunkX, chunkY, bitOffset / 64] & (1ul << (bitOffset % 64))) == 0)
+              continue; // skip grid lookup if the cell definitely isn't gooped
+
+            GoopPositionData goopPositionData = egd.goopedCellGrid[j, k];
+            if (goopPositionData == null || goopPositionData.remainingLifespan < 0f)
+              continue;
+
+            int bi = goopPositionData.baseIndex;
+            if (bi < 0)
+              bi = goopPositionData.baseIndex = __instance.GetGoopBaseIndex(goopPositionData.goopPosition, chunkX, chunkY);
+
+            if (__instance.goopDefinition.CanBeFrozen)
+            {
+              Vector2 v = new Vector2((goopPositionData.IsFrozen ? 1 : 0), 0f);
+              __instance.m_uv2Array[bi    ] = v;
+              __instance.m_uv2Array[bi + 1] = v;
+              __instance.m_uv2Array[bi + 2] = v;
+              __instance.m_uv2Array[bi + 3] = v;
+            }
+            VertexColorRebuildResult a = __instance.AssignVertexColors(goopPositionData, goopPositionData.goopPosition, chunkX, chunkY);
+            if ((int)a > (int)b)
+              b = a;
           }
-          VertexColorRebuildResult a = __instance.AssignVertexColors(goopPositionData, goopedPosition, chunkX, chunkY);
-          if ((int)a > (int)b)
-            b = a;
         }
 
         Mesh chunkMesh = __instance.GetChunkMesh(chunkX, chunkY);
@@ -395,12 +755,14 @@ internal static class Gooptimizations
           neighbor.neighborGoopData[ni] = null;
           neighbor.NeighborsAsIntFuckDiagonals = (neighbor.NeighborsAsInt &= ~(1 << 7 - ni)) & 0xAA;
         }
+        current = null;
       }
       __instance.m_goopedPositions.Remove(entry);
       __instance.m_goopedCells.Remove(entry);
       DeadlyDeadlyGoopManager.allGoopPositionMap.Remove(entry);
       __instance.SetDirty(entry);
-      ExtraGoopData.ClearGoopedBit(__instance, entry);
+      if (current != null)
+        ExtraGoopData.Get(__instance).RemoveGoop(current);
       return false;    // skip the original method
     }
 
@@ -752,7 +1114,8 @@ internal static class Gooptimizations
         __instance.m_goopedPositions.Add(pos);
         __instance.m_goopedCells.Add(pos, newGoop);
         allGoopPositionMap.Add(pos, __instance);
-        ExtraGoopData.SetGoopedBit(__instance, pos);
+        ExtraGoopData egd = ExtraGoopData.Get(__instance);
+        egd.AddGoop(newGoop);
         RoomHandler absoluteRoomFromPosition = GameManager.Instance.Dungeon.data.GetAbsoluteRoomFromPosition(cellPosition);
         absoluteRoomFromPosition.RegisterGoopManagerInRoom(__instance);
 

@@ -37,7 +37,7 @@ Currently included safe optimizations are:
   - **Optimize Bullet Trails**: Pools bullet trail particles and vertex data to reduce memory usage. Saves a modest amount of RAM.
   - **Optimize Pixel Rotation**: Optimizes pixel movement rotation used for pixel-perfect collisions. Saves a modest amount of RAM.
   - **Optimize Numerical Strings**: Caches strings for small numbers used frequently by SGUI's labels. Saves significant RAM while any console is open.
-  - **Optimize Visibility Checks**: Skips redundant sprite visibility checks when the results aren't actually used. Saves a small amount of CPU.
+  - **Optimize Visibility Checks**: Speeds up sprite visibility checks by using inline arithmetic where possible. Saves a small amount of CPU.
   - **Optimize Flood Filling**: Uses an optimized flood fill algorithm for floor post-processing. Saves a small amount of CPU and RAM.
   - **Optimize Projectile Prefabs**: Removes prefab effect data (e.g., poison) from projectiles that never apply those effects. Saves a small amount of RAM.
   - **Optimize Chunk Checks**: Optimize checks for whether sprite chunks are relevant to gameplay. Saves a small amount of CPU.
