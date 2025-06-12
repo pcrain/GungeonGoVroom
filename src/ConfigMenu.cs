@@ -16,6 +16,7 @@ internal static class GGVConfig
   internal static bool FIX_EVOLVER       = true;
   internal static bool FIX_AMMO_DRIFT    = true;
   internal static bool FIX_REPAUSE       = true;
+  internal static bool FIX_MIMIC_CHEST   = true;
 
   // Safe Optimizations
   internal static int  PREALLOCATE_HEAP  = 0;
@@ -72,6 +73,7 @@ internal static class GGVConfig
     FIX_EVOLVER       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.EVOLVER);
     FIX_AMMO_DRIFT    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_DRIFT);
     FIX_REPAUSE       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.REPAUSE);
+    FIX_MIMIC_CHEST   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MIMIC_CHEST);
 
     OPT_VIS_CHECKS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.VIS_CHECKS);
     OPT_OCCLUSION     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.OCCLUSION);
@@ -115,6 +117,7 @@ internal static class GGVConfig
     WriteLine($"FIX_EVOLVER              = {FIX_EVOLVER}");
     WriteLine($"FIX_AMMO_DRIFT           = {FIX_AMMO_DRIFT}");
     WriteLine($"FIX_REPAUSE              = {FIX_REPAUSE}");
+    WriteLine($"FIX_MIMIC_CHEST          = {FIX_MIMIC_CHEST}");
 
     WriteLine($"OPT_OCCLUSION            = {OPT_OCCLUSION}");
     WriteLine($"OPT_AMMO_DISPLAY         = {OPT_AMMO_DISPLAY}");
@@ -175,6 +178,7 @@ internal static class ConfigMenu
   internal const string EVOLVER       = "Evolver Devolve Fix";
   internal const string AMMO_DRIFT    = "Ammo Drift Fix";
   internal const string REPAUSE       = "Unpause / Repause Fix";
+  internal const string MIMIC_CHEST   = "Invalid Mimic Chest Fix";
 
   internal const string SAFE_OPT      = "Safe Optimizations";
   internal const string PREALLOCATE   = "Preallocate Heap Memory";
@@ -227,6 +231,7 @@ internal static class ConfigMenu
     sf.FancyToggle(EVOLVER, "Fixes Evolver devolving to its 2nd form\nafter dropping it, picking it back up,\nand killing 5 enemies to level it up.");
     sf.FancyToggle(AMMO_DRIFT, "Fixes ammo display drifting to the right when\na gun temporarily gets infinite ammo\n(e.g., from Magazine Rack).");
     sf.FancyToggle(REPAUSE, "Fixes game continuing to run if you\nunpause and quickly repause during menu\nfading animation.");
+    sf.FancyToggle(MIMIC_CHEST, "Fixes errors caused by modded chests\nattempting to transform into mimics when no\ncorresponding mimic exists (mostly for modded use).");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
     so.FancyMemList(PREALLOCATE, "Preallocates RAM to avoid OS requests later.\nDefault uses Gungeon's default of about 200MB.\nHigher values result in fewer lag spikes.");

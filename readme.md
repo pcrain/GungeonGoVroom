@@ -20,6 +20,7 @@ Currently included bugfixes are:
   - **Evolver Devolve Fix**: Fixes Evolver devolving to its 2nd form after dropping it, picking it back up, and killing 5 enemies to level it up.
   - **Ammo Drift Fix**: Fixes ammo display drifting to the right when a gun temporarily gets infinite ammo (e.g., from Magazine Rack).
   - **Unpause / Repause Fix**: Fixes game continuing to run if you unpause and quickly repause during menu fading animation.
+  - **Invalid Mimic Chest Fix**: Fixes errors caused by modded chests attempting to transform into mimics when no corresponding mimic exists (mostly for modded use).
 
 ### Safe Optimizations
 

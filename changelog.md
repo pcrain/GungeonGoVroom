@@ -9,6 +9,7 @@
 - Fixed IndexOutOfRange exception caused by trying to add / remove goop circles outside the bounds of the current map
 - Moved "Optimize Path Recalculations" to Safe Optimizations
 - Fixed ArgumentOutOfRangeException caused by logic for sprite z-depth update
+- Added "Invalid Mimic Chest Fix", preventing modded chest types from transforming into mimics if they don't have a mimic type specified
 
 ## 1.4.1 (2025-06-07)
 

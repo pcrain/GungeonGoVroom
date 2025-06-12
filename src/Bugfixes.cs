@@ -394,4 +394,26 @@ internal static partial class Patches
         private static bool IsActuallyStillPaused(GameManager instance) => instance.m_paused;
     }
 
+    /// <summary>Prevent Mimics from spawning from chests with no valid Mimic GUID</summary>
+    [HarmonyPatch]
+    private static class MimicTransformationPatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_MIMIC_CHEST)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(Chest), nameof(Chest.DoMimicTransformation))]
+        [HarmonyPrefix]
+        private static bool DoMimicTransformation(Chest __instance)
+        {
+          return !string.IsNullOrEmpty(__instance.MimicGuid); // prevent further execution if there's no valid mimic to turn into
+        }
+    }
 }
