@@ -697,7 +697,7 @@ internal static partial class Patches
       [HarmonyPrefix]
       private static bool PixelatorOnRenderImagePatch(Pixelator __instance, RenderTexture source, RenderTexture target)
       {
-        if (!GameManager.HasInstance || !GameManager.Instance.IsPaused)
+        if (!GameManager.HasInstance || !GameManager.Instance.IsPaused || GameManager.Instance.PreventPausing)
           return true; // call the original method
 
         if (__instance.m_bloomer && __instance.m_bloomer.enabled)

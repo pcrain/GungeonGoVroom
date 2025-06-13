@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1 (2025-06-13)
+
+- Fixed screen going completely black when dying or when the game is otherwise forcibly paused
+
 ## 1.5.0 (2025-06-12)
 
 - Added "Optimize Pause Menu" option, dramatically reducing CPU usage while the game is paused
