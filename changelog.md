@@ -1,15 +1,15 @@
 # Changelog
 
-## 1.5.0 (TBD)
+## 1.5.0 (2025-06-12)
 
 - Added "Optimize Pause Menu" option, dramatically reducing CPU usage while the game is paused
+- Added "Invalid Mimic Chest Fix", preventing modded chest types from transforming into mimics if they don't have a mimic type specified
 - Added optimizations for beam sprite rebuilding to "Optimize Beams"
 - Substantially improved goop optimizations, particularly when lots of fire is on screen
 - Substantially improved pointcast optimizations
 - Fixed IndexOutOfRange exception caused by trying to add / remove goop circles outside the bounds of the current map
-- Moved "Optimize Path Recalculations" to Safe Optimizations
 - Fixed ArgumentOutOfRangeException caused by logic for sprite z-depth update
-- Added "Invalid Mimic Chest Fix", preventing modded chest types from transforming into mimics if they don't have a mimic type specified
+- Moved "Optimize Path Recalculations" to Safe Optimizations
 
 ## 1.4.1 (2025-06-07)
 
