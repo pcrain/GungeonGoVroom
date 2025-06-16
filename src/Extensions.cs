@@ -70,4 +70,12 @@ internal static class Extensions
 
           return (Func<S, T>)getterMethod.CreateDelegate(typeof(Func<S, T>));
     }
+
+
+    /// <summary>Check if two floats are approximately equal</summary>
+    internal static bool Approximately(this float a, float b, float threshold = 0.0001f)
+    {
+      float c = a - b;
+      return -threshold < c && c < threshold;
+  }
 }

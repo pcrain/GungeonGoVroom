@@ -1,8 +1,9 @@
 # Changelog
 
-## 1.5.2 (TBD)
+## 1.5.2 (2025-06-15)
 
 - Fixed error spam caused by trying to attach a `CustomTrailRenderer` to something that already has a `MeshFilter` and added logging to figure out why it's happening at all
+- Fixed pause menu being permanently tiny when Tiny UI is enabled while Optimize Pause Menu is also enabled
 
 ## 1.5.1 (2025-06-13)
 

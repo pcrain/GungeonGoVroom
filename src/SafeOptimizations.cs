@@ -703,9 +703,15 @@ internal static partial class Patches
         if (__instance.m_bloomer && __instance.m_bloomer.enabled)
           __instance.m_bloomer.enabled = false;
         float tileScale = Mathf.Max(1f, Mathf.Min(20f, (float)Screen.height * __instance.m_camera.rect.height / 270f));
-        if (tileScale != __instance.ScaleTileScale)
+        float uiScale = Pixelator.Instance.ScaleTileScale / 3f * GameUIRoot.GameUIScalar;
+        if (!tileScale.Approximately(__instance.ScaleTileScale))
         {
           GGVDebug.Log($"changing tile scale from {__instance.ScaleTileScale} to {tileScale}");
+          __instance.CheckSize();
+        }
+        else if (!uiScale.Approximately(GameUIRoot.Instance.m_manager.UIScale))
+        {
+          GGVDebug.Log($"changing UI scale from {GameUIRoot.Instance.m_manager.UIScale} to {uiScale}");
           __instance.CheckSize();
         }
         BraveCameraUtility.MaintainCameraAspect(__instance.m_camera);
