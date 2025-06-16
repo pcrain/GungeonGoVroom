@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.2 (TBD)
+
+- Fixed error spam caused by trying to attach a `CustomTrailRenderer` to something that already has a `MeshFilter` and added logging to figure out why it's happening at all
+
 ## 1.5.1 (2025-06-13)
 
 - Fixed screen going completely black when dying or when the game is otherwise forcibly paused

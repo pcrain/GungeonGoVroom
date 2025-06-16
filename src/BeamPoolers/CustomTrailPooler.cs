@@ -230,6 +230,18 @@ internal static class CustomTrailPooler
   {
     CustomTrailRenderer self = __instance;
 
+    //BUG: this function can throw null reference errors, seemingly immediately following the following failure message:
+    // "Can't add component 'MeshFilter' to trail object because such a component is already added to the game object!"
+    // ...haven't tracked down the root cause of this or why this doesn't happen in the base game, but hopefully the logging below helps
+    if (!self.mesh || !self.renderer)
+    {
+      UnityEngine.Debug.LogError($"attempted to update CustomTrailRenderer mesh for object {self.gameObject.name} without a mesh and/or renderer, selfdestructing -- tell Captain Pretzel!");
+      foreach (Component c in self.gameObject.GetComponents<Component>())
+        UnityEngine.Debug.LogError($"  have component {c.GetType().Name}");
+      UnityEngine.Object.Destroy(self);
+      return false;
+    }
+
     if (self.specRigidbody && self.specRigidbody.transform.rotation.eulerAngles.z != 0f)
       self.transform.localRotation = Quaternion.Euler(0f, 0f, 0f - self.specRigidbody.transform.rotation.eulerAngles.z);
     if (!self.emit)
