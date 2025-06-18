@@ -21,6 +21,7 @@ Currently included bugfixes are:
   - **Ammo Drift Fix**: Fixes ammo display drifting to the right when a gun temporarily gets infinite ammo (e.g., from Magazine Rack).
   - **Unpause / Repause Fix**: Fixes game continuing to run if you unpause and quickly repause during menu fading animation.
   - **Invalid Mimic Chest Fix**: Fixes errors caused by modded chests attempting to transform into mimics when no corresponding mimic exists (mostly for modded use).
+  - **High Stress Armor Fix**: Fixes no health or armor being displayed during High Stress mode for Robot or other 0-health characters.
 
 ### Safe Optimizations
 

@@ -416,4 +416,54 @@ internal static partial class Patches
           return !string.IsNullOrEmpty(__instance.MimicGuid); // prevent further execution if there's no valid mimic to turn into
         }
     }
+
+    /// <summary>Forces 0-health characters to show a single armor piece when under the effects of NextShotKills.</summary>
+    [HarmonyPatch]
+    private static class HighStressPatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_HIGH_STRESS)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(GameUIHeartController), nameof(GameUIHeartController.UpdateHealth))]
+        [HarmonyILManipulator]
+        private static void GameUIHeartControllerUpdateHealthPatchIL(ILContext il)
+        {
+            ILCursor cursor = new ILCursor(il);
+            ILLabel afterNextShotKillsLabel = null;
+            if (!cursor.TryGotoNext(MoveType.After,
+              instr => instr.MatchLdarg(1),
+              instr => instr.MatchLdfld<HealthHaver>(nameof(HealthHaver.NextShotKills)),
+              instr => instr.MatchBrfalse(out afterNextShotKillsLabel)
+              ))
+                return;
+
+            cursor.Emit(OpCodes.Ldarg, 1);
+            cursor.Emit(OpCodes.Ldloca, 0); // num
+            cursor.Emit(OpCodes.Ldloca, 2); // num2
+            cursor.CallPrivate(typeof(HighStressPatch), nameof(HighStressArmorFix));
+            cursor.Emit(OpCodes.Br, afterNextShotKillsLabel);
+        }
+
+        private static void HighStressArmorFix(HealthHaver hh, ref float health, ref float armor)
+        {
+          if (hh.gameActor is PlayerController pc && pc.ForceZeroHealthState)
+          {
+            health = 0f;
+            armor = 1f;
+          }
+          else
+          {
+            health = 0.5f;
+            armor = 0f;
+          }
+        }
+    }
 }

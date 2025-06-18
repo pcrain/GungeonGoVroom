@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.3 (TBD)
+
+- Added "High Stress Armor Fix", showing a single armor piece for Robot / other 0-health characters during High Stress challenge mode
+
 ## 1.5.2 (2025-06-15)
 
 - Fixed error spam caused by trying to attach a `CustomTrailRenderer` to something that already has a `MeshFilter` and added logging to figure out why it's happening at all
