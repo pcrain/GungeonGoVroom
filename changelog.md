@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.5.3 (TBD)
+## 1.5.3 (2025-06-20)
 
 - Added "High Stress Armor Fix", showing a single armor piece for Robot / other 0-health characters during High Stress challenge mode
 - Fixed issue with "Optimize Pixel Rotation" causing bullets fired from Prize Gun in Winchester's minigame to phase through blocks
