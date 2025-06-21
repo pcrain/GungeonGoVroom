@@ -304,7 +304,7 @@ internal static class SetRotationAndScaleOptimization
       float x = _Scratch[i].x - basePivot.x;
       float y = _Scratch[i].y - basePivot.y;
       _Scratch[i].x = (x * baseCos - y * baseSin) * scale.x + basePivot.x;
-      _Scratch[i].y = (x * baseSin - y * baseCos) * scale.y + basePivot.y;
+      _Scratch[i].y = (x * baseSin + y * baseCos) * scale.y + basePivot.y;
     }
 
     // determine the absolute world bounds of the collider
