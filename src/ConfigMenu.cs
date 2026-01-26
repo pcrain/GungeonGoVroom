@@ -279,7 +279,8 @@ internal static class ConfigMenu
     ao.FancyToggleOff(ITEM_LOOKUPS, "Speeds up passive / active item lookups\nby skipping delegate creation.\nSaves a small amount of CPU and RAM.");
 
     Gunfig eo = _Gunfig.AddSubMenu(EXPR_OPT);
-    eo.FancyToggleOff(MOUSE_EVENTS, "Prevents checks for whether the mouse is\nover a menu item when no menus are open.\nSaves significant CPU, but may break custom UIs.");
+    // BUG: mouse toggle is broken and breaks vanilla menus...disabling until I can find a proper fix
+    // eo.FancyToggleOff(MOUSE_EVENTS, "Prevents checks for whether the mouse is\nover a menu item when no menus are open.\nSaves significant CPU, but may break custom UIs.");
     eo.FancyToggleOff(TITLE_SCREEN, "Prevents scanning for the player on\nthe title screen when no player exists.\nSaves small CPU, but may break floor loads.");
 
     GGVConfig.Update();

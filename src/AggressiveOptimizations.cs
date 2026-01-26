@@ -486,13 +486,15 @@ internal static partial class Patches
     {
         private static bool Prepare(MethodBase original)
         {
-          if (!GGVConfig.OPT_MOUSE_EVENTS)
-            return false;
-          if (original == null)
-            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
-          else
-            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
-          return true;
+          // BUG: mouse toggle is broken and breaks vanilla menus...disabling until I can find a proper fix
+          return false;
+          // if (!GGVConfig.OPT_MOUSE_EVENTS)
+          //   return false;
+          // if (original == null)
+          //   GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          // else
+          //   GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          // return true;
         }
 
         [HarmonyPatch(typeof(dfGUIManager), nameof(dfGUIManager.HitTest))]
