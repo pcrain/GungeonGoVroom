@@ -27,6 +27,7 @@ Currently included bugfixes are:
   - **Infinite Beam Ammo Fix**: Fixes beams depleting ammo even when under the effects of Magazine Rack.
   - **Caped Bullet Kin Fix**: Fixes Caped Bullet Kin taking longer to despawn at higher frame rates.
   - **Flak Bullets Fix**: Fixes Flak Bullets duplicating projectiles infinitely when possessing multiple copies of the item.
+  - **Scattershot Fix**: Fixes Scattershot consuming ammo for each projectile fired when firing charge projectiles (e.g., from Crescent Crossbow).
 
 ### Safe Optimizations
 

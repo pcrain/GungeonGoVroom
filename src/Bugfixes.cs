@@ -625,13 +625,67 @@ internal static partial class Patches
 
             cursor.Emit(OpCodes.Ldarg_1);
             cursor.CallPrivate(typeof(FlakBulletsPatch), nameof(FlakBulletsFix));
-            System.Console.WriteLine($"  patched!");
         }
 
         private static bool FlakBulletsFix(bool origVal, Projectile proj)
         {
           // don't allow postprocessing projectiles that were themselves spawned from other player projectiles
           return origVal && !proj.SpawnedFromOtherPlayerProjectile;
+        }
+    }
+
+    [HarmonyPatch]
+    private static class ScattershotPatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_SCATTERSHOT)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(GunVolleyModificationItem), nameof(GunVolleyModificationItem.ModifyVolley))]
+        [HarmonyILManipulator]
+        private static void GunVolleyModificationItemModifyVolleyPatchIL(ILContext il)
+        {
+            ILCursor cursor = new ILCursor(il);
+            if (!cursor.TryGotoNext(MoveType.After,
+              instr => instr.MatchStfld<ProjectileModule>(nameof(ProjectileModule.ammoCost))))
+                return;
+
+            cursor.Emit(OpCodes.Ldloc, 7);
+            cursor.CallPrivate(typeof(ScattershotPatch), nameof(ScattershotFix));
+        }
+
+        private static void ScattershotFix(ProjectileModule mod)
+        {
+          if (mod.ammoCost > 0)
+            return;
+          if (mod.chargeProjectiles is not List<ProjectileModule.ChargeProjectile> list)
+            return;
+          // make a deep copy of the list of charge projectiles
+          mod.chargeProjectiles = new List<ProjectileModule.ChargeProjectile>(list.Count);
+          foreach (ProjectileModule.ChargeProjectile orig in list)
+          {
+            ProjectileModule.ChargeProjectile dupe = new ProjectileModule.ChargeProjectile(){
+              ChargeTime                 = orig.ChargeTime,
+              Projectile                 = orig.Projectile,
+              UsedProperties             = orig.UsedProperties,
+              VfxPool                    = orig.VfxPool,
+              LightIntensity             = orig.LightIntensity,
+              ScreenShake                = orig.ScreenShake,
+              OverrideShootAnimation     = orig.OverrideShootAnimation,
+              OverrideMuzzleFlashVfxPool = orig.OverrideMuzzleFlashVfxPool,
+              MegaReflection             = orig.MegaReflection,
+              AdditionalWwiseEvent       = orig.AdditionalWwiseEvent,
+              AmmoCost                   = 0,
+            };
+            mod.chargeProjectiles.Add(dupe);
+          }
         }
     }
 }
