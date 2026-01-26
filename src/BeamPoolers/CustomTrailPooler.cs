@@ -233,6 +233,11 @@ internal static class CustomTrailPooler
     //BUG: this function can throw null reference errors, seemingly immediately following the following failure message:
     // "Can't add component 'MeshFilter' to trail object because such a component is already added to the game object!"
     // ...haven't tracked down the root cause of this or why this doesn't happen in the base game, but hopefully the logging below helps
+    //NOTE: i believe this error to be caused by some mod calling UnityEngine.Object.Instantiate(projectile.gameObject) on some projectile
+    // to clone it at runtime, causing the Start() method to fail when calling AddComponent<MeshFilter> and cascading into problems from
+    // there. the workaround would be to just double-check we don't have those components already, and only fail if they truly aren't
+    // available. however, this projectile cloning also causes the rest of Start() to never execute, which we can't really make up for here.
+    // so...just hope it doesn't happen.
     if (!self.mesh || !self.renderer)
     {
       UnityEngine.Debug.LogError($"attempted to update CustomTrailRenderer mesh for object {self.gameObject.name} without a mesh and/or renderer, selfdestructing -- tell Captain Pretzel!");
