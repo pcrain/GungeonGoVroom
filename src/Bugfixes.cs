@@ -598,4 +598,40 @@ internal static partial class Patches
           __instance.m_updateEveryFrame = true;
         }
     }
+
+    /// <summary>Prevents Flak Bullets and similar items from splitting infinitely when the player has duplicates.</summary>
+    [HarmonyPatch]
+    private static class FlakBulletsPatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_FLAK_BULLETS)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(ComplexProjectileModifier), nameof(ComplexProjectileModifier.PostProcessProjectile))]
+        [HarmonyILManipulator]
+        private static void ComplexProjectileModifierPostProcessProjectilePatchIL(ILContext il)
+        {
+            ILCursor cursor = new ILCursor(il);
+            if (!cursor.TryGotoNext(MoveType.Before,
+              instr => instr.MatchStfld<SpawnProjModifier>(nameof(SpawnProjModifier.PostprocessSpawnedProjectiles))))
+                return;
+
+            cursor.Emit(OpCodes.Ldarg_1);
+            cursor.CallPrivate(typeof(FlakBulletsPatch), nameof(FlakBulletsFix));
+            System.Console.WriteLine($"  patched!");
+        }
+
+        private static bool FlakBulletsFix(bool origVal, Projectile proj)
+        {
+          // don't allow postprocessing projectiles that were themselves spawned from other player projectiles
+          return origVal && !proj.SpawnedFromOtherPlayerProjectile;
+        }
+    }
 }

@@ -6,6 +6,7 @@
 - Added "Gun Magnificence Fix", preventing magnificence from increasing when picking up a gun that has already been picked up
 - Added "Infinite Beam Ammo Fix", preventing the ammo for beam weapons from decreasing when under the effects of Magazine Rack
 - Added "Caped Bullet Kin Fix", preventing Caped Bullet Kin from taking longer to despawn at higher frame rates
+- Added "Flak Bullets Fix", preventing multiple copies of Flak Bullets causing projectiles to duplicate infinitely
 - Completely disabled "Optimize GUI Mouse Events" option for now, as it causes issues with vanilla menus
 
 ## 1.5.3 (2025-06-20)

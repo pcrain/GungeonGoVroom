@@ -26,6 +26,7 @@ Currently included bugfixes are:
   - **Gun Magnificence Fix**: Fixes magnificence increasing when picking up a gun that has already been picked up.
   - **Infinite Beam Ammo Fix**: Fixes beams depleting ammo even when under the effects of Magazine Rack.
   - **Caped Bullet Kin Fix**: Fixes Caped Bullet Kin taking longer to despawn at higher frame rates.
+  - **Flak Bullets Fix**: Fixes Flak Bullets duplicating projectiles infinitely when possessing multiple copies of the item.
 
 ### Safe Optimizations
 
