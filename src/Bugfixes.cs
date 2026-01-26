@@ -503,4 +503,29 @@ internal static partial class Patches
           return origVal;
         }
     }
+
+    /// <summary>Prevent Guns from increasing magnificence every time they're picked up.</summary>
+    [HarmonyPatch]
+    private static class GunMagnificencePatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_GUN_MAGNIFICENCE)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(PickupObject), nameof(PickupObject.HandleMagnficence))]
+        [HarmonyPrefix]
+        private static bool PickupObjectHandleMagnficencePatch(PickupObject __instance)
+        {
+            if (__instance is Gun gun && gun.HasBeenPickedUp)
+              return false; // don't increase magnificence if the gun has already been picked up
+            return true;
+        }
+    }
 }

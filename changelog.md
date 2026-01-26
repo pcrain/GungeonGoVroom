@@ -3,6 +3,7 @@
 ## 1.5.4 (2026-01-25)
 
 - Added "Brick of Cash Fix", preventing the secret room Snitch from spawning within walls on the right side
+- Added "Gun Magnificence Fix", preventing magnificence from increasing when picking up a gun that has already been picked up
 
 ## 1.5.3 (2025-06-20)
 

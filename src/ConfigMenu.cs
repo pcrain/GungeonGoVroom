@@ -5,20 +5,21 @@ using Gunfiguration;
 internal static class GGVConfig
 {
   // Bugfixes
-  internal static bool FIX_DUCT_TAPE     = true;
-  internal static bool FIX_QUICK_RESTART = true;
-  internal static bool FIX_SHUFFLE       = true;
-  internal static bool FIX_AMMO_UI       = true;
-  internal static bool FIX_ORBITAL_GUN   = true;
-  internal static bool FIX_COOP_TURBO    = true;
-  internal static bool FIX_BULLET_TRAILS = true;
-  internal static bool FIX_DAMAGE_CAPS   = true;
-  internal static bool FIX_EVOLVER       = true;
-  internal static bool FIX_AMMO_DRIFT    = true;
-  internal static bool FIX_REPAUSE       = true;
-  internal static bool FIX_MIMIC_CHEST   = true;
-  internal static bool FIX_HIGH_STRESS   = true;
-  internal static bool FIX_BRICK_OF_CASH = true;
+  internal static bool FIX_DUCT_TAPE        = true;
+  internal static bool FIX_QUICK_RESTART    = true;
+  internal static bool FIX_SHUFFLE          = true;
+  internal static bool FIX_AMMO_UI          = true;
+  internal static bool FIX_ORBITAL_GUN      = true;
+  internal static bool FIX_COOP_TURBO       = true;
+  internal static bool FIX_BULLET_TRAILS    = true;
+  internal static bool FIX_DAMAGE_CAPS      = true;
+  internal static bool FIX_EVOLVER          = true;
+  internal static bool FIX_AMMO_DRIFT       = true;
+  internal static bool FIX_REPAUSE          = true;
+  internal static bool FIX_MIMIC_CHEST      = true;
+  internal static bool FIX_HIGH_STRESS      = true;
+  internal static bool FIX_BRICK_OF_CASH    = true;
+  internal static bool FIX_GUN_MAGNIFICENCE = true;
 
   // Safe Optimizations
   internal static int  PREALLOCATE_HEAP  = 0;
@@ -64,50 +65,51 @@ internal static class GGVConfig
       PREALLOCATE_HEAP = Int32.Parse(heapConfig.Split('G')[0]);
     }
 
-    FIX_DUCT_TAPE     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUCT_TAPE);
-    FIX_QUICK_RESTART = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.QUICK_RESTART);
-    FIX_SHUFFLE       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.SHUFFLE);
-    FIX_AMMO_UI       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_UI);
-    FIX_ORBITAL_GUN   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ORBITAL_GUN);
-    FIX_COOP_TURBO    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.COOP_TURBO);
-    FIX_BULLET_TRAILS = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BULLET_TRAILS);
-    FIX_DAMAGE_CAPS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DAMAGE_CAPS);
-    FIX_EVOLVER       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.EVOLVER);
-    FIX_AMMO_DRIFT    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_DRIFT);
-    FIX_REPAUSE       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.REPAUSE);
-    FIX_MIMIC_CHEST   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MIMIC_CHEST);
-    FIX_HIGH_STRESS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.HIGH_STRESS);
-    FIX_BRICK_OF_CASH = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BRICK_OF_CASH);
+    FIX_DUCT_TAPE        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUCT_TAPE);
+    FIX_QUICK_RESTART    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.QUICK_RESTART);
+    FIX_SHUFFLE          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.SHUFFLE);
+    FIX_AMMO_UI          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_UI);
+    FIX_ORBITAL_GUN      = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ORBITAL_GUN);
+    FIX_COOP_TURBO       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.COOP_TURBO);
+    FIX_BULLET_TRAILS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BULLET_TRAILS);
+    FIX_DAMAGE_CAPS      = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DAMAGE_CAPS);
+    FIX_EVOLVER          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.EVOLVER);
+    FIX_AMMO_DRIFT       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_DRIFT);
+    FIX_REPAUSE          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.REPAUSE);
+    FIX_MIMIC_CHEST      = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MIMIC_CHEST);
+    FIX_HIGH_STRESS      = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.HIGH_STRESS);
+    FIX_BRICK_OF_CASH    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BRICK_OF_CASH);
+    FIX_GUN_MAGNIFICENCE = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUN_MAGNIFICENCE);
 
-    OPT_VIS_CHECKS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.VIS_CHECKS);
-    OPT_OCCLUSION     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.OCCLUSION);
-    OPT_AMMO_DISPLAY  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_DISPLAY);
-    OPT_PAUSE         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PAUSE);
-    OPT_LIGHT_CULL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
-    OPT_BEAMS         = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
-    OPT_PATH_RECALC   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PATH_RECALC);
-    OPT_GUI_EVENTS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
-    OPT_NUMBERS       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.NUMBERS);
-    OPT_FLOOD_FILL    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.FLOOD_FILL);
-    OPT_TRAILS        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TRAILS);
-    OPT_PROJ_STATUS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
-    OPT_CHUNK_CHECKS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNK_CHECKS);
-    OPT_PHYSICS_LEAK  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PHYSICS_LEAK);
-    OPT_PIXEL_MOVE    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIXEL_MOVE);
-    OPT_PIXEL_ROTATE  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIXEL_ROTATE);
+    OPT_VIS_CHECKS       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.VIS_CHECKS);
+    OPT_OCCLUSION        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.OCCLUSION);
+    OPT_AMMO_DISPLAY     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.AMMO_DISPLAY);
+    OPT_PAUSE            = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PAUSE);
+    OPT_LIGHT_CULL       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LIGHT_CULL);
+    OPT_BEAMS            = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BEAMS);
+    OPT_PATH_RECALC      = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PATH_RECALC);
+    OPT_GUI_EVENTS       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUI_EVENTS);
+    OPT_NUMBERS          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.NUMBERS);
+    OPT_FLOOD_FILL       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.FLOOD_FILL);
+    OPT_TRAILS           = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TRAILS);
+    OPT_PROJ_STATUS      = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PROJ_STATUS);
+    OPT_CHUNK_CHECKS     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNK_CHECKS);
+    OPT_PHYSICS_LEAK     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PHYSICS_LEAK);
+    OPT_PIXEL_MOVE       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIXEL_MOVE);
+    OPT_PIXEL_ROTATE     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIXEL_ROTATE);
 
-    OPT_MATH          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
-    OPT_CHUNKBUILD    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
-    OPT_LINEAR_CAST   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LINEAR_CAST);
-    OPT_POINTCAST     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
-    OPT_PIT_VFX       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIT_VFX);
-    OPT_ITEM_LOOKUPS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ITEM_LOOKUPS);
-    OPT_DUNGEON_DIMS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUNGEON_DIMS);
-    OPT_DEPTH_CHECKS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DEPTH_CHECKS);
-    OPT_GOOP          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GOOP);
+    OPT_MATH             = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
+    OPT_CHUNKBUILD       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
+    OPT_LINEAR_CAST      = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.LINEAR_CAST);
+    OPT_POINTCAST        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.POINTCAST);
+    OPT_PIT_VFX          = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIT_VFX);
+    OPT_ITEM_LOOKUPS     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ITEM_LOOKUPS);
+    OPT_DUNGEON_DIMS     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DUNGEON_DIMS);
+    OPT_DEPTH_CHECKS     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.DEPTH_CHECKS);
+    OPT_GOOP             = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GOOP);
 
-    OPT_MOUSE_EVENTS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MOUSE_EVENTS);
-    OPT_TITLE_SCREEN  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TITLE_SCREEN);
+    OPT_MOUSE_EVENTS     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MOUSE_EVENTS);
+    OPT_TITLE_SCREEN     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TITLE_SCREEN);
 
     WriteLine($"PREALLOCATE_HEAP         = {PREALLOCATE_HEAP} GB");
     WriteLine($"FIX_DUCT_TAPE            = {FIX_DUCT_TAPE}");
@@ -124,6 +126,7 @@ internal static class GGVConfig
     WriteLine($"FIX_MIMIC_CHEST          = {FIX_MIMIC_CHEST}");
     WriteLine($"FIX_HIGH_STRESS          = {FIX_HIGH_STRESS}");
     WriteLine($"FIX_BRICK_OF_CASH        = {FIX_BRICK_OF_CASH}");
+    WriteLine($"FIX_GUN_MAGNIFICENCE     = {FIX_GUN_MAGNIFICENCE}");
 
     WriteLine($"OPT_OCCLUSION            = {OPT_OCCLUSION}");
     WriteLine($"OPT_AMMO_DISPLAY         = {OPT_AMMO_DISPLAY}");
@@ -172,55 +175,56 @@ internal static class ConfigMenu
 {
   internal static Gunfig _Gunfig = null;
 
-  internal const string BUG_FIX       = "Bugfixes";
-  internal const string DUCT_TAPE     = "Duct Tape Fix";
-  internal const string QUICK_RESTART = "Quick Restart Fix";
-  internal const string SHUFFLE       = "Shuffle Fix";
-  internal const string AMMO_UI       = "Ammo UI Fix";
-  internal const string ORBITAL_GUN   = "Orbital Gun Fix";
-  internal const string COOP_TURBO    = "Co-op Turbo Mode Fix";
-  internal const string BULLET_TRAILS = "Bullet Trail Fix";
-  internal const string DAMAGE_CAPS   = "Beam Damage Cap Fix";
-  internal const string EVOLVER       = "Evolver Devolve Fix";
-  internal const string AMMO_DRIFT    = "Ammo Drift Fix";
-  internal const string REPAUSE       = "Unpause / Repause Fix";
-  internal const string MIMIC_CHEST   = "Invalid Mimic Chest Fix";
-  internal const string HIGH_STRESS   = "High Stress Armor Fix";
-  internal const string BRICK_OF_CASH = "Brick of Cash Fix";
+  internal const string BUG_FIX          = "Bugfixes";
+  internal const string DUCT_TAPE        = "Duct Tape Fix";
+  internal const string QUICK_RESTART    = "Quick Restart Fix";
+  internal const string SHUFFLE          = "Shuffle Fix";
+  internal const string AMMO_UI          = "Ammo UI Fix";
+  internal const string ORBITAL_GUN      = "Orbital Gun Fix";
+  internal const string COOP_TURBO       = "Co-op Turbo Mode Fix";
+  internal const string BULLET_TRAILS    = "Bullet Trail Fix";
+  internal const string DAMAGE_CAPS      = "Beam Damage Cap Fix";
+  internal const string EVOLVER          = "Evolver Devolve Fix";
+  internal const string AMMO_DRIFT       = "Ammo Drift Fix";
+  internal const string REPAUSE          = "Unpause / Repause Fix";
+  internal const string MIMIC_CHEST      = "Invalid Mimic Chest Fix";
+  internal const string HIGH_STRESS      = "High Stress Armor Fix";
+  internal const string BRICK_OF_CASH    = "Brick of Cash Fix";
+  internal const string GUN_MAGNIFICENCE = "Gun Magnificence Fix";
 
-  internal const string SAFE_OPT      = "Safe Optimizations";
-  internal const string PREALLOCATE   = "Preallocate Heap Memory";
-  internal const string OCCLUSION     = "Optimize Occlusion";
-  internal const string AMMO_DISPLAY  = "Optimize Ammo Display";
-  internal const string PAUSE         = "Optimize Pause Menu";
-  internal const string VIS_CHECKS    = "Optimize Visibility Checks";
-  internal const string LIGHT_CULL    = "Optimize Light Culling";
-  internal const string BEAMS         = "Optimize Beams";
-  internal const string PATH_RECALC   = "Optimize Path Recalculations";
-  internal const string GUI_EVENTS    = "Optimize GUI Events";
-  internal const string NUMBERS       = "Optimize Numerical Strings";
-  internal const string FLOOD_FILL    = "Optimize Flood Filling";
-  internal const string TRAILS        = "Optimize Bullet Trails";
-  internal const string PIXEL_ROTATE  = "Optimize Pixel Rotation";
-  internal const string PROJ_STATUS   = "Optimize Projectile Prefabs";
-  internal const string CHUNK_CHECKS  = "Optimize Chunk Checks";
-  internal const string PHYSICS_LEAK  = "Optimize Linear Cast Pool";
-  internal const string PIXEL_MOVE    = "Optimize Pixel Movement Gen";
+  internal const string SAFE_OPT         = "Safe Optimizations";
+  internal const string PREALLOCATE      = "Preallocate Heap Memory";
+  internal const string OCCLUSION        = "Optimize Occlusion";
+  internal const string AMMO_DISPLAY     = "Optimize Ammo Display";
+  internal const string PAUSE            = "Optimize Pause Menu";
+  internal const string VIS_CHECKS       = "Optimize Visibility Checks";
+  internal const string LIGHT_CULL       = "Optimize Light Culling";
+  internal const string BEAMS            = "Optimize Beams";
+  internal const string PATH_RECALC      = "Optimize Path Recalculations";
+  internal const string GUI_EVENTS       = "Optimize GUI Events";
+  internal const string NUMBERS          = "Optimize Numerical Strings";
+  internal const string FLOOD_FILL       = "Optimize Flood Filling";
+  internal const string TRAILS           = "Optimize Bullet Trails";
+  internal const string PIXEL_ROTATE     = "Optimize Pixel Rotation";
+  internal const string PROJ_STATUS      = "Optimize Projectile Prefabs";
+  internal const string CHUNK_CHECKS     = "Optimize Chunk Checks";
+  internal const string PHYSICS_LEAK     = "Optimize Linear Cast Pool";
+  internal const string PIXEL_MOVE       = "Optimize Pixel Movement Gen";
 
-  internal const string AGGR_OPT      = "Aggressive Optimizations";
-  internal const string MATH          = "Optimize Math";
-  internal const string CHUNKBUILD    = "Optimize Chunk Building";
-  internal const string LINEAR_CAST   = "Optimize Linear Cast";
-  internal const string POINTCAST     = "Optimize Pointcast";
-  internal const string PIT_VFX       = "Optimize Pit VFX";
-  internal const string ITEM_LOOKUPS  = "Optimize Item Lookups";
-  internal const string DUNGEON_DIMS  = "Optimize Dungeon Size Checks";
-  internal const string DEPTH_CHECKS  = "Optimize Sprite Depth Checks";
-  internal const string GOOP          = "Optimize Goop Updates";
+  internal const string AGGR_OPT         = "Aggressive Optimizations";
+  internal const string MATH             = "Optimize Math";
+  internal const string CHUNKBUILD       = "Optimize Chunk Building";
+  internal const string LINEAR_CAST      = "Optimize Linear Cast";
+  internal const string POINTCAST        = "Optimize Pointcast";
+  internal const string PIT_VFX          = "Optimize Pit VFX";
+  internal const string ITEM_LOOKUPS     = "Optimize Item Lookups";
+  internal const string DUNGEON_DIMS     = "Optimize Dungeon Size Checks";
+  internal const string DEPTH_CHECKS     = "Optimize Sprite Depth Checks";
+  internal const string GOOP             = "Optimize Goop Updates";
 
-  internal const string EXPR_OPT      = "Experimental Optimizations";
-  internal const string MOUSE_EVENTS  = "Optimize GUI Mouse Events";
-  internal const string TITLE_SCREEN  = "Optimize Title Screen";
+  internal const string EXPR_OPT         = "Experimental Optimizations";
+  internal const string MOUSE_EVENTS     = "Optimize GUI Mouse Events";
+  internal const string TITLE_SCREEN     = "Optimize Title Screen";
 
   internal static void Init()
   {
@@ -242,6 +246,7 @@ internal static class ConfigMenu
     sf.FancyToggle(MIMIC_CHEST, "Fixes errors caused by modded chests\nattempting to transform into mimics when no\ncorresponding mimic exists (mostly for modded use).");
     sf.FancyToggle(HIGH_STRESS, "Fixes no health or armor being displayed\nduring High Stress mode for Robot or\nother 0-health characters.");
     sf.FancyToggle(BRICK_OF_CASH, "Fixes secret room Snitch spawned by Brick of Cash\nitem from spawning inside walls on\nthe right side of rooms.");
+    sf.FancyToggle(GUN_MAGNIFICENCE, "Fixes magnificence increasing when\npicking up a gun that has already been picked up.");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
     so.FancyMemList(PREALLOCATE, "Preallocates RAM to avoid OS requests later.\nDefault uses Gungeon's default of about 200MB.\nHigher values result in fewer lag spikes.");
