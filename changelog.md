@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.4 (2026-01-25)
+
+- Added "Brick of Cash Fix", preventing the secret room Snitch from spawning within walls on the right side
+
 ## 1.5.3 (2025-06-20)
 
 - Added "High Stress Armor Fix", showing a single armor piece for Robot / other 0-health characters during High Stress challenge mode

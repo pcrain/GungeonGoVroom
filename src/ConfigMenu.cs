@@ -18,6 +18,7 @@ internal static class GGVConfig
   internal static bool FIX_REPAUSE       = true;
   internal static bool FIX_MIMIC_CHEST   = true;
   internal static bool FIX_HIGH_STRESS   = true;
+  internal static bool FIX_BRICK_OF_CASH = true;
 
   // Safe Optimizations
   internal static int  PREALLOCATE_HEAP  = 0;
@@ -76,6 +77,7 @@ internal static class GGVConfig
     FIX_REPAUSE       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.REPAUSE);
     FIX_MIMIC_CHEST   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MIMIC_CHEST);
     FIX_HIGH_STRESS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.HIGH_STRESS);
+    FIX_BRICK_OF_CASH = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BRICK_OF_CASH);
 
     OPT_VIS_CHECKS    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.VIS_CHECKS);
     OPT_OCCLUSION     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.OCCLUSION);
@@ -121,6 +123,7 @@ internal static class GGVConfig
     WriteLine($"FIX_REPAUSE              = {FIX_REPAUSE}");
     WriteLine($"FIX_MIMIC_CHEST          = {FIX_MIMIC_CHEST}");
     WriteLine($"FIX_HIGH_STRESS          = {FIX_HIGH_STRESS}");
+    WriteLine($"FIX_BRICK_OF_CASH        = {FIX_BRICK_OF_CASH}");
 
     WriteLine($"OPT_OCCLUSION            = {OPT_OCCLUSION}");
     WriteLine($"OPT_AMMO_DISPLAY         = {OPT_AMMO_DISPLAY}");
@@ -183,6 +186,7 @@ internal static class ConfigMenu
   internal const string REPAUSE       = "Unpause / Repause Fix";
   internal const string MIMIC_CHEST   = "Invalid Mimic Chest Fix";
   internal const string HIGH_STRESS   = "High Stress Armor Fix";
+  internal const string BRICK_OF_CASH = "Brick of Cash Fix";
 
   internal const string SAFE_OPT      = "Safe Optimizations";
   internal const string PREALLOCATE   = "Preallocate Heap Memory";
@@ -237,6 +241,7 @@ internal static class ConfigMenu
     sf.FancyToggle(REPAUSE, "Fixes game continuing to run if you\nunpause and quickly repause during menu\nfading animation.");
     sf.FancyToggle(MIMIC_CHEST, "Fixes errors caused by modded chests\nattempting to transform into mimics when no\ncorresponding mimic exists (mostly for modded use).");
     sf.FancyToggle(HIGH_STRESS, "Fixes no health or armor being displayed\nduring High Stress mode for Robot or\nother 0-health characters.");
+    sf.FancyToggle(BRICK_OF_CASH, "Fixes secret room Snitch spawned by Brick of Cash\nitem from spawning inside walls on\nthe right side of rooms.");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
     so.FancyMemList(PREALLOCATE, "Preallocates RAM to avoid OS requests later.\nDefault uses Gungeon's default of about 200MB.\nHigher values result in fewer lag spikes.");

@@ -466,4 +466,41 @@ internal static partial class Patches
           }
         }
     }
+
+    /// <summary>Prevent snitch spawned by Brick of Cash from melding with walls on the right.</summary>
+    [HarmonyPatch]
+    private static class BrickOfCashPatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_BRICK_OF_CASH)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(SecretRoomDoorBeer), nameof(SecretRoomDoorBeer.DoSnitchBrick))]
+        [HarmonyILManipulator]
+        private static void SecretRoomDoorBeerDoSnitchBrickPatchIL(ILContext il)
+        {
+            ILCursor cursor = new ILCursor(il);
+            if (!cursor.TryGotoNext(MoveType.After,
+              instr => instr.MatchCall<DungeonData>(nameof(DungeonData.GetIntVector2FromDirection))
+              ))
+                return;
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.CallPrivate(typeof(BrickOfCashPatch), nameof(BrickOfCashFix));
+        }
+
+        private static IntVector2 BrickOfCashFix(IntVector2 origVal, SecretRoomDoorBeer secret)
+        {
+          if (secret.exitDef.downstreamExit.referencedExit.exitDirection == DungeonData.Direction.WEST)
+            return origVal + new IntVector2(-1, 0);
+          return origVal;
+        }
+    }
 }
