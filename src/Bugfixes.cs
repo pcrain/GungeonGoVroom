@@ -575,4 +575,27 @@ internal static partial class Patches
             gun.ammo = Mathf.Min(gun.AdjustedMaxAmmo, oldMaxAmmo);
         }
     }
+
+    /// <summary>Properly updates Caped Bullet Kin's timers so they don't take longer to despawn at higher refresh rates.</summary>
+    [HarmonyPatch]
+    private static class CapedBulletKinPatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_CAPED_BULLET_KIN)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(UnlockPlayableBulletManBehavior), nameof(UnlockPlayableBulletManBehavior.Start))]
+        [HarmonyPostfix]
+        private static void UnlockPlayableBulletManBehaviorStartPatch(UnlockPlayableBulletManBehavior __instance)
+        {
+          __instance.m_updateEveryFrame = true;
+        }
+    }
 }

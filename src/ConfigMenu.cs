@@ -21,6 +21,7 @@ internal static class GGVConfig
   internal static bool FIX_BRICK_OF_CASH    = true;
   internal static bool FIX_GUN_MAGNIFICENCE = true;
   internal static bool FIX_INFINITE_BEAMS   = true;
+  internal static bool FIX_CAPED_BULLET_KIN = true;
 
   // Safe Optimizations
   internal static int  PREALLOCATE_HEAP  = 0;
@@ -82,6 +83,7 @@ internal static class GGVConfig
     FIX_BRICK_OF_CASH    = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.BRICK_OF_CASH);
     FIX_GUN_MAGNIFICENCE = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.GUN_MAGNIFICENCE);
     FIX_INFINITE_BEAMS   = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.INFINITE_BEAMS);
+    FIX_CAPED_BULLET_KIN = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CAPED_BULLET_KIN);
 
     OPT_VIS_CHECKS       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.VIS_CHECKS);
     OPT_OCCLUSION        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.OCCLUSION);
@@ -130,6 +132,7 @@ internal static class GGVConfig
     WriteLine($"FIX_BRICK_OF_CASH        = {FIX_BRICK_OF_CASH}");
     WriteLine($"FIX_GUN_MAGNIFICENCE     = {FIX_GUN_MAGNIFICENCE}");
     WriteLine($"FIX_INFINITE_BEAMS       = {FIX_INFINITE_BEAMS}");
+    WriteLine($"FIX_CAPED_BULLET_KIN     = {FIX_CAPED_BULLET_KIN}");
 
     WriteLine($"OPT_OCCLUSION            = {OPT_OCCLUSION}");
     WriteLine($"OPT_AMMO_DISPLAY         = {OPT_AMMO_DISPLAY}");
@@ -195,6 +198,7 @@ internal static class ConfigMenu
   internal const string BRICK_OF_CASH    = "Brick of Cash Fix";
   internal const string GUN_MAGNIFICENCE = "Gun Magnificence Fix";
   internal const string INFINITE_BEAMS   = "Infinite Beam Ammo Fix";
+  internal const string CAPED_BULLET_KIN = "Caped Bullet Kin Fix";
 
   internal const string SAFE_OPT         = "Safe Optimizations";
   internal const string PREALLOCATE      = "Preallocate Heap Memory";
@@ -252,6 +256,7 @@ internal static class ConfigMenu
     sf.FancyToggle(BRICK_OF_CASH, "Fixes secret room Snitch spawned by Brick of Cash\nitem from spawning inside walls on\nthe right side of rooms.");
     sf.FancyToggle(GUN_MAGNIFICENCE, "Fixes magnificence increasing when\npicking up a gun that has already been picked up.");
     sf.FancyToggle(INFINITE_BEAMS, "Fixes beams depleting ammo even when under\nthe effects of Magazine Rack.");
+    sf.FancyToggle(CAPED_BULLET_KIN, "Fixes Caped Bullet Kin taking longer to\ndespawn at higher frame rates.");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
     so.FancyMemList(PREALLOCATE, "Preallocates RAM to avoid OS requests later.\nDefault uses Gungeon's default of about 200MB.\nHigher values result in fewer lag spikes.");
