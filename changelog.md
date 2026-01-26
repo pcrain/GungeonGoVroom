@@ -4,6 +4,7 @@
 
 - Added "Brick of Cash Fix", preventing the secret room Snitch from spawning within walls on the right side
 - Added "Gun Magnificence Fix", preventing magnificence from increasing when picking up a gun that has already been picked up
+- Added "Infinite Beam Ammo Fix", preventing the ammo for beam weapons from decreasing when under the effects of Magazine Rack
 - Completely disabled "Optimize GUI Mouse Events" option for now, as it causes issues with vanilla menus
 
 ## 1.5.3 (2025-06-20)

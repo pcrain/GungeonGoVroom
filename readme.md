@@ -24,6 +24,7 @@ Currently included bugfixes are:
   - **High Stress Armor Fix**: Fixes no health or armor being displayed during High Stress mode for Robot or other 0-health characters.
   - **Brick of Cash Fix**: Fixes secret room Snitch spawned by Brick of Cash item from spawning inside walls on the right side of rooms.
   - **Gun Magnificence Fix**: Fixes magnificence increasing when picking up a gun that has already been picked up.
+  - **Infinite Beam Ammo Fix**: Fixes beams depleting ammo even when the player has temporary infinite ammo (e.g., from Magazine Rack).
 
 ### Safe Optimizations
 

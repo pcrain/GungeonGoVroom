@@ -528,4 +528,51 @@ internal static partial class Patches
             return true;
         }
     }
+
+    /// <summary>Prevent beams from draining ammo when the player should have infinite ammo.</summary>
+    [HarmonyPatch]
+    private static class InfiniteBeamAmmoPatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_INFINITE_BEAMS)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(MagazineRack), nameof(MagazineRack.Update))]
+        [HarmonyILManipulator]
+        private static void MagazineRackUpdatePatchIL(ILContext il)
+        {
+            // move after the check that we're within the necessary radius
+            ILCursor cursor = new ILCursor(il);
+            if (!cursor.TryGotoNext(MoveType.AfterLabel,
+              instr => instr.MatchLdloc(0),
+              instr => instr.MatchBrtrue(out ILLabel _)))
+                return;
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldloc_1);
+            cursor.CallPrivate(typeof(InfiniteBeamAmmoPatch), nameof(InfiniteBeamAmmoFix));
+        }
+
+        private static void InfiniteBeamAmmoFix(MagazineRack rack, PlayerController player)
+        {
+          if (!player.InfiniteAmmo.HasOverride("MagazineRack"))
+            return; // if the player wasn't in Magazine Rack's radius last frame, there's nothing to do
+
+          int pid = player.PlayerIDX;
+          if (pid != 0 && pid != 1)
+            return; // invalid player ID, nothing to do
+
+          int oldMaxAmmo = (pid == 0) ? rack.m_p1MaxGunAmmoThisFrame : rack.m_p2MaxGunAmmoThisFrame;
+          int oldGunId   = (pid == 0) ? rack.m_p1GunIDThisFrame : rack.m_p2GunIDThisFrame;
+          if (player.CurrentGun is Gun gun && !gun.RequiresFundsToShoot && gun.CurrentAmmo < oldMaxAmmo && gun.PickupObjectId == oldGunId)
+            gun.ammo = Mathf.Min(gun.AdjustedMaxAmmo, oldMaxAmmo);
+        }
+    }
 }
