@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.6.1 (2026-04-12)
+- Added "Orbital Bullets Fix", preventing orbiting bullets from counting towards the orbital cap after despawning
+
 ## 1.6.0 (2026-01-25)
 
 - Added "Brick of Cash Fix", preventing the secret room Snitch from spawning within walls on the right side

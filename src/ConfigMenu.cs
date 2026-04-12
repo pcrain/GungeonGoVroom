@@ -24,6 +24,7 @@ internal static class GGVConfig
   internal static bool FIX_CAPED_BULLET_KIN = true;
   internal static bool FIX_FLAK_BULLETS     = true;
   internal static bool FIX_SCATTERSHOT      = true;
+  internal static bool FIX_ORBITAL_BULLETS  = true;
 
   // Safe Optimizations
   internal static int  PREALLOCATE_HEAP  = 0;
@@ -88,6 +89,7 @@ internal static class GGVConfig
     FIX_CAPED_BULLET_KIN = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CAPED_BULLET_KIN);
     FIX_FLAK_BULLETS     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.FLAK_BULLETS);
     FIX_SCATTERSHOT      = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.SCATTERSHOT);
+    FIX_ORBITAL_BULLETS  = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.ORBITAL_BULLETS);
 
     OPT_VIS_CHECKS       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.VIS_CHECKS);
     OPT_OCCLUSION        = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.OCCLUSION);
@@ -139,6 +141,7 @@ internal static class GGVConfig
     WriteLine($"FIX_CAPED_BULLET_KIN     = {FIX_CAPED_BULLET_KIN}");
     WriteLine($"FIX_FLAK_BULLETS         = {FIX_FLAK_BULLETS}");
     WriteLine($"FIX_SCATTERSHOT          = {FIX_SCATTERSHOT}");
+    WriteLine($"FIX_ORBITAL_BULLETS      = {FIX_ORBITAL_BULLETS}");
 
     WriteLine($"OPT_OCCLUSION            = {OPT_OCCLUSION}");
     WriteLine($"OPT_AMMO_DISPLAY         = {OPT_AMMO_DISPLAY}");
@@ -207,6 +210,7 @@ internal static class ConfigMenu
   internal const string CAPED_BULLET_KIN = "Caped Bullet Kin Fix";
   internal const string FLAK_BULLETS     = "Flak Bullets Fix";
   internal const string SCATTERSHOT      = "Scattershot Fix";
+  internal const string ORBITAL_BULLETS  = "Orbital Bullets Fix";
 
   internal const string SAFE_OPT         = "Safe Optimizations";
   internal const string PREALLOCATE      = "Preallocate Heap Memory";
@@ -267,6 +271,7 @@ internal static class ConfigMenu
     sf.FancyToggle(CAPED_BULLET_KIN, "Fixes Caped Bullet Kin taking longer to\ndespawn at higher frame rates.");
     sf.FancyToggle(FLAK_BULLETS, "Fixes Flak Bullets duplicating projectiles\ninfinitely when possessing multiple copies of\nthe item.");
     sf.FancyToggle(SCATTERSHOT, "Fixes Scattershot consuming ammo for each projectile\nfired when firing charge projectiles\n(e.g., from Crescent Crossbow).");
+    sf.FancyToggle(ORBITAL_BULLETS, "Fixes orbiting projectiles not properly deregistering\nthemselves when dying midair, eventually reducing\nthe orbital projectile cap to zero.");
 
     Gunfig so = _Gunfig.AddSubMenu(SAFE_OPT);
     so.FancyMemList(PREALLOCATE, "Preallocates RAM to avoid OS requests later.\nDefault uses Gungeon's default of about 200MB.\nHigher values result in fewer lag spikes.");

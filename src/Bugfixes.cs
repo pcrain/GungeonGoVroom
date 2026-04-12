@@ -688,4 +688,26 @@ internal static partial class Patches
           }
         }
     }
+
+    [HarmonyPatch]
+    private static class OrbitalBulletsPatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_ORBITAL_BULLETS)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+          return true;
+        }
+
+        [HarmonyPatch(typeof(OrbitProjectileMotionModule), nameof(OrbitProjectileMotionModule.Move))]
+        [HarmonyPrefix]
+        private static bool OrbitProjectileMotionModuleMovePatch(OrbitProjectileMotionModule __instance, Projectile source, Transform projectileTransform, tk2dBaseSprite projectileSprite, SpeculativeRigidbody specRigidbody, ref float m_timeElapsed, ref Vector2 m_currentDirection, bool Inverted, bool shouldRotate)
+        {
+          return (source && source.isActiveAndEnabled); // don't move if we're not active
+        }
+    }
 }
