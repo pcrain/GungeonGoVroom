@@ -29,6 +29,7 @@ Currently included bugfixes are:
   - **Flak Bullets Fix**: Fixes Flak Bullets duplicating projectiles infinitely when possessing multiple copies of the item.
   - **Scattershot Fix**: Fixes Scattershot consuming ammo for each projectile fired when firing charge projectiles (e.g., from Crescent Crossbow).
   - **Orbital Bullets Fix**: Fixes orbiting projectiles not properly deregistering themselves when dying midair, eventually reducing the orbital projectile cap to zero.
+  - **Starpew Fix**: Fixes Starpew's last two charge levels missing two side projectiles after charging and firing Starpew once.
 
 ### Safe Optimizations
 

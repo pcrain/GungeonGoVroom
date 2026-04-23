@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.6.2 (TBD)
+- Added "Starpew Fix", fixing an issue where two of Starpew's charge projectiles would not fire after the first charge shot
+
 ## 1.6.1 (2026-04-12)
 - Added "Orbital Bullets Fix", preventing orbiting bullets from counting towards the orbital cap after despawning
 

@@ -710,4 +710,22 @@ internal static partial class Patches
           return (source && source.isActiveAndEnabled); // don't move if we're not active
         }
     }
+
+    [HarmonyPatch]
+    private static class StarpewPatch
+    {
+        private static bool Prepare(MethodBase original)
+        {
+          if (!GGVConfig.FIX_STARPEW)
+            return false;
+          if (original == null)
+            GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+          else
+            GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+
+          // this particular patch is so easy it doesn't even need a patch
+          (PickupObjectDatabase.GetById(507) as Gun).Volley.projectiles[5].numberOfShotsInClip = 100;
+          return true;
+        }
+    }
 }
