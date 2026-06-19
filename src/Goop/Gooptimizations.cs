@@ -109,41 +109,11 @@ internal static class Gooptimizations
         _CachedEGD = _NullEGD;
       }
 
-      internal static bool TestGoopedBit(DeadlyDeadlyGoopManager manager, IntVector2 pos)
-      {
-        int chunkX        = (int)(pos.x * INV_CELLS_PER_CHUNK_F);
-        int chunkY        = (int)(pos.y * INV_CELLS_PER_CHUNK_F);
-        ExtraGoopData egd = ExtraGoopData.Get(manager);
-        if (chunkX < 0 || chunkY < 0 || chunkX >= egd._xChunks || chunkY >= egd._yChunks)
-          return false;
-        int bitOffset     = (pos.x % CELLS_PER_CHUNK) * CELLS_PER_CHUNK + (pos.y % CELLS_PER_CHUNK);
-        return (egd.goopedCellBitfield[chunkX, chunkY, bitOffset >> 6] & (1ul << (bitOffset & 63))) > 0;
-      }
-
-      private void SetGoopedBit(IntVector2 pos)
-      {
-        int chunkX        = (int)(pos.x * INV_CELLS_PER_CHUNK_F);
-        int chunkY        = (int)(pos.y * INV_CELLS_PER_CHUNK_F);
-        if (chunkX < 0 || chunkY < 0 || chunkX >= this._xChunks || chunkY >= this._yChunks)
-          return;
-        int bitOffset     = (pos.x % CELLS_PER_CHUNK) * CELLS_PER_CHUNK + (pos.y % CELLS_PER_CHUNK);
-        this.goopedCellBitfield[chunkX, chunkY, bitOffset >> 6] |= (1ul << (bitOffset & 63));
-      }
-
-      private void ClearGoopedBit(IntVector2 pos)
-      {
-        int chunkX        = (int)(pos.x * INV_CELLS_PER_CHUNK_F);
-        int chunkY        = (int)(pos.y * INV_CELLS_PER_CHUNK_F);
-        if (chunkX < 0 || chunkY < 0 || chunkX >= this._xChunks || chunkY >= this._yChunks)
-          return;
-        int bitOffset     = (pos.x % CELLS_PER_CHUNK) * CELLS_PER_CHUNK + (pos.y % CELLS_PER_CHUNK);
-        this.goopedCellBitfield[chunkX, chunkY, bitOffset >> 6] &= ~(1ul << (bitOffset & 63));
-      }
-
       internal void AddGoop(GoopPositionData goop)
       {
         IntVector2 pos = goop.goopPosition;
-        this.SetGoopedBit(pos);
+        int bitOffset = (pos.x % CELLS_PER_CHUNK) * CELLS_PER_CHUNK + (pos.y % CELLS_PER_CHUNK);
+        this.goopedCellBitfield[(int)(pos.x * INV_CELLS_PER_CHUNK_F), (int)(pos.y * INV_CELLS_PER_CHUNK_F), bitOffset >> 6] |= (1ul << (bitOffset & 63));
         this.goopedCellGrid[pos.x, pos.y] = goop;
         int numGoops = this.allGoopedCells.Count;
         this.allGoopedCells.Add(goop);
@@ -158,7 +128,8 @@ internal static class Gooptimizations
           return;
         }
         IntVector2 pos = goop.goopPosition;
-        this.ClearGoopedBit(pos);
+        int bitOffset = (pos.x % CELLS_PER_CHUNK) * CELLS_PER_CHUNK + (pos.y % CELLS_PER_CHUNK);
+        this.goopedCellBitfield[(int)(pos.x * INV_CELLS_PER_CHUNK_F), (int)(pos.y * INV_CELLS_PER_CHUNK_F), bitOffset >> 6] &= ~(1ul << (bitOffset & 63));
         this.goopedCellGrid[pos.x, pos.y] = null;
         this._allGoopedCellsIndices.Remove(goop);
         int lastGoopIdx = this.allGoopedCells.Count - 1;
