@@ -285,7 +285,7 @@ internal static class ConfigMenu
     so.FancyToggle(PAUSE, "Prevents a lot of unnecessary rendering\nwhile the game is paused.\nSaves a large amount of CPU while paused.");
     so.FancyToggle(BEAMS, "Pools beam bones to reduce memory usage and\noptimizes beam mesh rebuilding logic.\nSaves a significant amount of RAM and CPU.");
     so.FancyToggle(LIGHT_CULL, "Uses optimized inlined logic for\ndetermining whether lights should be culled.\nSaves a significant amount of CPU.");
-    so.FancyToggle(PATH_RECALC, "Optimizes clearance computations used\nfor enemy pathing logic.\nSaves modest amount of CPU.");
+    so.FancyToggle(PATH_RECALC, "Optimizes clearance and walkability checks\nused for enemy pathing logic.\nSaves a modest amount of CPU.");
     so.FancyToggle(GUI_EVENTS, "Caches results of expensive lookups\nfor finding GUI event handlers.\nSaves a modest amount of RAM.");
     so.FancyToggle(TRAILS, "Pools bullet trail particles and vertex\ndata to reduce memory usage.\nSaves a modest amount of RAM.");
     so.FancyToggle(PIXEL_ROTATE, "Optimizes pixel movement rotation\nused for pixel-perfect collisions.\nSaves a modest amount of RAM.");
@@ -311,7 +311,7 @@ internal static class ConfigMenu
     Gunfig eo = _Gunfig.AddSubMenu(EXPR_OPT);
     // BUG: mouse toggle is broken and breaks vanilla menus...disabling until I can find a proper fix
     // eo.FancyToggleOff(MOUSE_EVENTS, "Prevents checks for whether the mouse is\nover a menu item when no menus are open.\nSaves significant CPU, but may break custom UIs.");
-    eo.FancyToggleOff(TITLE_SCREEN, "Prevents scanning for the player on\nthe title screen when no player exists.\nSaves small CPU, but may break floor loads.");
+    eo.FancyToggleOff(TITLE_SCREEN, "Prevents scanning for the player on\nthe title screen when no player exists.\nSaves a bit of CPU, but may break floor loads.");
 
     GGVConfig.Update();
     Gunfig.OnAllModsLoaded += LateInit;

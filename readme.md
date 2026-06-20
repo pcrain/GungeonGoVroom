@@ -42,7 +42,7 @@ Currently included safe optimizations are:
   - **Optimize Pause Menu**: Prevents a lot of unnecessary rendering while the game is paused. Saves a large amount of CPU while paused.
   - **Optimize Beams**: Pools beam bones to reduce memory usage and optimizes beam mesh rebuilding logic. Saves a significant amount of RAM and CPU.
   - **Optimize Light Culling**: Uses optimized inlined logic for determining whether lights should be culled. Saves a significant amount of CPU.
-  - **Optimize Path Recalculations**: Optimizes clearance computations used for enemy pathing logic. Saves modest amount of CPU.
+  - **Optimize Path Recalculations**: Optimizes clearance and walkability checks used for enemy pathing logic. Saves a modest amount of CPU.
   - **Optimize GUI Events**: Caches results of expensive lookups for finding GUI event handlers. Saves a modest amount of RAM.
   - **Optimize Bullet Trails**: Pools bullet trail particles and vertex data to reduce memory usage. Saves a modest amount of RAM.
   - **Optimize Pixel Rotation**: Optimizes pixel movement rotation used for pixel-perfect collisions. Saves a modest amount of RAM.
@@ -74,7 +74,7 @@ Currently included aggressive optimizations are:
 These are experimental changes that improve Gungeon's performance in ways that might inadvertently alter vanilla behavior. Each experimental optimization will eventually be reclassified as either safe or aggressive once it has been thoroughly tested to exactly replicate vanilla behavior. These optimizations should still be suitable for most players, but they are all *DISABLED* by default.
 
 Currently included experimental optimizations are:
-  - **Optimize Title Screen**: Prevents scanning for the player on the title screen when no player exists. Saves small CPU, but may break floor loads.
+  - **Optimize Title Screen**: Prevents scanning for the player on the title screen when no player exists. Saves a bit of CPU, but may break floor loads.
 
 ## Issues? Suggestions?
 

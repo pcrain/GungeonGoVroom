@@ -3,6 +3,7 @@
 ## 1.7.0 (TBD)
 - Added "Starpew Fix", fixing an issue where two of Starpew's charge projectiles would not fire after the first charge shot
 - Optimized Goop update logic a bit more for slightly more performance
+- Added optimizations to walkability checks and heap clears to "Optimize Path Recalculations", saving more CPU and RAM
 
 ## 1.6.1 (2026-04-12)
 - Added "Orbital Bullets Fix", preventing orbiting bullets from counting towards the orbital cap after despawning
