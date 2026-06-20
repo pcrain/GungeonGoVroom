@@ -922,5 +922,41 @@ internal static partial class Patches
 
       private static int IntMaxIfPaused(int orig) => (GameManager.HasInstance && GameManager.Instance.IsPaused) ? int.MaxValue : orig;
     }
+
+    [HarmonyPatch]
+    private static class GetRandomAvailableCellPatch
+    {
+      private static bool Prepare(MethodBase original)
+      {
+        if (!GGVConfig.OPT_RANDOM_CELL)
+          return false;
+        if (original == null)
+          GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+        else
+          GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+        return true;
+      }
+
+      private static List<IntVector2> _StaticIntVectorList = new();
+
+      private static List<IntVector2> GetStaticIntVectorList()
+      {
+        _StaticIntVectorList.Clear();
+        return _StaticIntVectorList;
+      }
+
+      /// <summary>Make GetRandomAvailableCell() reuse a static list to consume less memory.</summary>
+      [HarmonyPatch(typeof(RoomHandler), nameof(RoomHandler.GetRandomAvailableCell))]
+      [HarmonyILManipulator]
+      private static void RoomHandlerGetRandomAvailableCellPatchIL(ILContext il)
+      {
+          ILCursor cursor = new ILCursor(il);
+          if (cursor.TryGotoNext(MoveType.Before,instr => instr.MatchNewobj<List<IntVector2>>()))
+          {
+            cursor.Remove();
+            cursor.CallPrivate(typeof(GetRandomAvailableCellPatch), nameof(GetStaticIntVectorList));
+          }
+      }
+    }
 }
 

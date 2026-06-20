@@ -53,6 +53,7 @@ Currently included safe optimizations are:
   - **Optimize Chunk Checks**: Optimize checks for whether sprite chunks are relevant to gameplay. Saves a small amount of CPU.
   - **Optimize Linear Cast Pool**: Fixes a memory leak in Physics calculations for pixel-perfect collisions. Saves a small amount of RAM.
   - **Optimize Pixel Movement Gen**: Optimizes pixel movement generator used for pixel-perfect collisions. Saves a small amount of CPU.
+  - **Optimize Random Cell Lookup**: Optimizes function for getting a random cell in a room. Saves a small amount of RAM.
 
 ### Aggressive Optimizations
 

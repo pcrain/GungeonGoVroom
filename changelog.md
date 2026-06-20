@@ -4,6 +4,7 @@
 - Added "Starpew Fix", fixing an issue where two of Starpew's charge projectiles would not fire after the first charge shot
 - Optimized Goop update logic a bit more for slightly more performance
 - Added optimizations to walkability checks and heap clears to "Optimize Path Recalculations", saving more CPU and RAM
+- Added "Optimize Random Cell" option, slightly reducing RAM usage when various game objects request a random cell in a room
 
 ## 1.6.1 (2026-04-12)
 - Added "Orbital Bullets Fix", preventing orbiting bullets from counting towards the orbital cap after despawning

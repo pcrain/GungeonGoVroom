@@ -45,6 +45,7 @@ internal static class GGVConfig
   internal static bool OPT_PIXEL_MOVE    = true;
   internal static bool OPT_PIXEL_ROTATE  = true;
   internal static bool OPT_PAUSE         = true;
+  internal static bool OPT_RANDOM_CELL   = true;
 
   // Aggressive Optimizations
   internal static bool OPT_MATH          = true;
@@ -109,6 +110,7 @@ internal static class GGVConfig
     OPT_PHYSICS_LEAK     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PHYSICS_LEAK);
     OPT_PIXEL_MOVE       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIXEL_MOVE);
     OPT_PIXEL_ROTATE     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIXEL_ROTATE);
+    OPT_RANDOM_CELL      = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.RANDOM_CELL);
 
     OPT_MATH             = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
     OPT_CHUNKBUILD       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
@@ -162,6 +164,7 @@ internal static class GGVConfig
     WriteLine($"OPT_PHYSICS_LEAK         = {OPT_PHYSICS_LEAK}");
     WriteLine($"OPT_PIXEL_MOVE           = {OPT_PIXEL_MOVE}");
     WriteLine($"OPT_PIXEL_ROTATE         = {OPT_PIXEL_ROTATE}");
+    WriteLine($"OPT_RANDOM_CELL          = {OPT_RANDOM_CELL}");
 
     WriteLine($"OPT_MATH                 = {OPT_MATH}");
     WriteLine($"OPT_CHUNKBUILD           = {OPT_CHUNKBUILD}");
@@ -234,6 +237,7 @@ internal static class ConfigMenu
   internal const string CHUNK_CHECKS     = "Optimize Chunk Checks";
   internal const string PHYSICS_LEAK     = "Optimize Linear Cast Pool";
   internal const string PIXEL_MOVE       = "Optimize Pixel Movement Gen";
+  internal const string RANDOM_CELL      = "Optimize Random Cell Lookup";
 
   internal const string AGGR_OPT         = "Aggressive Optimizations";
   internal const string MATH             = "Optimize Math";
@@ -296,6 +300,7 @@ internal static class ConfigMenu
     so.FancyToggle(CHUNK_CHECKS, "Optimize checks for whether sprite chunks\nare relevant to gameplay.\nSaves a small amount of CPU.");
     so.FancyToggle(PHYSICS_LEAK, "Fixes a memory leak in Physics\ncalculations for pixel-perfect collisions.\nSaves a small amount of RAM.");
     so.FancyToggle(PIXEL_MOVE, "Optimizes pixel movement generator\nused for pixel-perfect collisions.\nSaves a small amount of CPU.");
+    so.FancyToggle(RANDOM_CELL, "Optimizes function for getting\na random cell in a room.\nSaves a small amount of RAM.");
 
     Gunfig ao = _Gunfig.AddSubMenu(AGGR_OPT);
     ao.FancyToggleOff(GOOP, "Speeds up goop updates by using\nfaster iterators and lookup algorithms.\nSaves a large amount of CPU.");
