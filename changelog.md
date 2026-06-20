@@ -5,6 +5,7 @@
 - Optimized Goop update logic a bit more for slightly more performance
 - Added optimizations to walkability checks and heap clears to "Optimize Path Recalculations", saving more CPU and RAM
 - Added "Optimize Random Cell" option, slightly reducing RAM usage when various game objects request a random cell in a room
+- Added "Optimize Text Markup" option, fixing a memory leak when rendering markup text (e.g., the infinite ammo symbol)
 
 ## 1.6.1 (2026-04-12)
 - Added "Orbital Bullets Fix", preventing orbiting bullets from counting towards the orbital cap after despawning

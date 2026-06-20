@@ -958,5 +958,38 @@ internal static partial class Patches
           }
       }
     }
+
+    /// <summary>Fixes a memory leak where whitespace dfMarkupTokens are never released within parseTag()</summary>
+    [HarmonyPatch]
+    private static class MarkupTokenizerMemoryLeakPatch
+    {
+      private static bool Prepare(MethodBase original)
+      {
+        if (!GGVConfig.OPT_TEXT_MARKUP)
+          return false;
+        if (original == null)
+          GGVDebug.LogPatch($"Patching class {MethodBase.GetCurrentMethod().DeclaringType}");
+        else
+          GGVDebug.LogPatch($"  Patching {original.DeclaringType}.{original.Name}");
+        return true;
+      }
+
+      [HarmonyPatch(typeof(dfMarkupTokenizer), nameof(dfMarkupTokenizer.parseTag))]
+      [HarmonyILManipulator]
+      private static void dfMarkupTokenizerparseTagPatchIL(ILContext il)
+      {
+          ILCursor cursor = new ILCursor(il);
+          if (!cursor.TryGotoNext(MoveType.After,
+            instr => instr.MatchCall<dfMarkupTokenizer>(nameof(dfMarkupTokenizer.parseWhitespace)),
+            instr => instr.MatchPop()
+            ))
+              return;
+
+          --cursor.Index;
+          cursor.Remove(); // remove the pop instruction and properly dispose of the markup token
+          cursor.Emit(OpCodes.Call, typeof(dfMarkupToken).GetMethod(nameof(dfMarkupToken.Release), BindingFlags.Instance | BindingFlags.Public));
+      }
+    }
+
 }
 

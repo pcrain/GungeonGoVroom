@@ -46,6 +46,7 @@ internal static class GGVConfig
   internal static bool OPT_PIXEL_ROTATE  = true;
   internal static bool OPT_PAUSE         = true;
   internal static bool OPT_RANDOM_CELL   = true;
+  internal static bool OPT_TEXT_MARKUP   = true;
 
   // Aggressive Optimizations
   internal static bool OPT_MATH          = true;
@@ -111,6 +112,7 @@ internal static class GGVConfig
     OPT_PIXEL_MOVE       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIXEL_MOVE);
     OPT_PIXEL_ROTATE     = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.PIXEL_ROTATE);
     OPT_RANDOM_CELL      = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.RANDOM_CELL);
+    OPT_TEXT_MARKUP      = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.TEXT_MARKUP);
 
     OPT_MATH             = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.MATH);
     OPT_CHUNKBUILD       = "Enabled" == ConfigMenu._Gunfig.Value(ConfigMenu.CHUNKBUILD);
@@ -165,6 +167,7 @@ internal static class GGVConfig
     WriteLine($"OPT_PIXEL_MOVE           = {OPT_PIXEL_MOVE}");
     WriteLine($"OPT_PIXEL_ROTATE         = {OPT_PIXEL_ROTATE}");
     WriteLine($"OPT_RANDOM_CELL          = {OPT_RANDOM_CELL}");
+    WriteLine($"OPT_TEXT_MARKUP          = {OPT_TEXT_MARKUP}");
 
     WriteLine($"OPT_MATH                 = {OPT_MATH}");
     WriteLine($"OPT_CHUNKBUILD           = {OPT_CHUNKBUILD}");
@@ -238,6 +241,7 @@ internal static class ConfigMenu
   internal const string PHYSICS_LEAK     = "Optimize Linear Cast Pool";
   internal const string PIXEL_MOVE       = "Optimize Pixel Movement Gen";
   internal const string RANDOM_CELL      = "Optimize Random Cell Lookup";
+  internal const string TEXT_MARKUP      = "Optimize Text Markup";
 
   internal const string AGGR_OPT         = "Aggressive Optimizations";
   internal const string MATH             = "Optimize Math";
@@ -301,6 +305,7 @@ internal static class ConfigMenu
     so.FancyToggle(PHYSICS_LEAK, "Fixes a memory leak in Physics\ncalculations for pixel-perfect collisions.\nSaves a small amount of RAM.");
     so.FancyToggle(PIXEL_MOVE, "Optimizes pixel movement generator\nused for pixel-perfect collisions.\nSaves a small amount of CPU.");
     so.FancyToggle(RANDOM_CELL, "Optimizes function for getting\na random cell in a room.\nSaves a small amount of RAM.");
+    so.FancyToggle(TEXT_MARKUP, "Fixes a small memory leak when parsing\ntext markup (e.g., the infinite ammo symbol).\nSaves a small amount of RAM.");
 
     Gunfig ao = _Gunfig.AddSubMenu(AGGR_OPT);
     ao.FancyToggleOff(GOOP, "Speeds up goop updates by using\nfaster iterators and lookup algorithms.\nSaves a large amount of CPU.");
