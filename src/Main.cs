@@ -43,7 +43,7 @@ public static class C // constants
 
     public const string MOD_NAME     = "Gungeon Go Vroom";
     public const string MOD_INT_NAME = "GungeonGoVroom";
-    public const string MOD_VERSION  = "1.6.1";
+    public const string MOD_VERSION  = "1.7.0";
     public const string MOD_GUID     = "pretzel.etg.ggv";
     public const string MOD_PREFIX   = "ggv";
 
@@ -52,7 +52,7 @@ public static class C // constants
 
 [BepInPlugin(C.MOD_GUID, C.MOD_INT_NAME, C.MOD_VERSION)]
 [BepInDependency(ETGModMainBehaviour.GUID, "1.9.2")]
-[BepInDependency(Gunfiguration.C.MOD_GUID, "1.1.7")]
+[BepInDependency(Gunfiguration.C.MOD_GUID, "1.1.11")]
 public class Initialisation : BaseUnityPlugin
 {
     private void Awake()
